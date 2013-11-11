@@ -3,7 +3,7 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py
+#  options string: py:new_style
 #
 
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
@@ -17,7 +17,7 @@ except:
   fastbinary = None
 
 
-class Iface:
+class Iface(object):
   def OpenSession(self, req):
     """
     Parameters:
@@ -124,6 +124,13 @@ class Iface:
     pass
 
   def FetchResults(self, req):
+    """
+    Parameters:
+     - req
+    """
+    pass
+
+  def GetLog(self, req):
     """
     Parameters:
      - req
@@ -618,6 +625,36 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "FetchResults failed: unknown result");
 
+  def GetLog(self, req):
+    """
+    Parameters:
+     - req
+    """
+    self.send_GetLog(req)
+    return self.recv_GetLog()
+
+  def send_GetLog(self, req):
+    self._oprot.writeMessageBegin('GetLog', TMessageType.CALL, self._seqid)
+    args = GetLog_args()
+    args.req = req
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_GetLog(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = GetLog_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "GetLog failed: unknown result");
+
 
 class Processor(Iface, TProcessor):
   def __init__(self, handler):
@@ -639,6 +676,7 @@ class Processor(Iface, TProcessor):
     self._processMap["CloseOperation"] = Processor.process_CloseOperation
     self._processMap["GetResultSetMetadata"] = Processor.process_GetResultSetMetadata
     self._processMap["FetchResults"] = Processor.process_FetchResults
+    self._processMap["GetLog"] = Processor.process_GetLog
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -831,10 +869,21 @@ class Processor(Iface, TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
+  def process_GetLog(self, seqid, iprot, oprot):
+    args = GetLog_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = GetLog_result()
+    result.success = self._handler.GetLog(args.req)
+    oprot.writeMessageBegin("GetLog", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
 
 # HELPER FUNCTIONS AND STRUCTURES
 
-class OpenSession_args:
+class OpenSession_args(object):
   """
   Attributes:
    - req
@@ -895,7 +944,7 @@ class OpenSession_args:
   def __ne__(self, other):
     return not (self == other)
 
-class OpenSession_result:
+class OpenSession_result(object):
   """
   Attributes:
    - success
@@ -955,7 +1004,7 @@ class OpenSession_result:
   def __ne__(self, other):
     return not (self == other)
 
-class CloseSession_args:
+class CloseSession_args(object):
   """
   Attributes:
    - req
@@ -1016,7 +1065,7 @@ class CloseSession_args:
   def __ne__(self, other):
     return not (self == other)
 
-class CloseSession_result:
+class CloseSession_result(object):
   """
   Attributes:
    - success
@@ -1076,7 +1125,7 @@ class CloseSession_result:
   def __ne__(self, other):
     return not (self == other)
 
-class GetInfo_args:
+class GetInfo_args(object):
   """
   Attributes:
    - req
@@ -1137,7 +1186,7 @@ class GetInfo_args:
   def __ne__(self, other):
     return not (self == other)
 
-class GetInfo_result:
+class GetInfo_result(object):
   """
   Attributes:
    - success
@@ -1197,7 +1246,7 @@ class GetInfo_result:
   def __ne__(self, other):
     return not (self == other)
 
-class ExecuteStatement_args:
+class ExecuteStatement_args(object):
   """
   Attributes:
    - req
@@ -1258,7 +1307,7 @@ class ExecuteStatement_args:
   def __ne__(self, other):
     return not (self == other)
 
-class ExecuteStatement_result:
+class ExecuteStatement_result(object):
   """
   Attributes:
    - success
@@ -1318,7 +1367,7 @@ class ExecuteStatement_result:
   def __ne__(self, other):
     return not (self == other)
 
-class GetTypeInfo_args:
+class GetTypeInfo_args(object):
   """
   Attributes:
    - req
@@ -1379,7 +1428,7 @@ class GetTypeInfo_args:
   def __ne__(self, other):
     return not (self == other)
 
-class GetTypeInfo_result:
+class GetTypeInfo_result(object):
   """
   Attributes:
    - success
@@ -1439,7 +1488,7 @@ class GetTypeInfo_result:
   def __ne__(self, other):
     return not (self == other)
 
-class GetCatalogs_args:
+class GetCatalogs_args(object):
   """
   Attributes:
    - req
@@ -1500,7 +1549,7 @@ class GetCatalogs_args:
   def __ne__(self, other):
     return not (self == other)
 
-class GetCatalogs_result:
+class GetCatalogs_result(object):
   """
   Attributes:
    - success
@@ -1560,7 +1609,7 @@ class GetCatalogs_result:
   def __ne__(self, other):
     return not (self == other)
 
-class GetSchemas_args:
+class GetSchemas_args(object):
   """
   Attributes:
    - req
@@ -1621,7 +1670,7 @@ class GetSchemas_args:
   def __ne__(self, other):
     return not (self == other)
 
-class GetSchemas_result:
+class GetSchemas_result(object):
   """
   Attributes:
    - success
@@ -1681,7 +1730,7 @@ class GetSchemas_result:
   def __ne__(self, other):
     return not (self == other)
 
-class GetTables_args:
+class GetTables_args(object):
   """
   Attributes:
    - req
@@ -1742,7 +1791,7 @@ class GetTables_args:
   def __ne__(self, other):
     return not (self == other)
 
-class GetTables_result:
+class GetTables_result(object):
   """
   Attributes:
    - success
@@ -1802,7 +1851,7 @@ class GetTables_result:
   def __ne__(self, other):
     return not (self == other)
 
-class GetTableTypes_args:
+class GetTableTypes_args(object):
   """
   Attributes:
    - req
@@ -1863,7 +1912,7 @@ class GetTableTypes_args:
   def __ne__(self, other):
     return not (self == other)
 
-class GetTableTypes_result:
+class GetTableTypes_result(object):
   """
   Attributes:
    - success
@@ -1923,7 +1972,7 @@ class GetTableTypes_result:
   def __ne__(self, other):
     return not (self == other)
 
-class GetColumns_args:
+class GetColumns_args(object):
   """
   Attributes:
    - req
@@ -1984,7 +2033,7 @@ class GetColumns_args:
   def __ne__(self, other):
     return not (self == other)
 
-class GetColumns_result:
+class GetColumns_result(object):
   """
   Attributes:
    - success
@@ -2044,7 +2093,7 @@ class GetColumns_result:
   def __ne__(self, other):
     return not (self == other)
 
-class GetFunctions_args:
+class GetFunctions_args(object):
   """
   Attributes:
    - req
@@ -2105,7 +2154,7 @@ class GetFunctions_args:
   def __ne__(self, other):
     return not (self == other)
 
-class GetFunctions_result:
+class GetFunctions_result(object):
   """
   Attributes:
    - success
@@ -2165,7 +2214,7 @@ class GetFunctions_result:
   def __ne__(self, other):
     return not (self == other)
 
-class GetOperationStatus_args:
+class GetOperationStatus_args(object):
   """
   Attributes:
    - req
@@ -2226,7 +2275,7 @@ class GetOperationStatus_args:
   def __ne__(self, other):
     return not (self == other)
 
-class GetOperationStatus_result:
+class GetOperationStatus_result(object):
   """
   Attributes:
    - success
@@ -2286,7 +2335,7 @@ class GetOperationStatus_result:
   def __ne__(self, other):
     return not (self == other)
 
-class CancelOperation_args:
+class CancelOperation_args(object):
   """
   Attributes:
    - req
@@ -2347,7 +2396,7 @@ class CancelOperation_args:
   def __ne__(self, other):
     return not (self == other)
 
-class CancelOperation_result:
+class CancelOperation_result(object):
   """
   Attributes:
    - success
@@ -2407,7 +2456,7 @@ class CancelOperation_result:
   def __ne__(self, other):
     return not (self == other)
 
-class CloseOperation_args:
+class CloseOperation_args(object):
   """
   Attributes:
    - req
@@ -2468,7 +2517,7 @@ class CloseOperation_args:
   def __ne__(self, other):
     return not (self == other)
 
-class CloseOperation_result:
+class CloseOperation_result(object):
   """
   Attributes:
    - success
@@ -2528,7 +2577,7 @@ class CloseOperation_result:
   def __ne__(self, other):
     return not (self == other)
 
-class GetResultSetMetadata_args:
+class GetResultSetMetadata_args(object):
   """
   Attributes:
    - req
@@ -2589,7 +2638,7 @@ class GetResultSetMetadata_args:
   def __ne__(self, other):
     return not (self == other)
 
-class GetResultSetMetadata_result:
+class GetResultSetMetadata_result(object):
   """
   Attributes:
    - success
@@ -2649,7 +2698,7 @@ class GetResultSetMetadata_result:
   def __ne__(self, other):
     return not (self == other)
 
-class FetchResults_args:
+class FetchResults_args(object):
   """
   Attributes:
    - req
@@ -2710,7 +2759,7 @@ class FetchResults_args:
   def __ne__(self, other):
     return not (self == other)
 
-class FetchResults_result:
+class FetchResults_result(object):
   """
   Attributes:
    - success
@@ -2748,6 +2797,127 @@ class FetchResults_result:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('FetchResults_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetLog_args(object):
+  """
+  Attributes:
+   - req
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'req', (TGetLogReq, TGetLogReq.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, req=None,):
+    self.req = req
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.req = TGetLogReq()
+          self.req.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('GetLog_args')
+    if self.req is not None:
+      oprot.writeFieldBegin('req', TType.STRUCT, 1)
+      self.req.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetLog_result(object):
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (TGetLogResp, TGetLogResp.thrift_spec), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRUCT:
+          self.success = TGetLogResp()
+          self.success.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('GetLog_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)

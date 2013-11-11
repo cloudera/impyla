@@ -3,7 +3,7 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py
+#  options string: py:new_style
 #
 
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
@@ -16,7 +16,7 @@ except:
   fastbinary = None
 
 
-class TProtocolVersion:
+class TProtocolVersion(object):
   HIVE_CLI_SERVICE_PROTOCOL_V1 = 0
 
   _VALUES_TO_NAMES = {
@@ -27,7 +27,7 @@ class TProtocolVersion:
     "HIVE_CLI_SERVICE_PROTOCOL_V1": 0,
   }
 
-class TTypeId:
+class TTypeId(object):
   BOOLEAN_TYPE = 0
   TINYINT_TYPE = 1
   SMALLINT_TYPE = 2
@@ -43,6 +43,7 @@ class TTypeId:
   STRUCT_TYPE = 12
   UNION_TYPE = 13
   USER_DEFINED_TYPE = 14
+  DECIMAL_TYPE = 15
 
   _VALUES_TO_NAMES = {
     0: "BOOLEAN_TYPE",
@@ -60,6 +61,7 @@ class TTypeId:
     12: "STRUCT_TYPE",
     13: "UNION_TYPE",
     14: "USER_DEFINED_TYPE",
+    15: "DECIMAL_TYPE",
   }
 
   _NAMES_TO_VALUES = {
@@ -78,9 +80,10 @@ class TTypeId:
     "STRUCT_TYPE": 12,
     "UNION_TYPE": 13,
     "USER_DEFINED_TYPE": 14,
+    "DECIMAL_TYPE": 15,
   }
 
-class TStatusCode:
+class TStatusCode(object):
   SUCCESS_STATUS = 0
   SUCCESS_WITH_INFO_STATUS = 1
   STILL_EXECUTING_STATUS = 2
@@ -103,7 +106,7 @@ class TStatusCode:
     "INVALID_HANDLE_STATUS": 4,
   }
 
-class TOperationState:
+class TOperationState(object):
   INITIALIZED_STATE = 0
   RUNNING_STATE = 1
   FINISHED_STATE = 2
@@ -132,7 +135,7 @@ class TOperationState:
     "UKNOWN_STATE": 6,
   }
 
-class TOperationType:
+class TOperationType(object):
   EXECUTE_STATEMENT = 0
   GET_TYPE_INFO = 1
   GET_CATALOGS = 2
@@ -167,7 +170,7 @@ class TOperationType:
     "UNKNOWN": 8,
   }
 
-class TGetInfoType:
+class TGetInfoType(object):
   CLI_MAX_DRIVER_CONNECTIONS = 0
   CLI_MAX_CONCURRENT_ACTIVITIES = 1
   CLI_DATA_SOURCE_NAME = 2
@@ -316,7 +319,7 @@ class TGetInfoType:
     "CLI_MAX_IDENTIFIER_LEN": 10005,
   }
 
-class TFetchOrientation:
+class TFetchOrientation(object):
   FETCH_NEXT = 0
   FETCH_PRIOR = 1
   FETCH_RELATIVE = 2
@@ -343,7 +346,7 @@ class TFetchOrientation:
   }
 
 
-class TPrimitiveTypeEntry:
+class TPrimitiveTypeEntry(object):
   """
   Attributes:
    - type
@@ -405,7 +408,7 @@ class TPrimitiveTypeEntry:
   def __ne__(self, other):
     return not (self == other)
 
-class TArrayTypeEntry:
+class TArrayTypeEntry(object):
   """
   Attributes:
    - objectTypePtr
@@ -467,7 +470,7 @@ class TArrayTypeEntry:
   def __ne__(self, other):
     return not (self == other)
 
-class TMapTypeEntry:
+class TMapTypeEntry(object):
   """
   Attributes:
    - keyTypePtr
@@ -543,7 +546,7 @@ class TMapTypeEntry:
   def __ne__(self, other):
     return not (self == other)
 
-class TStructTypeEntry:
+class TStructTypeEntry(object):
   """
   Attributes:
    - nameToTypePtr
@@ -615,7 +618,7 @@ class TStructTypeEntry:
   def __ne__(self, other):
     return not (self == other)
 
-class TUnionTypeEntry:
+class TUnionTypeEntry(object):
   """
   Attributes:
    - nameToTypePtr
@@ -687,7 +690,7 @@ class TUnionTypeEntry:
   def __ne__(self, other):
     return not (self == other)
 
-class TUserDefinedTypeEntry:
+class TUserDefinedTypeEntry(object):
   """
   Attributes:
    - typeClassName
@@ -749,7 +752,7 @@ class TUserDefinedTypeEntry:
   def __ne__(self, other):
     return not (self == other)
 
-class TTypeEntry:
+class TTypeEntry(object):
   """
   Attributes:
    - primitiveEntry
@@ -875,7 +878,7 @@ class TTypeEntry:
   def __ne__(self, other):
     return not (self == other)
 
-class TTypeDesc:
+class TTypeDesc(object):
   """
   Attributes:
    - types
@@ -946,7 +949,7 @@ class TTypeDesc:
   def __ne__(self, other):
     return not (self == other)
 
-class TColumnDesc:
+class TColumnDesc(object):
   """
   Attributes:
    - columnName
@@ -1049,7 +1052,7 @@ class TColumnDesc:
   def __ne__(self, other):
     return not (self == other)
 
-class TTableSchema:
+class TTableSchema(object):
   """
   Attributes:
    - columns
@@ -1120,7 +1123,7 @@ class TTableSchema:
   def __ne__(self, other):
     return not (self == other)
 
-class TBoolValue:
+class TBoolValue(object):
   """
   Attributes:
    - value
@@ -1180,7 +1183,7 @@ class TBoolValue:
   def __ne__(self, other):
     return not (self == other)
 
-class TByteValue:
+class TByteValue(object):
   """
   Attributes:
    - value
@@ -1240,7 +1243,7 @@ class TByteValue:
   def __ne__(self, other):
     return not (self == other)
 
-class TI16Value:
+class TI16Value(object):
   """
   Attributes:
    - value
@@ -1300,7 +1303,7 @@ class TI16Value:
   def __ne__(self, other):
     return not (self == other)
 
-class TI32Value:
+class TI32Value(object):
   """
   Attributes:
    - value
@@ -1360,7 +1363,7 @@ class TI32Value:
   def __ne__(self, other):
     return not (self == other)
 
-class TI64Value:
+class TI64Value(object):
   """
   Attributes:
    - value
@@ -1420,7 +1423,7 @@ class TI64Value:
   def __ne__(self, other):
     return not (self == other)
 
-class TDoubleValue:
+class TDoubleValue(object):
   """
   Attributes:
    - value
@@ -1480,7 +1483,7 @@ class TDoubleValue:
   def __ne__(self, other):
     return not (self == other)
 
-class TStringValue:
+class TStringValue(object):
   """
   Attributes:
    - value
@@ -1540,7 +1543,7 @@ class TStringValue:
   def __ne__(self, other):
     return not (self == other)
 
-class TColumn:
+class TColumn(object):
   """
   Attributes:
    - boolColumn
@@ -1735,7 +1738,7 @@ class TColumn:
   def __ne__(self, other):
     return not (self == other)
 
-class TColumnValue:
+class TColumnValue(object):
   """
   Attributes:
    - boolVal
@@ -1874,7 +1877,7 @@ class TColumnValue:
   def __ne__(self, other):
     return not (self == other)
 
-class TRow:
+class TRow(object):
   """
   Attributes:
    - colVals
@@ -1945,7 +1948,7 @@ class TRow:
   def __ne__(self, other):
     return not (self == other)
 
-class TRowSet:
+class TRowSet(object):
   """
   Attributes:
    - startRowOffset
@@ -2051,7 +2054,7 @@ class TRowSet:
   def __ne__(self, other):
     return not (self == other)
 
-class TStatus:
+class TStatus(object):
   """
   Attributes:
    - statusCode
@@ -2169,7 +2172,7 @@ class TStatus:
   def __ne__(self, other):
     return not (self == other)
 
-class THandleIdentifier:
+class THandleIdentifier(object):
   """
   Attributes:
    - guid
@@ -2245,7 +2248,7 @@ class THandleIdentifier:
   def __ne__(self, other):
     return not (self == other)
 
-class TSessionHandle:
+class TSessionHandle(object):
   """
   Attributes:
    - sessionId
@@ -2308,7 +2311,7 @@ class TSessionHandle:
   def __ne__(self, other):
     return not (self == other)
 
-class TOperationHandle:
+class TOperationHandle(object):
   """
   Attributes:
    - operationId
@@ -2411,7 +2414,7 @@ class TOperationHandle:
   def __ne__(self, other):
     return not (self == other)
 
-class TOpenSessionReq:
+class TOpenSessionReq(object):
   """
   Attributes:
    - client_protocol
@@ -2519,7 +2522,7 @@ class TOpenSessionReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TOpenSessionResp:
+class TOpenSessionResp(object):
   """
   Attributes:
    - status
@@ -2631,7 +2634,7 @@ class TOpenSessionResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TCloseSessionReq:
+class TCloseSessionReq(object):
   """
   Attributes:
    - sessionHandle
@@ -2694,7 +2697,7 @@ class TCloseSessionReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TCloseSessionResp:
+class TCloseSessionResp(object):
   """
   Attributes:
    - status
@@ -2757,7 +2760,7 @@ class TCloseSessionResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetInfoValue:
+class TGetInfoValue(object):
   """
   Attributes:
    - stringValue
@@ -2877,7 +2880,7 @@ class TGetInfoValue:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetInfoReq:
+class TGetInfoReq(object):
   """
   Attributes:
    - sessionHandle
@@ -2954,7 +2957,7 @@ class TGetInfoReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetInfoResp:
+class TGetInfoResp(object):
   """
   Attributes:
    - status
@@ -3032,7 +3035,7 @@ class TGetInfoResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TExecuteStatementReq:
+class TExecuteStatementReq(object):
   """
   Attributes:
    - sessionHandle
@@ -3131,7 +3134,7 @@ class TExecuteStatementReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TExecuteStatementResp:
+class TExecuteStatementResp(object):
   """
   Attributes:
    - status
@@ -3207,7 +3210,7 @@ class TExecuteStatementResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetTypeInfoReq:
+class TGetTypeInfoReq(object):
   """
   Attributes:
    - sessionHandle
@@ -3270,7 +3273,7 @@ class TGetTypeInfoReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetTypeInfoResp:
+class TGetTypeInfoResp(object):
   """
   Attributes:
    - status
@@ -3346,7 +3349,7 @@ class TGetTypeInfoResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetCatalogsReq:
+class TGetCatalogsReq(object):
   """
   Attributes:
    - sessionHandle
@@ -3409,7 +3412,7 @@ class TGetCatalogsReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetCatalogsResp:
+class TGetCatalogsResp(object):
   """
   Attributes:
    - status
@@ -3485,7 +3488,7 @@ class TGetCatalogsResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetSchemasReq:
+class TGetSchemasReq(object):
   """
   Attributes:
    - sessionHandle
@@ -3572,7 +3575,7 @@ class TGetSchemasReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetSchemasResp:
+class TGetSchemasResp(object):
   """
   Attributes:
    - status
@@ -3648,7 +3651,7 @@ class TGetSchemasResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetTablesReq:
+class TGetTablesReq(object):
   """
   Attributes:
    - sessionHandle
@@ -3767,7 +3770,7 @@ class TGetTablesReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetTablesResp:
+class TGetTablesResp(object):
   """
   Attributes:
    - status
@@ -3843,7 +3846,7 @@ class TGetTablesResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetTableTypesReq:
+class TGetTableTypesReq(object):
   """
   Attributes:
    - sessionHandle
@@ -3906,7 +3909,7 @@ class TGetTableTypesReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetTableTypesResp:
+class TGetTableTypesResp(object):
   """
   Attributes:
    - status
@@ -3982,7 +3985,7 @@ class TGetTableTypesResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetColumnsReq:
+class TGetColumnsReq(object):
   """
   Attributes:
    - sessionHandle
@@ -4093,7 +4096,7 @@ class TGetColumnsReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetColumnsResp:
+class TGetColumnsResp(object):
   """
   Attributes:
    - status
@@ -4169,7 +4172,7 @@ class TGetColumnsResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetFunctionsReq:
+class TGetFunctionsReq(object):
   """
   Attributes:
    - sessionHandle
@@ -4270,7 +4273,7 @@ class TGetFunctionsReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetFunctionsResp:
+class TGetFunctionsResp(object):
   """
   Attributes:
    - status
@@ -4346,7 +4349,7 @@ class TGetFunctionsResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetOperationStatusReq:
+class TGetOperationStatusReq(object):
   """
   Attributes:
    - operationHandle
@@ -4409,7 +4412,7 @@ class TGetOperationStatusReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetOperationStatusResp:
+class TGetOperationStatusResp(object):
   """
   Attributes:
    - status
@@ -4484,7 +4487,7 @@ class TGetOperationStatusResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TCancelOperationReq:
+class TCancelOperationReq(object):
   """
   Attributes:
    - operationHandle
@@ -4547,7 +4550,7 @@ class TCancelOperationReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TCancelOperationResp:
+class TCancelOperationResp(object):
   """
   Attributes:
    - status
@@ -4610,7 +4613,7 @@ class TCancelOperationResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TCloseOperationReq:
+class TCloseOperationReq(object):
   """
   Attributes:
    - operationHandle
@@ -4673,7 +4676,7 @@ class TCloseOperationReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TCloseOperationResp:
+class TCloseOperationResp(object):
   """
   Attributes:
    - status
@@ -4736,7 +4739,7 @@ class TCloseOperationResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetResultSetMetadataReq:
+class TGetResultSetMetadataReq(object):
   """
   Attributes:
    - operationHandle
@@ -4799,7 +4802,7 @@ class TGetResultSetMetadataReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TGetResultSetMetadataResp:
+class TGetResultSetMetadataResp(object):
   """
   Attributes:
    - status
@@ -4875,7 +4878,7 @@ class TGetResultSetMetadataResp:
   def __ne__(self, other):
     return not (self == other)
 
-class TFetchResultsReq:
+class TFetchResultsReq(object):
   """
   Attributes:
    - operationHandle
@@ -4966,7 +4969,7 @@ class TFetchResultsReq:
   def __ne__(self, other):
     return not (self == other)
 
-class TFetchResultsResp:
+class TFetchResultsResp(object):
   """
   Attributes:
    - status
@@ -5040,6 +5043,146 @@ class TFetchResultsResp:
   def validate(self):
     if self.status is None:
       raise TProtocol.TProtocolException(message='Required field status is unset!')
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class TGetLogReq(object):
+  """
+  Attributes:
+   - operationHandle
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'operationHandle', (TOperationHandle, TOperationHandle.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, operationHandle=None,):
+    self.operationHandle = operationHandle
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.operationHandle = TOperationHandle()
+          self.operationHandle.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('TGetLogReq')
+    if self.operationHandle is not None:
+      oprot.writeFieldBegin('operationHandle', TType.STRUCT, 1)
+      self.operationHandle.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.operationHandle is None:
+      raise TProtocol.TProtocolException(message='Required field operationHandle is unset!')
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class TGetLogResp(object):
+  """
+  Attributes:
+   - status
+   - log
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'status', (TStatus, TStatus.thrift_spec), None, ), # 1
+    (2, TType.STRING, 'log', None, None, ), # 2
+  )
+
+  def __init__(self, status=None, log=None,):
+    self.status = status
+    self.log = log
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.status = TStatus()
+          self.status.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.log = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('TGetLogResp')
+    if self.status is not None:
+      oprot.writeFieldBegin('status', TType.STRUCT, 1)
+      self.status.write(oprot)
+      oprot.writeFieldEnd()
+    if self.log is not None:
+      oprot.writeFieldBegin('log', TType.STRING, 2)
+      oprot.writeString(self.log)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.status is None:
+      raise TProtocol.TProtocolException(message='Required field status is unset!')
+    if self.log is None:
+      raise TProtocol.TProtocolException(message='Required field log is unset!')
     return
 
 

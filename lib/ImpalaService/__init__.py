@@ -1,1 +1,1 @@
-__all__ = ['ttypes', 'constants', 'ImpalaService', 'ImpalaHiveServer2Service']
+__all__ = ['ttypes', 'constants', 'ImpalaHiveServer2Service']

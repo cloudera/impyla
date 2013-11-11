@@ -3,7 +3,7 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py
+#  options string: py:new_style
 #
 
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
@@ -20,6 +20,7 @@ PRIMITIVE_TYPES = set([
     7,
     8,
     9,
+    15,
 ])
 COMPLEX_TYPES = set([
     10,
@@ -47,4 +48,5 @@ TYPE_NAMES = {
     11 : "MAP",
     12 : "STRUCT",
     13 : "UNIONTYPE",
+    15 : "DECIMAL",
 }

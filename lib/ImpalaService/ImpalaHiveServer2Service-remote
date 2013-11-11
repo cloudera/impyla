@@ -4,7 +4,7 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py
+#  options string: py:new_style
 #
 
 import sys
@@ -23,7 +23,6 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Usage: ' + sys.argv[0] + ' [-h host[:port]] [-u url] [-f[ramed]] function [arg1 [arg2...]]'
   print ''
   print 'Functions:'
-  print '  TStatus ResetCatalog()'
   print ''
   sys.exit(0)
 
@@ -74,15 +73,5 @@ else:
 protocol = TBinaryProtocol.TBinaryProtocol(transport)
 client = ImpalaHiveServer2Service.Client(protocol)
 transport.open()
-
-if cmd == 'ResetCatalog':
-  if len(args) != 0:
-    print 'ResetCatalog requires 0 args'
-    sys.exit(1)
-  pp.pprint(client.ResetCatalog())
-
-else:
-  print 'Unrecognized method %s' % cmd
-  sys.exit(1)
 
 transport.close()

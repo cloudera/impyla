@@ -4,7 +4,7 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py
+#  options string: py:new_style
 #
 
 import sys
@@ -39,6 +39,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print '  TCloseOperationResp CloseOperation(TCloseOperationReq req)'
   print '  TGetResultSetMetadataResp GetResultSetMetadata(TGetResultSetMetadataReq req)'
   print '  TFetchResultsResp FetchResults(TFetchResultsReq req)'
+  print '  TGetLogResp GetLog(TGetLogReq req)'
   print ''
   sys.exit(0)
 
@@ -185,6 +186,12 @@ elif cmd == 'FetchResults':
     print 'FetchResults requires 1 args'
     sys.exit(1)
   pp.pprint(client.FetchResults(eval(args[0]),))
+
+elif cmd == 'GetLog':
+  if len(args) != 1:
+    print 'GetLog requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.GetLog(eval(args[0]),))
 
 else:
   print 'Unrecognized method %s' % cmd
