@@ -47,7 +47,7 @@ threadsafety = 0 # Threads may not share the module.
 paramstyle = 'pyformat'
 
 
-def connect(host='localhost', port=21050, user=getpass.getuser(), timeout=45):
+def connect(host='localhost', port=21050, timeout=45):
     sock = TSocket(host, port)
     sock.setTimeout(timeout * 1000.)
     transport = TBufferedTransport(sock)
