@@ -2,6 +2,8 @@
 
 import exceptions
 
+from impala.cli_service.ttypes import TStatusCode
+
 class Error(exceptions.StandardError):
     pass
 
@@ -31,3 +33,8 @@ class DataError(DatabaseError):
 
 class NotSupportedError(DatabaseError):
     pass
+
+def err_if_rpc_not_ok(resp):
+    if (resp.status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_STATUS'] and
+            resp.status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_WITH_INFO_STATUS']):
+        raise OperationalError("RPC failed: %s" % resp.__class__.__name__)

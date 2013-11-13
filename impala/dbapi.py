@@ -8,14 +8,13 @@ from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
 
-from cli_service import TCLIService
-from cli_service.ttypes import (TStatusCode, TOpenSessionReq, TGetTablesReq,
-        TFetchResultsReq, TCloseOperationReq, TCloseSessionReq,
-        TGetOperationStatusReq, TExecuteStatementReq, TGetSchemasReq,
-        TGetInfoReq, TGetInfoType, TTypeId, TFetchOrientation,
-        TGetResultSetMetadataReq)
+from impala.cli_service import TCLIService
+from impala.cli_service.ttypes import (TOpenSessionReq, TFetchResultsReq,
+        TCloseSessionReq, TExecuteStatementReq, TGetInfoReq, TGetInfoType,
+        TTypeId, TFetchOrientation, TGetResultSetMetadataReq)
 
 import impala.error
+from impala.error import err_if_rpc_not_ok
 
 # This work builds off of:
 # 1. the Hue interface: 
@@ -26,13 +25,6 @@ import impala.error
 #       Impala/shell/impala_shell.py
 # 3. PyMongo interface
 # 4. PEP 249: http://www.python.org/dev/peps/pep-0249/
-
-LOG = logging.getLogger(__name__)
-
-def err_if_not_success(status, msg="Status returned unsuccessful."):
-    if (status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_STATUS'] and
-            status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_WITH_INFO_STATUS']):
-        raise impala.error.OperationalError(msg)
 
 
 # PEP 249 module globals
@@ -48,25 +40,19 @@ def connect(host='localhost', port=21050, user=getpass.getuser(), timeout=45):
     transport.open()
     protocol = TBinaryProtocol(transport)
     service = TCLIService.Client(protocol)
-    return Connection(sock, transport, protocol, service, user)
+    return Connection(service)
 
 
 class Connection(object):
+    # Connection objects are associated with a TCLIService.Client thrift service
+    # it's instantiated with an alive TCLIService.Client
     
-    def __init__(self, sock, transport, protocol, service, user):
-        self.user = user
-        self.sock = sock
-        self.transport = transport
-        self.protocol = protocol
+    def __init__(self, service):
         self.service = service
-        self.server_protocol_version = None
-        self.configuration = None
-        self.session_handle = None
-        self._open_session()
     
     def close(self):
         """Close the session and the Thrift transport."""
-        self.__del__()
+        self.service._iprot.trans.close()
     
     def commit(self):
         """Impala doesn't support transactions; does nothing."""
@@ -84,49 +70,39 @@ class Connection(object):
         except TTransportException as e:
             return False
         try:
-            err_if_not_success(resp.status, "Not connected; GetInfo returned unsuccessful status.")
+            err_if_rpc_not_ok(resp.status)
         except ImpalaException as e:
             return False
         return True
     
-    def cursor(self):
-        # TODO
-        return Cursor(self.service, self.session_handle)
+    def cursor(self, session_handle=None, user=None):
+        if user is None:
+            user = getpass.getuser()
+        if session_handle is None:
+            session_handle = self._open_session(user)
+        return Cursor(self.service, session_handle)
     
-    def _open_session(self):
+    def _open_session(self, user):
         # open a session with the Impala service
-        req = TOpenSessionReq(username=self.user)
+        req = TOpenSessionReq(username=user)
         try:
             resp = self.service.OpenSession(req)
-            err_if_not_success(resp.status, "OpenSession: failed to open a "
-                    "session to Impala. Are you connected to the service?")
+            err_if_rpc_not_ok(resp.status)
         except impala.error.OperationalError as e:
             self.close()
-        
-        self.server_protocol_version = resp.serverProtocolVersion
-        self.configuration = resp.configuration
-        self.session_handle = resp.sessionHandle
-        LOG.info("Opened a session")
-    
-    def _close_session(self):
-        req = TCloseSessionReq(sessionHandle=self.session_handle)
-        resp = self.service.CloseSession(req)
-        err_if_not_success(resp.status, "CloseSession: failed to close session.")
-    
-    def __del__(self):
-        if self.service is not None:
-            self._close_session()
-        if self.transport is not None:
-            self.transport.close()
+        return resp.sessionHandle
 
 
 class Cursor(object):
+    # Cursor objects are associated with a Session
+    # they are instantiated with alive session_handles
     
     def __init__(self, service, session_handle):
         self.service = service
         self.session_handle = session_handle
+        
         self._last_op_handle = None
-        self.arraysize = 100
+        self._arraysize = 100
         self._buffer = []
         self._orientation=TFetchOrientation.FETCH_NEXT
         
@@ -142,12 +118,18 @@ class Cursor(object):
     def rowcount(self):
         return self._rowcount
     
+    def set_arraysize(self, arraysize):
+        self._arraysize = arraysize
+    arraysize = property(lambda self: self._arraysize, set_arraysize)
+    
     @property
     def has_result_set(self):
         return self._last_op_handle is not None and self._last_op_handle.hasResultSet
     
     def close(self):
-        self.__del__()
+        req = TCloseSessionReq(sessionHandle=self.session_handle)
+        resp = self.service.CloseSession(req)
+        err_if_rpc_not_ok(resp.status)
     
     def execute(self, operation, parameters={}):
         self._buffer = []
@@ -203,24 +185,17 @@ class Cursor(object):
                 raise StopIteration
             return self._buffer.pop(0)
     
-    def __del__(self):
-        # TODO: currently, doesn't need to do anything, since all resources are
-        # controlled by the Connection.  However, to agree with PEP 249, I
-        # should check if the user has called .close(), and make sure no
-        # operations are allowed.
-        pass
-    
     def _execute_statement_async(self, statement, configuration={}):
         req = TExecuteStatementReq(sessionHandle=self.session_handle, statement=statement, confOverlay=configuration)
         resp = self.service.ExecuteStatement(req)
-        err_if_not_success(resp.status, "Failed to execute statement: %s" % statement)
+        err_if_rpc_not_ok(resp.status)
         return resp.operationHandle
     
     def _fetch_schema(self):
         # this assumes that self._last_op_handle.hasResultSet == True
         req = TGetResultSetMetadataReq(operationHandle=self._last_op_handle)
         resp = self.service.GetResultSetMetadata(req)
-        err_if_not_success(resp.status, "Failed to get query metadata.")
+        err_if_rpc_not_ok(resp.status)
         
         self._description = []
         for column in resp.schema.columns:
@@ -237,7 +212,7 @@ class Cursor(object):
             raise impala.error.ProgrammingError("Trying to fetch results on an operation with no results.")
         req = TFetchResultsReq(operationHandle=self._last_op_handle, orientation=self._orientation, maxRows=self.arraysize)
         resp = self.service.FetchResults(req)
-        err_if_not_success(resp.status, "Fetch failed.")
+        err_if_rpc_not_ok(resp.status)
         for trow in resp.results.rows:
             row = []
             for (i, col_val) in enumerate(trow.colVals):
