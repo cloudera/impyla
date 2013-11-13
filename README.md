@@ -1,8 +1,9 @@
-#impyla
+# impyla
 
 Python client to Cloudera Impala.
 
-####Rationale/vision
+
+## Rationale and vision
 
 Impala allows you to rapidly analyze large, distributed data sets.  But it
 doesn't integrate easily with your ad hoc (Python) analytical tools (pandas,
@@ -25,35 +26,36 @@ Eventually, we'll also support:
 * Running Python UDFs by compiling them to LLVM IR
 
 
-
-Installation
-------------
-
-Uses setuptools/distribute.
+## Installation
 
 Requires `thrift>=0.9`.
 
-Currently:
+    pip install impyla
+
+or from the repo
 
     git clone git://github.com/laserson/impyla.git
     cd impyla
     python setup.py install
 
-Eventually:
 
-    pip install impyla
+## Quickstart
 
+Impyla implements the Python DB API 2 (PEP 249)
 
-Usage
------
+    import impala.dbapi
+    conn = impala.dbapi.connect(host='my.host.com', port=21050)
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM table LIMIT 100')
+    for row in cursor:
+        process(row)
 
-    import impala
-    client = impala.ImpalaBeeswaxClient('host:port')
-    client.connect()
-    results = client.execute(query)
+You can also get back a pandas DataFrame object
+    
+    import impala.pandas
+    df = impala.pandas.Cursor2DataFrame(cur)
+    # carry df through scikit-learn, for example
 
-Note that `query` gets parsed by `impalad`, not the `impala-shell`, so do not do
-things like add semicolons to the end of the query.
 
 [1]: http://pandas.pydata.org/
 [2]: http://scikit-learn.org/
@@ -61,4 +63,3 @@ things like add semicolons to the end of the query.
 [4]: http://madlib.net/
 [5]: https://github.com/bitfort/madlibport
 [6]: http://spark.incubator.apache.org/
-[7]: 
