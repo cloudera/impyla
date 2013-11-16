@@ -84,7 +84,7 @@ class Connection(object):
         except TTransportException as e:
             return False
         try:
-            err_if_rpc_not_ok(resp.status)
+            err_if_rpc_not_ok(resp)
         except ImpalaException as e:
             return False
         return True
@@ -101,7 +101,7 @@ class Connection(object):
         req = TOpenSessionReq(username=user)
         try:
             resp = self.service.OpenSession(req)
-            err_if_rpc_not_ok(resp.status)
+            err_if_rpc_not_ok(resp)
         except impala.error.OperationalError as e:
             self.close()
         return resp.sessionHandle
@@ -115,6 +115,7 @@ class Cursor(object):
         self.service = service
         self.session_handle = session_handle
         
+        self._last_op_string = None
         self._last_op_handle = None
         self._arraysize = 100
         self._buffer = []
@@ -123,6 +124,10 @@ class Cursor(object):
         # initial values, per PEP 249
         self._description = None
         self._rowcount = -1
+    
+    @property
+    def query_string(self):
+        return self._last_op_string
     
     @property
     def description(self):
@@ -143,12 +148,13 @@ class Cursor(object):
     def close(self):
         req = TCloseSessionReq(sessionHandle=self.session_handle)
         resp = self.service.CloseSession(req)
-        err_if_rpc_not_ok(resp.status)
+        err_if_rpc_not_ok(resp)
     
     def execute(self, operation, parameters={}):
         self._buffer = []
         self._description = None
-        self._last_op_handle = self._execute_statement_async(operation % parameters)
+        self._last_op_string = operation % parameters
+        self._last_op_handle = self._execute_statement_async(self._last_op_string)
         if self.has_result_set:
             self._fetch_schema()
     
@@ -202,14 +208,14 @@ class Cursor(object):
     def _execute_statement_async(self, statement, configuration={}):
         req = TExecuteStatementReq(sessionHandle=self.session_handle, statement=statement, confOverlay=configuration)
         resp = self.service.ExecuteStatement(req)
-        err_if_rpc_not_ok(resp.status)
+        err_if_rpc_not_ok(resp)
         return resp.operationHandle
     
     def _fetch_schema(self):
         # this assumes that self._last_op_handle.hasResultSet == True
         req = TGetResultSetMetadataReq(operationHandle=self._last_op_handle)
         resp = self.service.GetResultSetMetadata(req)
-        err_if_rpc_not_ok(resp.status)
+        err_if_rpc_not_ok(resp)
         
         self._description = []
         for column in resp.schema.columns:
@@ -226,7 +232,7 @@ class Cursor(object):
             raise impala.error.ProgrammingError("Trying to fetch results on an operation with no results.")
         req = TFetchResultsReq(operationHandle=self._last_op_handle, orientation=self._orientation, maxRows=self.arraysize)
         resp = self.service.FetchResults(req)
-        err_if_rpc_not_ok(resp.status)
+        err_if_rpc_not_ok(resp)
         for trow in resp.results.rows:
             row = []
             for (i, col_val) in enumerate(trow.colVals):
