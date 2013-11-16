@@ -28,6 +28,5 @@ setup(
   url='https://github.com/laserson/impyla',
   packages=['impala', 'impala.cli_service'],
   keywords='cloudera impala python hadoop sql hdfs mpp madlib spark distributed',
-  install_requires=['thrift>=0.9'],
   license='Apache License, Version 2.0'
 )
