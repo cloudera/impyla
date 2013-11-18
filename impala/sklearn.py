@@ -1,9 +1,48 @@
+from sklearn.base import BaseEstimator
 
 
-class Table(object):
+class DataSet(object):
     
-    def __init__(self):
-        pass
+    def __init__(self, cursor, query_string, label=None):
+        self.cursor = cursor
+        self.query_string = query_string
+
+
+
+
+
+
+class ImpalaLogisticRegression(BaseEstimator):
+    
+    def __init__(self, step_size=0.1, mu=0.1):
+        self.step_size = step_size
+        self.mu = mu
+        self.coef_ = None
+        return self
+    
+    def partial_fit(self, cursor, query_string, label_column):
+        schema = util.compute_result_schema(cursor, query_string)
+        
+        if self.coef_ is None:
+            self.coef_ = np.zeros()
+    
+    def fit(self, cursor, query_string, label_column):
+        if self.coef_ is None
+        "SELECT logr(%(model_state)s,"
+                       "%(obs_as_str)s,"
+                       "%(label_column)s,
+                       "%(step)f, %(mu)f)"
+
+
+iutil.bismarck_epoch(model_table, dat_table, 'logr(__PREV_MODEL__, %(arr)s, %(label)s, %(step)s, %(mu)s)' % {'arr':arr, 'label':label, 'step':step, 'mu':mu}, epoch, label)
+
+uda_gen = 'logr(__PREV_MODEL__, %(arr)s, %(label)s, %(step)s, %(mu)s)' % {'arr':arr, 'label':label, 'step':step, 'mu':mu}
+
+INSERT INTO model_table
+SELECT 5, encodearray(logr(decodearray(model_table.model), toarray(data_table.feat1, data_table.feat2), label, step, mu))
+FROM model_table, data_table
+WHERE (data_table.label is null || true)=(model_table.model is null || true)
+    AND model_table.iter=4;
 
 
 
