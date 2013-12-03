@@ -14,6 +14,14 @@
 
 """Implements all necessary Impala HiveServer 2 RPC functionality."""
 
+# This work builds off of:
+# 1. the Hue interface: 
+#       hue/apps/beeswax/src/beeswax/server/dbms.py
+#       hue/apps/beeswax/src/beeswax/server/hive_server2_lib.py
+#       hue/desktop/core/src/desktop/lib/thrift_util.py
+# 2. the Impala shell:
+#       Impala/shell/impala_shell.py
+
 import socket
 import operator
 import exceptions
@@ -87,8 +95,6 @@ def retry(func):
                 pass
             except TTransportException as e:
                 pass
-            except RPCError as e:
-                pass
             except Exception as e:
                 raise
             transport.close()
@@ -105,6 +111,9 @@ def connect_to_impala(host, port, timeout=45):
     protocol = TBinaryProtocol(transport)
     service = TCLIService.Client(protocol)
     return service
+
+def close_service(service):
+    service._iprot.trans.close()
 
 def reconnect(service):
     service._iprot.trans.close()
