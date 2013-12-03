@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Impala exception classes.  Implements PEP 249."""
+"""Impala exception classes.  Also implements PEP 249."""
 
 import exceptions
 
@@ -48,7 +48,10 @@ class DataError(DatabaseError):
 class NotSupportedError(DatabaseError):
     pass
 
+class RPCError(Error):
+    pass
+
 def err_if_rpc_not_ok(resp):
     if (resp.status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_STATUS'] and
             resp.status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_WITH_INFO_STATUS']):
-        raise OperationalError("RPC failed: %s" % resp.__class__.__name__)
+        raise RPCError("RPC failed: %s" % resp.__class__.__name__)
