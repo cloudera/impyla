@@ -12,33 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+"""Implements the Python DB API 2.0 for Impala (PEP 249)"""
+
 import getpass
-import logging
-import operator
-import itertools
 
-from thrift.transport.TSocket import TSocket
-from thrift.transport.TTransport import TBufferedTransport
-from thrift.protocol.TBinaryProtocol import TBinaryProtocol
-
-from impala.cli_service import TCLIService
-from impala.cli_service.ttypes import (TOpenSessionReq, TFetchResultsReq,
-        TCloseSessionReq, TExecuteStatementReq, TGetInfoReq, TGetInfoType,
-        TTypeId, TFetchOrientation, TGetResultSetMetadataReq)
+from impala.cli_service.ttypes import TTypeId
 
 import impala.error
-from impala.error import err_if_rpc_not_ok
-
-# This work builds off of:
-# 1. the Hue interface: 
-#       hue/apps/beeswax/src/beeswax/server/dbms.py
-#       hue/apps/beeswax/src/beeswax/server/hive_server2_lib.py
-#       hue/desktop/core/src/desktop/lib/thrift_util.py
-# 2. the Impala shell:
-#       Impala/shell/impala_shell.py
-# 3. PyMongo interface
-# 4. PEP 249: http://www.python.org/dev/peps/pep-0249/
+import impala.rpc
 
 
 # PEP 249 module globals
@@ -48,16 +29,13 @@ paramstyle = 'pyformat'
 
 
 def connect(host='localhost', port=21050, timeout=45):
-    sock = TSocket(host, port)
-    sock.setTimeout(timeout * 1000.)
-    transport = TBufferedTransport(sock)
-    transport.open()
-    protocol = TBinaryProtocol(transport)
-    service = TCLIService.Client(protocol)
+    # PEP 249
+    service = impala.rpc.connect_to_impala(host, port, timeout)
     return Connection(service)
 
 
 class Connection(object):
+    # PEP 249
     # Connection objects are associated with a TCLIService.Client thrift service
     # it's instantiated with an alive TCLIService.Client
     
@@ -66,48 +44,30 @@ class Connection(object):
     
     def close(self):
         """Close the session and the Thrift transport."""
-        self.service._iprot.trans.close()
+        # PEP 249
+        impala.rpc.close_service(self.service)
     
     def commit(self):
         """Impala doesn't support transactions; does nothing."""
+        # PEP 249
         pass
     
     def rollback(self):
         """Impala doesn't support transactions; raises NotSupportedError"""
+        # PEP 249
         raise impala.error.NotSupportedError()
     
-    def ping(self):
-        """Checks connection to server by requesting some info from the server."""
-        req = TGetInfoReq(self.session_handle, TGetInfoType.CLI_SERVER_NAME)
-        try:
-            resp = self.service.GetInfo(req)
-        except TTransportException as e:
-            return False
-        try:
-            err_if_rpc_not_ok(resp)
-        except ImpalaException as e:
-            return False
-        return True
-    
     def cursor(self, session_handle=None, user=None):
+        # PEP 249
         if user is None:
             user = getpass.getuser()
         if session_handle is None:
-            session_handle = self._open_session(user)
+            session_handle = impala.rpc.open_session(self.service, user)
         return Cursor(self.service, session_handle)
-    
-    def _open_session(self, user):
-        # open a session with the Impala service
-        req = TOpenSessionReq(username=user)
-        try:
-            resp = self.service.OpenSession(req)
-            err_if_rpc_not_ok(resp)
-        except impala.error.OperationalError as e:
-            self.close()
-        return resp.sessionHandle
 
 
 class Cursor(object):
+    # PEP 249
     # Cursor objects are associated with a Session
     # they are instantiated with alive session_handles
     
@@ -115,56 +75,64 @@ class Cursor(object):
         self.service = service
         self.session_handle = session_handle
         
-        self._last_op_string = None
-        self._last_op_handle = None
+        self._last_operation_string = None
+        self._last_operation_handle = None
         self._arraysize = 100
         self._buffer = []
-        self._orientation=TFetchOrientation.FETCH_NEXT
         
         # initial values, per PEP 249
         self._description = None
         self._rowcount = -1
     
     @property
-    def query_string(self):
-        return self._last_op_string
-    
-    @property
     def description(self):
+        # PEP 249
         return self._description
     
     @property
     def rowcount(self):
+        # PEP 249
         return self._rowcount
     
+    @property
+    def query_string(self):
+        return self._last_operation_string
+    
     def set_arraysize(self, arraysize):
+        # PEP 249
         self._arraysize = arraysize
     arraysize = property(lambda self: self._arraysize, set_arraysize)
     
     @property
     def has_result_set(self):
-        return self._last_op_handle is not None and self._last_op_handle.hasResultSet
+        return (self._last_operation_handle is not None and 
+                self._last_operation_handle.hasResultSet)
     
     def close(self):
-        req = TCloseSessionReq(sessionHandle=self.session_handle)
-        resp = self.service.CloseSession(req)
-        err_if_rpc_not_ok(resp)
+        # PEP 249
+        impala.rpc.close_session(self.service, self.session_handle)
     
     def execute(self, operation, parameters={}):
+        # PEP 249
         self._buffer = []
         self._description = None
-        self._last_op_string = operation % parameters
-        self._last_op_handle = self._execute_statement_async(self._last_op_string)
+        self._last_operation_string = operation % parameters
+        self._last_operation_handle = impala.rpc.execute_statement(
+                self.service, self.session_handle, self._last_operation_string)
         if self.has_result_set:
-            self._fetch_schema()
+            schema = impala.rpc.get_result_schema(self.service,
+                    self._last_operation_handle)
+            self._description = [tup + (None, None, None, None, None) for tup in schema]
     
     def executemany(self, operation, seq_of_parameters=[]):
+        # PEP 249
         for parameters in seq_of_parameters:
             self.execute(operation, parameters)
             if self.has_result_set:
                 raise impala.error.ProgrammingError("Operations that have result sets are not allowed with executemany.")
         
     def fetchone(self):
+        # PEP 249
         if not self.has_result_set:
             raise impala.error.ProgrammingError("Tried to fetch but no results.")
         try:
@@ -173,6 +141,7 @@ class Cursor(object):
             return None
     
     def fetchmany(self, size=None):
+        # PEP 249
         if not self.has_result_set:
             raise impala.error.ProgrammingError("Tried to fetch but no results.")
         if size is None:
@@ -185,73 +154,38 @@ class Cursor(object):
         return local_buffer
     
     def fetchall(self):
+        # PEP 249
         return list(self)
     
     def setinputsizes(self, sizes):
+        # PEP 249
         pass
     
     def setoutputsize(self, size, column=None):
+        # PEP 249
         pass
     
     def __iter__(self):
         return self
     
     def next(self):
+        if not self.has_result_set:
+            raise impala.error.ProgrammingError("Trying to fetch results on an operation with no results.")
         if len(self._buffer) > 0:
             return self._buffer.pop(0)
         else:
-            self._fetch_results()
+            rows = impala.rpc.fetch_results(self.service,
+                    self._last_operation_handle, self.description,
+                    self.arraysize)
+            self._buffer.extend(rows)
             if len(self._buffer) == 0:
                 raise StopIteration
             return self._buffer.pop(0)
     
-    def _execute_statement_async(self, statement, configuration={}):
-        req = TExecuteStatementReq(sessionHandle=self.session_handle, statement=statement, confOverlay=configuration)
-        resp = self.service.ExecuteStatement(req)
-        err_if_rpc_not_ok(resp)
-        return resp.operationHandle
-    
-    def _fetch_schema(self):
-        # this assumes that self._last_op_handle.hasResultSet == True
-        req = TGetResultSetMetadataReq(operationHandle=self._last_op_handle)
-        resp = self.service.GetResultSetMetadata(req)
-        err_if_rpc_not_ok(resp)
-        
-        self._description = []
-        for column in resp.schema.columns:
-            name = column.columnName
-            type_ = TTypeId._VALUES_TO_NAMES[column.typeDesc.types[0].primitiveEntry.type]
-            # per PEP 249:
-            self._description.append((name, type_, None, None, None, None, None))
+    def ping(self):
+        """Checks connection to server by requesting some info from the server."""
+        return impala.rpc.ping(self.service, self.session_handle)
 
-    def _fetch_results(self):
-        # this function is primarily for internal use
-        # fills the buffer with up to self.arraysize rows
-        # may fill it with zero rows if there are no more results
-        if not self.has_result_set:
-            raise impala.error.ProgrammingError("Trying to fetch results on an operation with no results.")
-        req = TFetchResultsReq(operationHandle=self._last_op_handle, orientation=self._orientation, maxRows=self.arraysize)
-        resp = self.service.FetchResults(req)
-        err_if_rpc_not_ok(resp)
-        for trow in resp.results.rows:
-            row = []
-            for (i, col_val) in enumerate(trow.colVals):
-                row.append(_primitive_type_getters[self.description[i][1]](col_val).value)
-            self._buffer.append(tuple(row))
-
-# mapping between Thrift TTypeId (in schema) and TColumnValue (in returned rows)
-# helper object for converting from TRow to something friendlier
-_primitive_type_getters = {
-        'BOOLEAN_TYPE': operator.attrgetter('boolVal'),
-        'TINYINT_TYPE': operator.attrgetter('byteVal'),
-        'SMALLINT_TYPE': operator.attrgetter('i16Val'),
-        'INT_TYPE': operator.attrgetter('i32Val'),
-        'BIGINT_TYPE': operator.attrgetter('i64Val'),
-        'TIMESTAMP_TYPE': operator.attrgetter('i64Val'),
-        'FLOAT_TYPE': operator.attrgetter('doubleVal'),
-        'DOUBLE_TYPE': operator.attrgetter('doubleVal'),
-        'STRING_TYPE': operator.attrgetter('stringVal')
-}
 
 # Compliance with Type Objects of PEP 249.
 class _DBAPITypeObject(object):
