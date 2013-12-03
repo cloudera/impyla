@@ -21,23 +21,35 @@ try:
 except ImportError:
     print "Failed to import pandas"
 
-def to_pandas(cursor):
+def as_pandas(cursor):
     names = [metadata[0] for metadata in cursor.description]
     return pd.DataFrame([dict(zip(names, row)) for row in cursor], columns=names)
 
-def generate_random_table_name():
-    date = time.localtime(time.time())
-    date_string = "%04i%02i%02i%02i%02i%02i" % (date.tm_year, date.tm_mon,
-            date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec)
-    random_string = ''.join(random.sample(string.ascii_lowercase, 8))
-    name = "temp%s%s" % (date_string, random_string)
-    return name
+def generate_random_table_name(prefix='tmp', safe=False, cursor=None):
+    tries_left = 3
+    while tries_left > 0:
+        date = time.localtime(time.time())
+        date_string = "%04i%02i%02i%02i%02i%02i" % (date.tm_year, date.tm_mon,
+                date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec)
+        random_string = ''.join(random.sample(string.ascii_lowercase, 8))
+        name = "%s%s%s" % (prefix, date_string, random_string)
+        if safe == False:
+            return name
+        # safe is True; check cursor
+        if cursor is None:
+            raise ValueError("Must supply a cursor for safe table name gen")
+        if not cursor.table_exists(name):
+            return name
+        tries_left -= 1
+    raise ValueError("Failed to generate a safe table name")
 
 def compute_result_schema(cursor, query_string):
     temp_name = generate_random_table_name()
-    cursor.execute("CREATE VIEW %s AS %s" % (temp_name, query_string))
-    cursor.execute("SELECT * FROM %s LIMIT 0" % temp_name)
-    schema = cursor.description
-    cursor.execute("DROP VIEW %s" % temp_name)
+    try:
+        cursor.execute("CREATE VIEW %s AS %s" % (temp_name, query_string))
+        cursor.execute("SELECT * FROM %s LIMIT 0" % temp_name)
+        schema = cursor.description
+    finally:
+        cursor.execute("DROP VIEW %s" % temp_name)
     return schema
-    
+
