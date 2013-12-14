@@ -1,42 +1,22 @@
+# Copyright 2013 Cloudera Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import struct
+
 from sklearn.base import BaseEstimator
 
 import impala.util
-
-
-class DataSet(object):
-    """Represents a (labeled) data set backed by Impala.
-    
-    The underlying data could be a persisted table, or an unmaterialized query
-    string.
-    
-    Parameters
-    ----------
-    cursor
-    query_string
-    table_name
-    """
-    
-    def __init__(self, cursor, **kw):
-        self.cursor = cursor
-        
-        if 'table_name' in kw:
-            if 'query_string' in kw:
-                raise ValueError("Exactly one of `table_name` and `query_string` "
-                                 "must be provided.")
-            self.table_name = kw['table_name']
-            self.query_string = 'SELECT * FROM %s' % self.table_name
-            self.is_persisted = True
-        elif 'query_string' in kw:
-            self.table_name = None
-            self.query_string = kw['query_string']
-            self.is_persisted = False
-        else:
-            raise ValueError("Exactly one of `table_name` and `query_string` "
-                             "must be provided.")
-        
-        self.schema = util.compute_result_schema(self.cursor, self.query_string)
-
-
 
 class ImpalaLogisticRegression(BaseEstimator):
     
@@ -47,152 +27,72 @@ class ImpalaLogisticRegression(BaseEstimator):
         self.coef_ = None
         return self
     
-    def partial_fit(self, cursor, blobstore,  query_string, label_column, epoch, ):
+    def partial_fit(self, cursor, model_store, data_query, label_column, epoch):
+        """Fit logistic regression model.
         
-        blobstore.put(epoch + 1, )
+        Parameters
+        ----------
         
-        selectable = """
-                %(udf_name)s(%(model)s, %(param)s, %(observation)s)
-                """ % ('logr', 'model_table.value', 'param_table.value', 'toarray(data_table.*)')
+        model_store is BlobStore that contains model data.  The key
+        `str(epoch - 1)` must exist.
         
-        logistic_regression_query = """
-                INSERT INTO %(blob_store)s
-                SELECT %(key)i, %(selectable)s
-                FROM %(table)s
-                """ % ('model_table', new_epoch, selectable, cross_prod_sql_gen)
+        data_query is a SQL query string that produces rows that go into the
+        regression.  It will be converted into a VIEW, just for this fn call.
+        All columns go into the regression except for the `label_column`.
         
-        
-        
-        
-        logistic_regression_query = """
-            INSERT INTO %(model_table)s
-            SELECT %(epoch)i, logr(%(model_table)s.model, toarray(), %(label_column)s, %(step_size)f, %(mu)f)
-            FROM %(model_table)s INNER JOIN %(data_table)s
-            ON (%(model_table)s.model is null || true) = (%(data_table)s.%(hack)s is null || true)
-            WHERE %(model_table)s.iter = %(prev_epoch)i
-            """
-            
-            
-        
-        
-        schema = impala.util.compute_result_schema(cursor, query_string)
-        
-        if self.coef_ is None:
-            self.coef_ = np.zeros()
-    
-    def fit(self, cursor, query_string, label_column, model_table=None):
-        self.coef_ = np.zeros()
-        model_table = impala.util.make_model_table(cursor, model_table=model_table)
-        for i in xrange(self.n_iter):
-            self.partial_fit(cursor, query_string, label_column, i+1, model_table)
-        
-        
+        label_column is the string name of the column that contains the labels.
         """
-        INSERT INTO %(model_table)s
-        SELECT %(epoch)i, encodearray(logr(decodearray(model_table.model), ))
+        # A preferable alternative is to create a more repeatable pattern.  To
+        # do so, the UDAs should all take the same args:
+        # 1. a bit-string for the previous model,
+        # 2. a bit-string for the model hyper-parameters,
+        # 3. a bit-string representing the observation,
+        # 4. the label.
+        #
+        # Something like this:
+        # model_value = """
+        #         %(udf_name)s(%(model)s, %(param)s, %(observation)s, %(label)s)
+        #         """ % ('logr',
+        #                '%s.value' % model_store.name,
+        #                'param_table.value',
+        #                'toarray(data_table.*)')
+        #
+        # Here is the logistic regression query as currently impl. in the
+        # madlibport repo:
+        #
+        # INSERT INTO model_table
+        # SELECT 5, encodearray(logr(decodearray(model_table.model), toarray(data_table.feat1, data_table.feat2), label, step, mu))
+        # FROM model_table, data_table
+        # WHERE (data_table.label is null || true)=(model_table.model is null || true) AND model_table.iter=4;
         
-    FROM %(model_table)s
-    INNER JOIN %(data_table)s
-    ON (%(model_table)s.model is null || true) = (%(data_table)s.%(hack)s is null || true)
-    WHERE %(model_table)s.iter = %(epoch)i
-    """
-        
-        
-        if self.coef_ is None:
-            pass
-        "SELECT logr(%(model_state)s,"
-                       "%(obs_as_str)s,"
-                       "%(label_column)s,
-                       "%(step)f, %(mu)f)"
-
-
-iutil.bismarck_epoch(model_table, dat_table, 'logr(__PREV_MODEL__, %(arr)s, %(label)s, %(step)s, %(mu)s)' % {'arr':arr, 'label':label, 'step':step, 'mu':mu}, epoch, label)
-
-uda_gen = 'logr(__PREV_MODEL__, %(arr)s, %(label)s, %(step)s, %(mu)s)' % {'arr':arr, 'label':label, 'step':step, 'mu':mu}
-
-INSERT INTO model_table
-SELECT 5, encodearray(logr(decodearray(model_table.model), toarray(data_table.feat1, data_table.feat2), label, step, mu))
-FROM model_table, data_table
-WHERE (data_table.label is null || true)=(model_table.model is null || true)
-    AND model_table.iter=4;
-
-
-
-# TODO
-def summarize(cursor, table=None, query_string=None, target_cols=None):
-    """Generate summary statistics for a set of rows backed by Impala.
+        prev_epoch = str(epoch - 1)
+        data_view = impala.util.create_view_from_query(cursor, data_query, safe=True)
+        data_schema = impala.util.compute_result_schema(cursor, "SELECT * FROM %s" % data_view)
+        columns = [tup[0] for tup in schema]
+        if label_column not in columns:
+            raise ValueError("%s is not a column in the provided data_query" % label_column)
+        data_columns = [c for c in columns if c != label_column]
+        model_value = """
+                %(udf_name)s(%(model)s, %(observation)s, %(label_column)s, %(step_size)f, %(mu)f)
+                """ % {'udf_name': 'logr',
+                       'model': '%s.value' % model_store.name,
+                       'observation': 'toarray(%s)' % ', '.join(['%s.%s' (data_view, col) for col in data_columns])
+                       'label_column': label_column,
+                       'step_size': self.step_size,
+                       'mu': self.mu}
+        derived_from_clause = model_store.distribute_value(str(prev_epoch), data_view)
+        model_store.put(str(epoch), model_value, derived_from_clause)   # actual execution here
+        impala.util.drop_view(cursor, data_view)
     
-    Must provide either the name of a table, or a query that will define the
-    table of interest.
-    """
-    # Ideally, the summarization functionality would be implemented in Impala,
-    # allowing for a single pass on the data.  There would be a command like:
-    #
-    # SELECT summarize(*)
-    # FROM
-    #     (SELECT * FROM foo);
-    #
-    # The subquery which defines the rows of interest is provided either as the
-    # last executed query in the cursor, as a table name (where we perform
-    # SELECT *), or as an arbitrary query of interest
-    #
-    # The code would look something like this:
-    #     summarization_query = "SELECT summarize(*) FROM %s" % query_string
-    #     cursor.execute(summarization_query)
-    #
-    # However for now, we will compute some of these stats by issuing multiple
-    # queries.
+    def fit(self, cursor, data_query, label_column):
+        model_store = impala.blob.BlobStore(cursor)
+        model_store.send('0', 'NULL')
+        for i in xrange(self.n_iter):
+            epoch = i + 1
+            self.partial_fit(cursor, model_store, data_query, label_column, epoch)
+            self.coef_ = self._decode_coef(model_store[epoch])
     
-    # determine how the data set of interest is described:
-    if table is not None and query_string is None:
-        subquery = "SELECT * FROM %s" % table
-    elif query_string is not None and table is None:
-        subquery = query_string
-    else: # query 'preloaded' into cursor
-        subquery = cursor.last_query
-    
-    # get the schema of the data of interest
-    if table is not None or query_string is not None:
-        # TODO: this is a dirty hack, as a LIMIT clause in subquery will break
-        # this. Would be better if Impala had a function I could call for a dry
-        # run query
-        dry_run_query = '%s LIMIT 0' % subquery
-        cursor.execute(dry_run_query)
-    schema = cursor.description
-    
-    # classify the types of the schema
-    categoricals = []
-    numericals = []
-    booleans = []
-    for col in schema:
-        if col[1] == 'BOOLEAN_TYPE':
-            booleans.append(col[0])
-        elif col[1] == 'STRING_TYPE':
-            categoricals.append(col[0])
-        else: # TODO: hopefully numeric
-            numericals.append(col[0])
-    
-    if target_cols is None:
-        target_cols = [c[0] for c in schema]
-    
-    # now to the actual work
-    stats = {}
-    
-    # perform COUNT DISTINCT on the categoricals
-    for column in set(target_cols) & set(categoricals):
-        count_distinct_query = "SELECT COUNT(DISTINCT %s) FROM %s" % (column, subquery)
-        cursor.execute(count_distinct_query)
-        distinct = cursor.fetchall()[0][0]
-        stats[column] = {'type': 'categorical', 'distinct': distinct}
-    
-    # compute mean, std for the numerical values
-    target_numericals = list(set(target_cols) & set(numericals))
-    "SUM(%s), SUM(%s * %s)"
-    stats_query = "SELECT "
-    
-    
-    
-    
-    # COUNT DISTINCT
-    
-    
+    def _decode_coef(self, coef_string):
+        num_values = len(coef_string) / struct.calcsize("d")
+        values = struct.unpack("%id" % num_values, coef_string)
+        return list(values)
