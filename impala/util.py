@@ -17,13 +17,12 @@ import string
 import random
 
 try:
-    import pandas as pd
+    import pandas as pd    
+    def as_pandas(cursor):
+        names = [metadata[0] for metadata in cursor.description]
+        return pd.DataFrame([dict(zip(names, row)) for row in cursor], columns=names)
 except ImportError:
     print "Failed to import pandas"
-
-def as_pandas(cursor):
-    names = [metadata[0] for metadata in cursor.description]
-    return pd.DataFrame([dict(zip(names, row)) for row in cursor], columns=names)
 
 def generate_random_table_name(prefix='tmp', safe=False, cursor=None):
     tries_left = 3
@@ -53,3 +52,11 @@ def compute_result_schema(cursor, query_string):
         cursor.execute("DROP VIEW %s" % temp_name)
     return schema
 
+def create_view_from_query(cursor, query_string, view_name=None, safe=False):
+    if view_name is None:
+        view_name = generate_random_table_name(safe=safe, cursor=cursor)
+    cursor.execute("CREATE VIEW %s AS %s" % (view_name, query_string))
+    return view_name
+
+def drop_view(cursor, view_name):
+    cursor.execute("DROP VIEW %s" % view_name)
