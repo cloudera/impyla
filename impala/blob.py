@@ -15,18 +15,14 @@
 """
 Implements a blob store backed by an Impala table.
 
-Schema is always (key BIGINT, value STRING), and should always have at least a
-row (0, NULL).  Can be initialized to an already existing blob store table.
+Schema is always (key STRING, value STRING).  Can be initialized to an already
+existing blob store table.
 
-Supports getting binary data from the store.  Setting data is more fraught, as
-the data must be encoded in the query itself.  This is allowed, but you better
-know what you're doing.  It allows you to supply the name of a UDF that will
-decode ASCII-encoded data (e.g., Base64). 
-
-You do not have control over the keys.  They are increasing integers, and
-putting data into the table should always use the next higher key.  This is not
-rigorously checked when adding data (indeed, adding data from Impala (without
-using BlobStore) makes it impossible).
+Supports getting binary data from the store.  Also support putting data in from
+Impala (via a SQL query).  Sending data is more fraught, as the data must be
+encoded in the query itself.  This is allowed, but you better know what you're
+doing.  It also allows you to supply the name of a UDF that will decode ASCII-
+encoded data (e.g., Base64).
 
 This command also makes it easier to generate the necessary SQL to distribute
 the side data around to other queries (e.g., cross-join).  A typical use case
@@ -40,7 +36,6 @@ class BlobStore(object):
     def __init__(self, cursor, name=None):
         self._cursor = cursor
         self._name = name
-        self._max_key = None
         
         if self._name is None:
             self._name = impala.util.generate_random_table_name(prefix='blob',
@@ -50,74 +45,111 @@ class BlobStore(object):
         self._refresh_max()
     
     @property
-    def max_key(self):
-        return self._max_key
+    def name(self):
+        return self._name
     
     def _create_blob_table(self):
         self._cursor.execute("""
                 CREATE TABLE %s (
-                    key BIGINT,
+                    key STRING,
                     value STRING)
                 STORED AS parquetfile
-                """ % self._name)
-        self._cursor.execute("""
-                INSERT INTO %s
-                VALUES (0, NULL)
                 """ % self._name)
     
     def _validate_schema(self):
         schema = self._cursor.get_schema(self._name)
         if len(schema) != 2:
             raise ValueError("schema of blob store must have two cols")
-        if schema[0][0] != 'key' or schema[0][1] != 'BIGINT_TYPE':
-            raise ValueError("first col of blob store must be key BIGINT")
+        if schema[0][0] != 'key' or schema[0][1] != 'STRING_TYPE':
+            raise ValueError("first col of blob store must be 'key STRING'")
         if schema[1][0] != 'value' or schema[1][1] != 'STRING_TYPE':
-            raise ValueError("second col of blob store must be value STRING")
-        self._cursor.execute("SELECT * WHERE key=0")
-        results = self._cursor.fetchall()
-        if len(results) != 1:
-            raise ValueError("blob store must have a single row with key 0")
-        if results[0][0] != 0:
-            raise ValueError("query is f-ed up")
-        if results[0][1] is not None:
-            raise ValueError("key=0 should have value=NULL")
-    
-    def _refresh_max(self):
-        self._cursor.execute("SELECT max(key) FROM %s" % self._name)
-        self._max_key = self._cursor.fetchall()[0][0]
+            raise ValueError("second col of blob store must be 'value STRING'")
     
     def __getitem__(self, key):
-        if not isinstance(key, int):
-            raise ValueError("key must be integer")
-        if key > self._max_key:
-            raise KeyError("key=%i is greater than the max key value" % self._max_key)
-        self._cursor.execute("SELECT value FROM %s WHERE key=%i" % (self._name, key))
+        if not isinstance(key, basestring):
+            raise ValueError("key must be a string")
+        self._cursor.execute("SELECT value FROM %s WHERE key=%s" % (self._name, key))
+        results = self._cursor.fetchall()
+        if len(results) == 0:
+            raise KeyError("%s not found." % key)
+        if len(results) > 1:
+            raise KeyError("%s is not unique. Blob store in illegal state." % key)
         return self._cursor.fetchall()[0][0]
     
     def get(self, key):
         return self[key]
     
-    def put(self, key, value, decode_fn=None):
-        if not isinstance(key, int):
-            raise ValueError("key must be int")
+    def has_key(self, key):
+        self._cursor.execute("SELECT COUNT(*) FROM %s WHERE key=%s" % (self._name, key))
+        count = self._cursor.fetchall()[0][0]
+        if count == 0:
+            return False
+        elif count == 1:
+            return True
+        else:
+            raise KeyError("%s is not unique. Blob store in illegal state." % key)
+    
+    def send(self, key, value, decode_fn=None, safe=False):
+        if not isinstance(key, basestring):
+            raise ValueError("key must be a string")
         if not isinstance(value, basestring):
             raise ValueError("value must be string-type (possibly binary)")
-        if key != self._max_key + 1:
-            raise ValueError("key must be one greater than current max_key")
+        
+        if safe and self.has_key(key):
+            raise ValueError("Already have key %s" % key)
         
         decoded_value = value if not decode_fn else '%s(%s)' % (decode_fn, value)
         self._cursor.execute("""
                 INSERT INTO %s
-                VALUES (%i, %s)
+                VALUES (%s, %s)
                 """ % (self._name, key, decoded_value))
-        self._max_key = key
     
-    def put_sql(self, key, value):
-        if not isinstance(key, int):
-            raise ValueError("key must be int")
-        if not isinstance(value, basestring):
-            raise ValueError("value must be string-type (possibly binary)")
-        if key != self._max_key + 1:
-            raise ValueError("key must be one greater than current max_key")
+    def put(self, key, expr, from_, safe=False):
+        if not isinstance(key, basestring):
+            raise ValueError("key must be string")
         
-        INSERT INTO %s SELECT %i, %s
+        if safe and self.has_key(key):
+            raise ValueError("Already have key %s" % key)
+        
+        self._cursor.execute("""
+                INSERT INTO %s
+                SELECT %s, %s
+                FROM %s
+                """ % (self._name, key, expr, from_))
+    
+    def distribute_value_to_table(self, key, table_name, safe=False):
+        """Distributed value assoc with key to all rows in table_name.
+        
+        table_name is the name of a table or view.
+        """
+        
+        if not isinstance(key, basestring):
+            raise ValueError("key must be string")
+        
+        if safe and self.has_key(key):
+            raise ValueError("Already have key %s" % key)
+        
+        # hack: Impala doesn't let you do a cross join for fear of breaking
+        # something.  In order to get a cross join, perform an INNER JOIN using
+        # a condition that always evaluates to true.  However, the condition
+        # must evaluate a predicate on a column, and cannot simply use literals
+        # (e.g., 1 = 1 is not valid).  So we must reference a column in the
+        # table_name table.  To do so, we will get the list of columns from the given
+        # FROM clause and just choose one of the columns arbitrarily.
+        table_schema = impala.util.compute_result_schema(self._cursor,
+                "SELECT * FROM %s" % table_name)
+        hack_column = table_schema[0][0]
+        
+        from_with_side_data = """
+                %(table_name)s INNER JOIN %(blob_store)s
+                ON (%(blob_store)s.value is null || true) = (%(table_name)s.%(hack_column)s is null || true)
+                WHERE %(blob_store)s.key = %(key)s
+                """ % {'table_name': table_name,
+                       'blob_store': self.name,
+                       'key': key,
+                       'hack_column': hack_column}
+        
+        return from_with_side_data
+        
+
+        
