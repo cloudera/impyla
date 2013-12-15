@@ -49,7 +49,7 @@ data_strings = []
 for i in xrange(rows):
     row_string = '(' + ', '.join([str(val) for val in data[i, :-1]]) + ', %s' % ('true' if data[i, -1] > 0 else 'false') + ')'
     data_strings.append(row_string)
-    if (i + 1) % 100 == 0:
+    if (i + 1) % 200 == 0:
         sys.stdout.write("%i\n" % (i+1))
         sys.stdout.flush()
         data_query = 'INSERT INTO test_logr VALUES %s' % ', '.join(data_strings)
@@ -57,12 +57,14 @@ for i in xrange(rows):
         data_strings = []
 
 impala_estimator = impala.sklearn.ImpalaLogisticRegression()
-impala_estimator.
+impala_estimator.fit(cursor, "SELECT * FROM test_logr", "label")
 
 
 
 import impala.sklearn
 import impala.blob
+import impala.rpc
+import impala.dbapi
 
 reload(impala.sklearn)
 reload(impala.dbapi)
@@ -72,7 +74,24 @@ conn = impala.dbapi.connect(host='ulaz-1.ent.cloudera.com', port=21050)
 cursor = conn.cursor(user='root')
 cursor.execute("USE test_class")
 
+
+
+
 model_store = impala.blob.BlobStore(cursor)
+model_store = impala.blob.BlobStore(cursor, 'blob20131215144247onmerczp')
+
+data_query = "SELECT * FROM test_logr"
+label_column = 'label'
+
+
+model_value = """
+                %(udf_name)s(%(model)s, %(observation)s, %(label_column)s, %(step_size)f, %(mu)f)
+                """ % {'udf_name': 'logr',
+                       'model': '%s.value' % model_store.name,
+                       'observation': 'toarray(%s)' % ', '.join(['%s.%s' % (data_view, col) for col in data_columns]),
+                       'label_column': label_column,
+                       'step_size': step_size,
+                       'mu': mu}
 
 
 

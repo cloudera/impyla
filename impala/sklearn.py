@@ -27,7 +27,6 @@ class ImpalaLogisticRegression(BaseEstimator):
         self.mu = mu
         self.n_iter = n_iter
         self.coef_ = None
-        return self
     
     def partial_fit(self, cursor, model_store, data_query, label_column, epoch):
         """Fit logistic regression model.
@@ -67,10 +66,10 @@ class ImpalaLogisticRegression(BaseEstimator):
         # FROM model_table, data_table
         # WHERE (data_table.label is null || true)=(model_table.model is null || true) AND model_table.iter=4;
         
-        prev_epoch = str(epoch - 1)
+        prev_epoch = epoch - 1
         data_view = impala.util.create_view_from_query(cursor, data_query, safe=True)
         data_schema = impala.util.compute_result_schema(cursor, "SELECT * FROM %s" % data_view)
-        columns = [tup[0] for tup in schema]
+        columns = [tup[0] for tup in data_schema]
         if label_column not in columns:
             raise ValueError("%s is not a column in the provided data_query" % label_column)
         data_columns = [c for c in columns if c != label_column]
@@ -78,21 +77,24 @@ class ImpalaLogisticRegression(BaseEstimator):
                 %(udf_name)s(%(model)s, %(observation)s, %(label_column)s, %(step_size)f, %(mu)f)
                 """ % {'udf_name': 'logr',
                        'model': '%s.value' % model_store.name,
-                       'observation': 'toarray(%s)' % ', '.join(['%s.%s' (data_view, col) for col in data_columns]),
+                       'observation': 'toarray(%s)' % ', '.join(['%s.%s' % (data_view, col) for col in data_columns]),
                        'label_column': label_column,
                        'step_size': self.step_size,
                        'mu': self.mu}
-        derived_from_clause = model_store.distribute_value(str(prev_epoch), data_view)
+        derived_from_clause = model_store.distribute_value_to_table(str(prev_epoch), data_view)
         model_store.put(str(epoch), model_value, derived_from_clause)   # actual execution here
         impala.util.drop_view(cursor, data_view)
+        self.coef_ = self._decode_coef(model_store[str(epoch)])
     
     def fit(self, cursor, data_query, label_column):
+        import pdb
+        pdb.set_trace()
         model_store = impala.blob.BlobStore(cursor)
         model_store.send_null('0')
         for i in xrange(self.n_iter):
             epoch = i + 1
             self.partial_fit(cursor, model_store, data_query, label_column, epoch)
-            self.coef_ = self._decode_coef(model_store[epoch])
+            
     
     def _decode_coef(self, coef_string):
         num_values = len(coef_string) / struct.calcsize("d")
