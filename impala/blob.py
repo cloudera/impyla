@@ -31,6 +31,9 @@ would be to store model parameters as binary data for UDFs.
 
 import impala.util
 
+def wrap_single_quotes(x):
+    return "'%s'" % x
+
 class BlobStore(object):
     
     def __init__(self, cursor, name=None):
@@ -42,7 +45,6 @@ class BlobStore(object):
                     safe=True, cursor=self._cursor)
             self._create_blob_table()
         self._validate_schema()
-        self._refresh_max()
     
     @property
     def name(self):
@@ -57,7 +59,7 @@ class BlobStore(object):
                 """ % self._name)
     
     def _validate_schema(self):
-        schema = self._cursor.get_schema(self._name)
+        schema = self._cursor.get_table_schema(self._name)
         if len(schema) != 2:
             raise ValueError("schema of blob store must have two cols")
         if schema[0][0] != 'key' or schema[0][1] != 'STRING_TYPE':
@@ -68,19 +70,21 @@ class BlobStore(object):
     def __getitem__(self, key):
         if not isinstance(key, basestring):
             raise ValueError("key must be a string")
-        self._cursor.execute("SELECT value FROM %s WHERE key=%s" % (self._name, key))
+        # TODO: I should make sure to escape single quotes here
+        self._cursor.execute("SELECT value FROM %s WHERE key='%s'" % (self._name, key))
         results = self._cursor.fetchall()
         if len(results) == 0:
             raise KeyError("%s not found." % key)
         if len(results) > 1:
             raise KeyError("%s is not unique. Blob store in illegal state." % key)
-        return self._cursor.fetchall()[0][0]
+        return results[0][0]
     
     def get(self, key):
         return self[key]
     
     def has_key(self, key):
-        self._cursor.execute("SELECT COUNT(*) FROM %s WHERE key=%s" % (self._name, key))
+        # TODO: I should make sure to escape single quotes here
+        self._cursor.execute("SELECT COUNT(*) FROM %s WHERE key='%s'" % (self._name, key))
         count = self._cursor.fetchall()[0][0]
         if count == 0:
             return False
@@ -89,7 +93,7 @@ class BlobStore(object):
         else:
             raise KeyError("%s is not unique. Blob store in illegal state." % key)
     
-    def send(self, key, value, decode_fn=None, safe=False):
+    def send(self, key, value, decode_fn=wrap_single_quotes, safe=False):
         if not isinstance(key, basestring):
             raise ValueError("key must be a string")
         if not isinstance(value, basestring):
@@ -98,11 +102,15 @@ class BlobStore(object):
         if safe and self.has_key(key):
             raise ValueError("Already have key %s" % key)
         
-        decoded_value = value if not decode_fn else '%s(%s)' % (decode_fn, value)
+        # TODO: I should make sure to escape single quotes here
+        decoded_value = decode_fn(value)
         self._cursor.execute("""
                 INSERT INTO %s
-                VALUES (%s, %s)
+                VALUES ('%s', %s)
                 """ % (self._name, key, decoded_value))
+    
+    def send_null(self, key, safe=False):
+        self.send(key, 'NULL', decode_fn=lambda x: x, safe=safe)
     
     def put(self, key, expr, from_, safe=False):
         if not isinstance(key, basestring):
@@ -111,13 +119,14 @@ class BlobStore(object):
         if safe and self.has_key(key):
             raise ValueError("Already have key %s" % key)
         
+        # TODO: I should make sure to escape single quotes here
         self._cursor.execute("""
                 INSERT INTO %s
-                SELECT %s, %s
+                SELECT '%s', %s
                 FROM %s
                 """ % (self._name, key, expr, from_))
     
-    def distribute_value_to_table(self, key, table_name, safe=False):
+    def distribute_value_to_table(self, key, table_name):
         """Distributed value assoc with key to all rows in table_name.
         
         table_name is the name of a table or view.
@@ -126,9 +135,6 @@ class BlobStore(object):
         if not isinstance(key, basestring):
             raise ValueError("key must be string")
         
-        if safe and self.has_key(key):
-            raise ValueError("Already have key %s" % key)
-        
         # hack: Impala doesn't let you do a cross join for fear of breaking
         # something.  In order to get a cross join, perform an INNER JOIN using
         # a condition that always evaluates to true.  However, the condition
@@ -136,20 +142,17 @@ class BlobStore(object):
         # (e.g., 1 = 1 is not valid).  So we must reference a column in the
         # table_name table.  To do so, we will get the list of columns from the given
         # FROM clause and just choose one of the columns arbitrarily.
-        table_schema = impala.util.compute_result_schema(self._cursor,
-                "SELECT * FROM %s" % table_name)
+        table_schema = self._cursor.get_table_schema(table_name)
         hack_column = table_schema[0][0]
         
+        # TODO: I should make sure to escape single quotes here
         from_with_side_data = """
                 %(table_name)s INNER JOIN %(blob_store)s
                 ON (%(blob_store)s.value is null || true) = (%(table_name)s.%(hack_column)s is null || true)
-                WHERE %(blob_store)s.key = %(key)s
+                WHERE %(blob_store)s.key = '%(key)s'
                 """ % {'table_name': table_name,
                        'blob_store': self.name,
                        'key': key,
                        'hack_column': hack_column}
         
         return from_with_side_data
-        
-
-        
