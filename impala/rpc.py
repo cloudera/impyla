@@ -241,8 +241,14 @@ def get_table_schema(service, session_handle, table_name, database_name='.*'):
     err_if_rpc_not_ok(resp)
     operation_handle = resp.operationHandle
     results = fetch_results(service=service, operation_handle=operation_handle)
-    if len(results) > 1:
-        raise RPCError("db: %s, table: %s is not unique" % database_name, table_name)
+    if len(results) == 0:
+        raise RPCError("no schema results for table %s.%s" % (database_name, table_name))
+    # check that results are derived from a unique table
+    tables = set()
+    for col in results:
+        tables.add((col[1], col[2]))
+    if len(tables) > 1:
+        raise RPCError("db: %s, table: %s is not unique" % (database_name, table_name))
     return [(r[3], _PrimitiveType_to_TTypeId[r[5]]) for r in results]
 
 @retry
