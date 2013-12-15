@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import struct
 
 from sklearn.base import BaseEstimator
@@ -76,7 +78,7 @@ class ImpalaLogisticRegression(BaseEstimator):
                 %(udf_name)s(%(model)s, %(observation)s, %(label_column)s, %(step_size)f, %(mu)f)
                 """ % {'udf_name': 'logr',
                        'model': '%s.value' % model_store.name,
-                       'observation': 'toarray(%s)' % ', '.join(['%s.%s' (data_view, col) for col in data_columns])
+                       'observation': 'toarray(%s)' % ', '.join(['%s.%s' (data_view, col) for col in data_columns]),
                        'label_column': label_column,
                        'step_size': self.step_size,
                        'mu': self.mu}
@@ -86,7 +88,7 @@ class ImpalaLogisticRegression(BaseEstimator):
     
     def fit(self, cursor, data_query, label_column):
         model_store = impala.blob.BlobStore(cursor)
-        model_store.send('0', 'NULL')
+        model_store.send_null('0')
         for i in xrange(self.n_iter):
             epoch = i + 1
             self.partial_fit(cursor, model_store, data_query, label_column, epoch)
