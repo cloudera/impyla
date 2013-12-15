@@ -15,9 +15,10 @@
 import sys
 
 import numpy as np
-import sklearn
+import sklearn.linear_model
 
 import impala.dbapi
+import impala.sklearn
 
 rows = 10000
 cols = 100
@@ -44,16 +45,49 @@ cursor = conn.cursor(user='root')
 cursor.execute("CREATE DATABASE IF NOT EXISTS test_class")
 cursor.execute("USE test_class")
 cursor.execute("CREATE TABLE test_logr (%s, label BOOLEAN)" % ', '.join(['feat%i DOUBLE' % i for i in xrange(cols)]))
-
+data_strings = []
 for i in xrange(rows):
-    if i % 100 == 0:
-        sys.stdout.write("%i\n" % i)
+    row_string = '(' + ', '.join([str(val) for val in data[i, :-1]]) + ', %s' % ('true' if data[i, -1] > 0 else 'false') + ')'
+    data_strings.append(row_string)
+    if (i + 1) % 100 == 0:
+        sys.stdout.write("%i\n" % (i+1))
         sys.stdout.flush()
-    cursor.execute("INSERT INTO test_logr")
-    
-        
-    
-    
+        data_query = 'INSERT INTO test_logr VALUES %s' % ', '.join(data_strings)
+        cursor.execute(data_query)
+        data_strings = []
 
-cursor.execute("select pos from cosmic")
-df = impala.to_dataframe(cursor)
+impala_estimator = impala.sklearn.ImpalaLogisticRegression()
+impala_estimator.
+
+
+
+import impala.sklearn
+import impala.blob
+
+reload(impala.sklearn)
+reload(impala.dbapi)
+reload(impala.blob)
+reload(impala.rpc)
+conn = impala.dbapi.connect(host='ulaz-1.ent.cloudera.com', port=21050)
+cursor = conn.cursor(user='root')
+cursor.execute("USE test_class")
+
+model_store = impala.blob.BlobStore(cursor)
+
+
+
+
+database_name = '.*'
+database_name = 'test_class'
+table_name = '.*'
+table_name = 'blob20131214211350ixuvnmkz'
+req = TGetColumnsReq(sessionHandle=session_handle,
+                     schemaName=database_name,
+                     tableName=table_name,
+                     columnName='.*')
+resp = service.GetColumns(req)
+impala.rpc.err_if_rpc_not_ok(resp)
+operation_handle = resp.operationHandle
+results = impala.rpc.fetch_results(service=service, operation_handle=operation_handle)
+
+
