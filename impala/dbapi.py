@@ -185,6 +185,18 @@ class Cursor(object):
     def ping(self):
         """Checks connection to server by requesting some info from the server."""
         return impala.rpc.ping(self.service, self.session_handle)
+    
+    def table_exists(self, table_name, database_name=None):
+        if database_name is None:
+            database_name = '.*'
+        return impala.rpc.table_exists(self.service, self.session_handle,
+                    table_name, database_name)
+    
+    def get_table_schema(self, table_name, database_name=None):
+        if database_name is None:
+            database_name = '.*'
+        return impala.rpc.get_table_schema(self.service, self.session_handle,
+                table_name, database_name)
 
 
 # Compliance with Type Objects of PEP 249.
