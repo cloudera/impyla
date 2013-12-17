@@ -21,7 +21,7 @@ from sklearn.base import BaseEstimator
 import impala.blob
 import impala.util
 
-class ImpalaLogisticRegression(BaseEstimator):
+class LogisticRegression(BaseEstimator):
     
     def __init__(self, step_size=0.1, mu=0.1, n_iter=5):
         self.step_size = step_size
@@ -93,9 +93,8 @@ class ImpalaLogisticRegression(BaseEstimator):
         for i in xrange(self.n_iter):
             epoch = i + 1
             self.partial_fit(cursor, model_store, data_query, label_column, epoch)
-            
     
     def _decode_coef(self, coef_string):
         num_values = len(coef_string) / struct.calcsize("d")
         values = struct.unpack("%id" % num_values, coef_string)
-        return list(values)
+        return np.asarray(list(values))
