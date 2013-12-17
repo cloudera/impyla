@@ -15,6 +15,7 @@
 """Implements the Python DB API 2.0 for Impala (PEP 249)"""
 
 import getpass
+from time import sleep
 
 from impala.cli_service.ttypes import TTypeId
 
@@ -119,6 +120,13 @@ class Cursor(object):
         self._last_operation_string = operation % parameters
         self._last_operation_handle = impala.rpc.execute_statement(
                 self.service, self.session_handle, self._last_operation_string)
+        # make execute synchronous: check whether operation finished
+        while True:
+            operation_state = impala.rpc.get_operation_status(self.service,
+                    self._last_operation_handle)
+            if operation_state not in ['INITIALIZED_STATE', 'RUNNING_STATE']:
+                break
+            sleep(0.1)
         if self.has_result_set:
             schema = impala.rpc.get_result_schema(self.service,
                     self._last_operation_handle)
