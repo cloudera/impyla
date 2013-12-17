@@ -191,8 +191,7 @@ def get_databases(service, session_handle):
     req = TGetSchemasReq(sessionHandle=session_handle, schemaName='.*')
     resp = service.GetSchemas(req)
     err_if_rpc_not_ok(resp)
-    results = fetch_results(service=service, operation_handle=operation_handle)
-    return [r[0] for r in results]
+    return resp.operation_handle
 
 @retry
 def database_exists(service, session_handle, db_name):
@@ -200,11 +199,14 @@ def database_exists(service, session_handle, db_name):
     resp = service.GetSchemas(req)
     err_if_rpc_not_ok(resp)
     operation_handle = resp.operationHandle
+    # this only fetches default max_rows, but there should only be one row ideally
     results = fetch_results(service=service, operation_handle=operation_handle)
+    exists = False
     for result in results:
         if result[0] == db_name:
-            return True
-    return False
+            exists = True
+    close_operation(service, operation_handle)
+    return exists
 
 @retry
 def get_tables(service, session_handle, database_name='.*'):
@@ -213,9 +215,7 @@ def get_tables(service, session_handle, database_name='.*'):
                         tableName='.*')
     resp = service.GetTables(req)
     err_if_rpc_not_ok(resp)
-    operation_handle = resp.operationHandle
-    results = fetch_results(service=service, operation_handle=operation_handle)
-    return [(r[1], r[2]) for r in results]
+    return resp.operation_handle
 
 @retry
 def table_exists(service, session_handle, table_name, database_name='.*'):
@@ -225,11 +225,14 @@ def table_exists(service, session_handle, table_name, database_name='.*'):
     resp = service.GetTables(req)
     err_if_rpc_not_ok(resp)
     operation_handle = resp.operationHandle
+    # this only fetches default max_rows, but there should only be one row ideally
     results = fetch_results(service=service, operation_handle=operation_handle)
+    exists = False
     for result in results:
         if result[2] == table_name:
-            return True
-    return False
+            exists = True
+    close_operation(service, operation_handle)
+    return exists
 
 @retry
 def get_table_schema(service, session_handle, table_name, database_name='.*'):
@@ -239,29 +242,17 @@ def get_table_schema(service, session_handle, table_name, database_name='.*'):
                          columnName='.*')
     resp = service.GetColumns(req)
     err_if_rpc_not_ok(resp)
-    operation_handle = resp.operationHandle
-    results = fetch_results(service=service, operation_handle=operation_handle)
-    if len(results) == 0:
-        raise RPCError("no schema results for table %s.%s" % (database_name, table_name))
-    # check that results are derived from a unique table
-    tables = set()
-    for col in results:
-        tables.add((col[1], col[2]))
-    if len(tables) > 1:
-        raise RPCError("db: %s, table: %s is not unique" % (database_name, table_name))
-    return [(r[3], _PrimitiveType_to_TTypeId[r[5]]) for r in results]
+    return resp.operationHandle
 
 @retry
-def get_functions(service, session_handle, database_name=None):
+def get_functions(service, session_handle, database_name='.*'):
     # TODO: need to test this one especially
     req = TGetFunctionsReq(sessionHandle=session_handle,
                            schemaName=database_name,
                            functionName='.*')
     resp = service.GetFunctions(req)
     err_if_rpc_not_ok(resp)
-    operation_handle = resp.operationHandle
-    results = fetch_results(service=service, operation_handle=operation_handle)
-    return [r[2] for r in results]
+    return resp.operationHandle
 
 @retry
 def get_operation_status(service, operation_handle):
