@@ -18,6 +18,7 @@ import struct
 
 from sklearn.base import BaseEstimator
 
+import impala.blob
 import impala.util
 
 class ImpalaLogisticRegression(BaseEstimator):
@@ -87,8 +88,6 @@ class ImpalaLogisticRegression(BaseEstimator):
         self.coef_ = self._decode_coef(model_store[str(epoch)])
     
     def fit(self, cursor, data_query, label_column):
-        import pdb
-        pdb.set_trace()
         model_store = impala.blob.BlobStore(cursor)
         model_store.send_null('0')
         for i in xrange(self.n_iter):
