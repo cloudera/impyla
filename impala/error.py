@@ -54,4 +54,4 @@ class RPCError(Error):
 def err_if_rpc_not_ok(resp):
     if (resp.status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_STATUS'] and
             resp.status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_WITH_INFO_STATUS']):
-        raise RPCError("RPC failed: %s" % resp.__class__.__name__)
+        raise RPCError("RPC status error: %s: %s" % (resp.__class__.__name__, str(resp.status)))
