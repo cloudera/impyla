@@ -28,15 +28,15 @@ Eventually, we'll also support:
 
 ## Installation
 
-Requires `thrift>=0.9`.
-
-    pip install impyla
-
 For the latest (dev) version, clone the repo:
 
     git clone git://github.com/laserson/impyla.git
     cd impyla
     python setup.py install
+
+NOTE: running `pip install impyla` will install version 0.7 of this package,
+which *very* different. We suggest you either clone or download the repo from
+the GitHub page.
 
 
 ## Quickstart
