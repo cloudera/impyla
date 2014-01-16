@@ -52,8 +52,8 @@ Impyla implements the Python DB API 2 (PEP 249)
 
 You can also get back a pandas DataFrame object
     
-    import impala.pandas
-    df = impala.pandas.Cursor2DataFrame(cur)
+    import impala.util
+    df = impala.util.as_pandas(cur)
     # carry df through scikit-learn, for example
 
 
