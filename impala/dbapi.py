@@ -29,9 +29,13 @@ threadsafety = 0 # Threads may not share the module.
 paramstyle = 'pyformat'
 
 
-def connect(host='localhost', port=21050, timeout=45):
+def connect(host='localhost', port=21050, timeout=45, use_ssl=False,
+        ca_cert=None, use_ldap=False, ldap_user=None, ldap_password=None,
+        use_kerberos=False, kerberos_service_name='impala'):
     # PEP 249
-    service = impala.rpc.connect_to_impala(host, port, timeout)
+    service = impala.rpc.connect_to_impala(host, port, timeout, use_ssl,
+        ca_cert, use_ldap, ldap_user, ldap_password, use_kerberos,
+        kerberos_service_name)
     return Connection(service)
 
 

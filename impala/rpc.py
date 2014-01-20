@@ -103,10 +103,44 @@ def retry(func):
     
     return wrapper
 
-def connect_to_impala(host, port, timeout=45):
-    sock = TSocket(host, port)
+# _get_socket and _get_transport based on the Impala shell impl
+def _get_socket(host, port, use_ssl, ca_cert):
+    if use_ssl:
+        from thrift.transport.TSSLSocket import TSSLSocket
+        if ca_cert is None:
+            return TSSLSocket(host, port, validate=False)
+        else:
+            return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
+    else:
+        return TSocket(host, port)
+
+def _get_transport(sock, host, use_ldap, ldap_user, ldap_password, use_kerberos,
+        kerberos_service_name):
+    if not use_ldap and not use_kerberos:
+        return TBufferedTransport(sock)
+    from impala.thrift_sasl import TSaslClientTransport
+    def sasl_factory():
+        sasl_client = sasl.Client()
+        sasl_client.setAttr("host", host)
+        if use_ldap:
+            sasl_client.setAttr("username", ldap_user)
+            sasl_client.setAttr("password", ldap_password)
+        else:
+            sasl_client.setAttr("service", kerberos_service_name)
+        sasl_client.init()
+        return sasl_client
+    if use_kerberos:
+        return TSaslClientTransport(sasl_factory, "GSSAPI", sock)
+    else:
+        return TSaslClientTransport(sasl_factory, "PLAIN", sock)
+
+def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
+        use_ldap=False, ldap_user=None, ldap_password=None, use_kerberos=False,
+        kerberos_service_name='impala'):
+    sock = _get_socket(host, port, use_ssl, ca_cert)
     sock.setTimeout(timeout * 1000.)
-    transport = TBufferedTransport(sock)
+    transport = _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
+                               use_kerberos, kerberos_service_name)
     transport.open()
     protocol = TBinaryProtocol(transport)
     service = TCLIService.Client(protocol)
