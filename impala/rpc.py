@@ -118,6 +118,10 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password, use_kerberos,
         kerberos_service_name):
     if not use_ldap and not use_kerberos:
         return TBufferedTransport(sock)
+    try:
+      import saslwrapper as sasl
+    except ImportError:
+      import sasl
     from impala.thrift_sasl import TSaslClientTransport
     def sasl_factory():
         sasl_client = sasl.Client()
