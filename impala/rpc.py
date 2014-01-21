@@ -47,7 +47,7 @@ _TTypeId_to_TColumnValue_getters = {
         'SMALLINT_TYPE': operator.attrgetter('i16Val'),
         'INT_TYPE': operator.attrgetter('i32Val'),
         'BIGINT_TYPE': operator.attrgetter('i64Val'),
-        'TIMESTAMP_TYPE': operator.attrgetter('i64Val'),
+        'TIMESTAMP_TYPE': operator.attrgetter('stringVal'),
         'FLOAT_TYPE': operator.attrgetter('doubleVal'),
         'DOUBLE_TYPE': operator.attrgetter('doubleVal'),
         'STRING_TYPE': operator.attrgetter('stringVal')

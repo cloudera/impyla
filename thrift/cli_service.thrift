@@ -283,9 +283,9 @@ union TColumnValue {
   2: TByteValue   byteVal      // TINYINT
   3: TI16Value    i16Val       // SMALLINT
   4: TI32Value    i32Val       // INT
-  5: TI64Value    i64Val       // BIGINT, TIMESTAMP
+  5: TI64Value    i64Val       // BIGINT
   6: TDoubleValue doubleVal    // FLOAT, DOUBLE
-  7: TStringValue stringVal    // STRING, LIST, MAP, STRUCT, UNIONTYPE, BINARY, DECIMAL
+  7: TStringValue stringVal    // STRING, LIST, MAP, STRUCT, UNIONTYPE, BINARY, DECIMAL, TIMESTAMP
 }
 
 // Represents a row in a rowset.
