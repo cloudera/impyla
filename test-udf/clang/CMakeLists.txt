@@ -11,7 +11,7 @@ find_program(CLANG_EXECUTABLE clang++)
 # This should be called with the .cc src file and it will generate a
 # src-file-ir target that can be built.
 # e.g. COMPILE_TO_IR(test.cc) generates the "test-ir" make target.
-set(IR_COMPILE_FLAGS "-emit-llvm" "-O0" "-c")
+set(IR_COMPILE_FLAGS "-emit-llvm" "-O3" "-c")
 # set(IR_COMPILE_FLAGS "-S" "-emit-llvm" "-O0" "-c")
 function(COMPILE_TO_IR SRC_FILE)
   get_filename_component(BASE_NAME ${SRC_FILE} NAME_WE)
