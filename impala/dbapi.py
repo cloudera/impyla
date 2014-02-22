@@ -62,12 +62,12 @@ class Connection(object):
         # PEP 249
         raise impala.error.NotSupportedError()
     
-    def cursor(self, session_handle=None, user=None):
+    def cursor(self, session_handle=None, user=None, configuration=None):
         # PEP 249
         if user is None:
             user = getpass.getuser()
         if session_handle is None:
-            session_handle = impala.rpc.open_session(self.service, user)
+            session_handle = impala.rpc.open_session(self.service, user, configuration)
         return Cursor(self.service, session_handle)
 
 

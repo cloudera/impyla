@@ -158,8 +158,8 @@ def reconnect(service):
     service._iprot.trans.open()
 
 @retry
-def open_session(service, user):
-    req = TOpenSessionReq(username=user)
+def open_session(service, user, configuration=None):
+    req = TOpenSessionReq(username=user, configuration=configuration)
     resp = service.OpenSession(req)
     err_if_rpc_not_ok(resp)
     return resp.sessionHandle
@@ -171,7 +171,7 @@ def close_session(service, session_handle):
     err_if_rpc_not_ok(resp)
 
 @retry
-def execute_statement(service, session_handle, statement, configuration={}):
+def execute_statement(service, session_handle, statement, configuration=None):
     req = TExecuteStatementReq(sessionHandle=session_handle,
                                statement=statement, confOverlay=configuration)
     resp = service.ExecuteStatement(req)
