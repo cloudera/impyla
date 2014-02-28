@@ -181,15 +181,21 @@ class Cursor(object):
         if size is None:
             size = self.arraysize
         local_buffer = []
-        for (i, row) in enumerate(self):
-            if i >= size:
+        i = 0
+        while i < size:
+            try:
+                local_buffer.append(self.next())
+                i += 1
+            except StopIteration:
                 break
-            local_buffer.append(row)
         return local_buffer
     
     def fetchall(self):
         # PEP 249
-        return list(self)
+        try:
+            return list(self)
+        except StopIteration:
+            return []
     
     def setinputsizes(self, sizes):
         # PEP 249
@@ -207,7 +213,8 @@ class Cursor(object):
             raise impala.error.ProgrammingError("Trying to fetch results on an operation with no results.")
         if len(self._buffer) > 0:
             return self._buffer.pop(0)
-        else:
+        elif self._last_operation_active:
+            # self._buffer is empty here and op is active: try to pull more rows
             rows = impala.rpc.fetch_results(self.service,
                     self._last_operation_handle, self.description,
                     self.arraysize)
@@ -217,6 +224,9 @@ class Cursor(object):
                 impala.rpc.close_operation(self.service, self._last_operation_handle)
                 raise StopIteration
             return self._buffer.pop(0)
+        else:
+            # empty buffer and op is now closed: raise StopIteration
+            raise StopIteration
     
     def ping(self):
         """Checks connection to server by requesting some info from the server."""
