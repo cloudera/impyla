@@ -13,12 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import argparse
 
 import llvm.core as lc
 from pywebhdfs.webhdfs import PyWebHdfsClient
 
 import impala.dbapi
+
+def log(msg):
+    sys.stderr.write("%s\n" % msg)
+    sys.stderr.flush()
 
 llvm2impala = {
     'struct.impala_udf::BooleanVal': 'BOOLEAN',
@@ -67,39 +72,53 @@ if not args.hdfs_path.endswith('.ll'):
 with open(args.llvm_path, 'rb') as ip:
     bc = ip.read()
 ll = lc.Module.from_bitcode(bc)
+log("Loaded the LLVM IR file %s" % args.llvm_path)
 
 # load symbols and types for each function in the LLVM  module
 functions = []
 for function in ll.functions:
-    symbol = function.name
-    # skip the first argument, which is FunctionContext*
-    arg_types = tuple([llvm2impala[arg.pointee.name] for arg in function.type.pointee.args[1:]])
-    functions.append((symbol, arg_types))
+    try:
+	symbol = function.name
+	log("Loading types for function %s" % symbol)
+	# skip the first argument, which is FunctionContext*
+	arg_types = tuple([llvm2impala[arg.pointee.name] for arg in function.type.pointee.args[1:]])
+	functions.append((symbol, arg_types))
+    except (AttributeError, KeyError):
+	# this process could fail for non-UDF helper functions...just ignore them,
+	# because we're not going to be registering them anyway
+	log("Had trouble with function %s; moving on..." % symbol)
+	pass
 
 # transfer the LLVM module to HDFS
 hdfs_client = PyWebHdfsClient(host=args.nn_host, port=args.webhdfs_port, user_name=args.user)
 hdfs_client.create_file(args.hdfs_path.lstrip('/'), bc, overwrite=args.force)
+log("Transferred LLVM IR to HDFS at %s" % args.hdfs_path)
 
 # register the functions with impala
 conn = impala.dbapi.connect(host=args.impala_host, port=args.impala_port)
 cursor = conn.cursor(user=args.user)
+log("Connected to impalad: %s" % args.impala_host)
 if args.db:
     cursor.execute('USE %s' % args.db)
 cursor.execute("SHOW FUNCTIONS")
 registered_functions = cursor.fetchall()
 for (udf_name, return_type) in zip(args.name, args.return_type):
+    log("Registering function %s" % udf_name)
     # find matching LLVM symbols to the current UDF name
     matches = [pair for pair in functions if udf_name in pair[0]]
     if len(matches) == 0:
-	print >>sys.stderr, "Couldn't find a symbol matching %s; skipping..." % name
+	log("Couldn't find a symbol matching %s; skipping..." % name)
 	continue
     if len(matches) > 1:
-	print >>sys.stderr, "Found multiple symbols matching %s; skipping..." % name
+	log("Found multiple symbols matching %s; skipping..." % name)
 	continue
     (symbol, arg_types) = matches[0]
     impala_name = '%s(%s)' % (udf_name, ','.join(arg_types))
     if args.force and impala_name in registered_functions:
+	log("Overwriting function %s" % impala_name)
 	cursor.execute("DROP FUNCTION %s" % impala_name)
     register_query = "CREATE FUNCTION %s RETURNS %s LOCATION '%s' SYMBOL='%s'" % (impala_name,
 	    return_type, args.hdfs_path, symbol)
+    log(register_query)
     cursor.execute(register_query)
+    log("Successfully registered %s" % impala_name)
