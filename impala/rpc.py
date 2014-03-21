@@ -74,6 +74,25 @@ _PrimitiveType_to_TTypeId = {
 # If present, the trailing 3 digits will be ignored without warning.
 _TIMESTAMP_PATTERN = re.compile(r'(\d+-\d+-\d+ \d+:\d+:\d+(\.\d{,6})?)')
 
+def _parse_timestamp(value):
+    if value:
+        match = _TIMESTAMP_PATTERN.match(value)
+        if match:
+            if match.group(2):
+                format = '%Y-%m-%d %H:%M:%S.%f'
+                # use the pattern to truncate the value
+                value = match.group()
+            else:
+                format = '%Y-%m-%d %H:%M:%S'
+            value = datetime.datetime.strptime(value, format)
+        else:
+            raise Exception(
+                    'Cannot convert "{}" into a datetime'.format(value))
+    else:
+        value = None
+    return value
+
+
 # TODO: Add another decorator that runs the function in its own thread
 def threaded(func):
     raise NotImplementedError
@@ -224,21 +243,7 @@ def fetch_results(service, operation_handle, schema=None, max_rows=100,
             type_ = schema[i][1]
             value = _TTypeId_to_TColumnValue_getters[type_](col_val).value
             if type_ == 'TIMESTAMP_TYPE':
-              if value:
-                match = _TIMESTAMP_PATTERN.match(value)
-                if match:
-                  if match.group(2):
-                    format = '%Y-%m-%d %H:%M:%S.%f'
-                    # use the pattern to truncate the value
-                    value = match.group()
-                  else:
-                    format = '%Y-%m-%d %H:%M:%S'
-                  value = datetime.datetime.strptime(value, format)
-                else:
-                  raise Exception(
-                      'Cannot convert "{}" into a datetime'.format(value))
-              else:
-                value = None
+                value = _parse_timestamp(value)
             row.append(value)
         rows.append(tuple(row))
 
