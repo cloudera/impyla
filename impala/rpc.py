@@ -15,16 +15,18 @@
 """Implements all necessary Impala HiveServer 2 RPC functionality."""
 
 # This work builds off of:
-# 1. the Hue interface: 
+# 1. the Hue interface:
 #       hue/apps/beeswax/src/beeswax/server/dbms.py
 #       hue/apps/beeswax/src/beeswax/server/hive_server2_lib.py
 #       hue/desktop/core/src/desktop/lib/thrift_util.py
 # 2. the Impala shell:
 #       Impala/shell/impala_shell.py
 
+import datetime
 import socket
 import operator
 import exceptions
+import re
 
 from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport, TTransportException
@@ -68,6 +70,10 @@ _PrimitiveType_to_TTypeId = {
         'STRING': 'STRING_TYPE',
 }
 
+# datetime only supports 6 digits of microseconds but Impala supports 9.
+# If present, the trailing 3 digits will be ignored without warning.
+_TIMESTAMP_PATTERN = re.compile(r'(\d+-\d+-\d+ \d+:\d+:\d+(\.\d{,6})?)')
+
 # TODO: Add another decorator that runs the function in its own thread
 def threaded(func):
     raise NotImplementedError
@@ -75,7 +81,7 @@ def threaded(func):
 def retry(func):
     # Retries RPCs after closing/reopening transport
     # `service` must be the first arg in args or must be a kwarg
-    
+
     def wrapper(*args, **kwargs):
         # get the thrift transport
         if 'service' in kwargs:
@@ -84,7 +90,7 @@ def retry(func):
             transport = args[0]._iprot.trans
         else:
             raise RPCError("RPC function does not have expected 'service' arg")
-        
+
         tries_left = 3
         while tries_left > 0:
             try:
@@ -100,7 +106,7 @@ def retry(func):
             transport.close()
             tries_left -= 1
         raise
-    
+
     return wrapper
 
 # _get_socket and _get_transport based on the Impala shell impl
@@ -185,14 +191,14 @@ def get_result_schema(service, operation_handle):
     req = TGetResultSetMetadataReq(operationHandle=operation_handle)
     resp = service.GetResultSetMetadata(req)
     err_if_rpc_not_ok(resp)
-    
+
     schema = []
     for column in resp.schema.columns:
         name = column.columnName
         type_ = TTypeId._VALUES_TO_NAMES[
                 column.typeDesc.types[0].primitiveEntry.type]
         schema.append((name, type_))
-    
+
     return schema
 
 @retry
@@ -200,24 +206,42 @@ def fetch_results(service, operation_handle, schema=None, max_rows=100,
                   orientation=TFetchOrientation.FETCH_NEXT):
     if not operation_handle.hasResultSet:
         return None
-    
+
     # the schema is necessary to pull the proper values (i.e., coalesce)
     if schema is None:
         schema = get_result_schema(service, operation_handle)
-    
+
     req = TFetchResultsReq(operationHandle=operation_handle,
                            orientation=orientation,
                            maxRows=max_rows)
     resp = service.FetchResults(req)
     err_if_rpc_not_ok(resp)
-    
+
     rows = []
     for trow in resp.results.rows:
         row = []
         for (i, col_val) in enumerate(trow.colVals):
-            row.append(_TTypeId_to_TColumnValue_getters[schema[i][1]](col_val).value)
+            type_ = schema[i][1]
+            value = _TTypeId_to_TColumnValue_getters[type_](col_val).value
+            if type_ == 'TIMESTAMP_TYPE':
+              if value:
+                match = _TIMESTAMP_PATTERN.match(value)
+                if match:
+                  if match.group(2):
+                    format = '%Y-%m-%d %H:%M:%S.%f'
+                    # use the pattern to truncate the value
+                    value = match.group()
+                  else:
+                    format = '%Y-%m-%d %H:%M:%S'
+                  value = datetime.datetime.strptime(value, format)
+                else:
+                  raise Exception(
+                      'Cannot convert "{}" into a datetime'.format(value))
+              else:
+                value = None
+            row.append(value)
         rows.append(tuple(row))
-    
+
     return rows
 
 @retry
@@ -325,7 +349,7 @@ def ping(service, session_handle):
         resp = service.GetInfo(req)
     except TTransportException as e:
         return False
-    
+
     try:
         err_if_rpc_not_ok(resp)
     except RPCError as e:
