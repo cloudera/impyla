@@ -47,11 +47,11 @@ try:
 	hdfs_client.create_file(hdfs_path.lstrip('/'), ir, overwrite=overwrite)
 
 	# register the function in Impala
-	impala_name = '%s(%s)' % (udf_name, ','.join(arg_types))
+	impala_name = '%s(%s)' % (udf_name, ', '.join(arg_types))
 	if overwrite:
 	    cursor.execute("SHOW FUNCTIONS")
-	    registered_functions = cursor.fetchall()
-	    if impala_name in registered_functions:
+	    registered_functions = [fn[0].lower() for fn in cursor.fetchall()]
+	    if impala_name.lower() in registered_functions:
 		cursor.execute("DROP FUNCTION %s" % impala_name)
 	register_query = "CREATE FUNCTION %s RETURNS %s LOCATION '%s' SYMBOL='%s'" % (impala_name,
 		return_type, hdfs_path, symbol)
