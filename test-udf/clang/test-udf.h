@@ -26,7 +26,12 @@ using namespace impala_udf;
 
 // BooleanVal StringEq1(FunctionContext* context, const StringVal& arg1, const StringVal& arg2);
 // BooleanVal StringEq2(FunctionContext* context, const StringVal& arg1, const StringVal& arg2);
-bool StringEq(FunctionContext* context, const StringVal& arg1, const StringVal& arg2);
+// bool StringEq(FunctionContext* context, const StringVal& arg1, const StringVal& arg2);
+// bool StringEq3(FunctionContext* context, const StringVal& arg1, const StringVal& arg2);
 // uint8_t GetThird(FunctionContext* context, const StringVal& arg1, const IntVal& arg2);
+
+// bool StringTest(FunctionContext* context, const StringVal& arg1);
+
+int test_size_t(const char* arg);
 
 #endif

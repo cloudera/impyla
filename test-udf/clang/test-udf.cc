@@ -1,4 +1,5 @@
 #include "test-udf.h"
+#include <cstring>
 
 // IntVal AddUdf(FunctionContext* context, const IntVal& arg1, const IntVal& arg2) {
 //   if (arg1.is_null || arg2.is_null) return IntVal::null();
@@ -111,6 +112,28 @@ bool StringEq(FunctionContext* context,
 }
 
 
+// bool StringEq3(FunctionContext* context,
+//               const StringVal& arg1,
+//               const StringVal& arg2) {
+//     return memcmp(arg1.ptr, arg2.ptr, arg1.len) == 0;
+// }
+
+
 // uint8_t GetThird(FunctionContext* context, const StringVal& arg1, const IntVal& arg2) {
 //     return arg1.ptr[arg2.val];
+// }
+
+
+// bool StringTest(FunctionContext* context, const StringVal& arg1) {
+//     // const char* foo = "bar";
+//     StringVal foo("bar");
+//     // if (arg1.len != strlen(foo)) return false;
+//     if (arg1.len != foo.len) return false;
+//     // return memcmp(arg1.ptr, foo, arg1.len);
+//     return memcmp(arg1.ptr, foo.ptr, arg1.len);
+// }
+
+// int test_size_t(const char* arg) {
+    // int a = strlen(arg);
+    // return a;
 // }
