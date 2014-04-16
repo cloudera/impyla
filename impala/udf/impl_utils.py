@@ -12,7 +12,9 @@ from .types import AnyVal
 # the gep needs a (0, 0, 0) offset
 
 def _get_is_null_pointer(builder, val):
-    ptr = cgutils.inbound_gep(builder, val._getpointer(), 0, 0, 0)
+    ptr = builder.gep(val._getpointer(),
+		      [lc.Constant.int(lc.Type.int(32), 0)] * 3, # gep(0, 0, 0)
+		      inbounds=True)
     return ptr
 
 def _get_is_null(builder, val):

@@ -27,7 +27,8 @@ register_global = registry.register_global
 class ImpalaValue(ntypes.Type):
     pass
 
-FunctionContext = ntypes.OpaqueType('class.impala_udf::FunctionContext')
+# FunctionContext = ntypes.OpaqueType('class.impala_udf::FunctionContext')
+FunctionContext = ntypes.Type('class.impala_udf::FunctionContext')
 
 AnyVal = ImpalaValue('AnyVal')
 

@@ -258,7 +258,8 @@ class ImpalaTargetContext(BaseContext):
 	    iv2 = AnyValStruct(self, builder)
 	    # this is equiv to _set_is_null, but changes the GEP bc of AnyVal's structure
 	    byte = builder.zext(is_null, lc.Type.int(8))
-	    builder.store(byte, cgutils.inbound_gep(builder, iv2._getpointer(), 0, 0))
+	    builder.store(byte, builder.gep(iv2._getpointer(),
+		    [lc.Constant.int(lc.Type.int(32), 0)] * 2, inbounds=True))
 	    return iv2._getvalue()
 
 	if fromty == BooleanVal:
