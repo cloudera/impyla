@@ -30,7 +30,7 @@ Eventually, we'll also support:
 
 For the latest (dev) version, clone the repo:
 
-    git clone git://github.com/laserson/impyla.git
+    git clone https://github.com/cloudera/impyla.git
     cd impyla
     python setup.py install
 
