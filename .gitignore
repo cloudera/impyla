@@ -3,6 +3,7 @@ scratch.py
 
 # C extensions
 *.so
+*.bc
 
 # Packages
 *.egg

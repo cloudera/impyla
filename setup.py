@@ -29,7 +29,9 @@ setup(
     author='Uri Laserson',
     author_email='laserson@cloudera.com',
     url='https://github.com/cloudera/impyla',
-    packages=['impala', 'impala.cli_service', 'impala.tests'],
+    packages=['impala', 'impala.cli_service', 'impala.udf', 'impala.tests'],
+    package_data={'impala.udf': ['precompiled/*.bc']},
+    scripts=['bin/register-impala-udfs.py'],
     install_requires=['thrift'],
     keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark'
             'distributed db api pep 249'),

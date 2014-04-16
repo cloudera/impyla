@@ -53,6 +53,7 @@ For the latest (dev) version, clone the repo:
 ```bash
 git clone https://github.com/cloudera/impyla.git
 cd impyla
+make # optional: only for Numba-compiled UDFs; requires LLVM/clang
 python setup.py install
 ```
 

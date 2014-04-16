@@ -14,18 +14,66 @@
 
 """Module for compiling Python functions into Impala UDFs"""
 
-# convert *Val name to Impala data type name
-udf2impala = {'BooleanVal': 'BOOLEAN',
-	      'TinyIntVal': 'TINYINT',
-	      'SmallIntVal': 'SMALLINT',
-	      'IntVal': 'INT',
-	      'BigIntVal': 'BIGINT',
-	      'FloatVal': 'FLOAT',
-	      'DoubleVal': 'DOUBLE',
-	      'StringVal': 'STRING',
-	      'TimestampVal': 'TIMESTAMP'}
+from __future__ import absolute_import
 
-# TODO: in the future, consider taking an ImpalaContext if there is some info I
+import llvm.core as lc
+from numba import sigutils
+from numba.compiler import compile_extra, Flags
+
+from .target import ImpalaTargetContext
+from .typing import impala_typing_context
+
+
+# functionality to compile Python UDFs into Impala-executable IR
+
+def udf(signature):
+    def wrapper(pyfunc):
+	udfobj = UDF(pyfunc, signature)
+	return udfobj
+    return wrapper
+
+
+class UDF(object):
+    def __init__(self, pyfunc, signature):
+	self.py_func = pyfunc
+	self.signature = signature
+	self.name = pyfunc.__name__
+
+	# recreate for each UDF, as linking is destructive to the
+	# precompiled module
+	impala_typing = impala_typing_context()
+	impala_targets = ImpalaTargetContext(impala_typing)
+
+	args, return_type = sigutils.normalize_signature(signature)
+	flags = Flags()
+	flags.set('no_compile')
+	self._cres = compile_extra(typingctx=impala_typing,
+		   targetctx=impala_targets, func=pyfunc,
+		   args=args, return_type=return_type,
+		   flags=flags, locals={})
+	llvm_func = impala_targets.finalize(self._cres.llvm_func, return_type,
+		    args)
+	self.llvm_func = llvm_func
+	numba_module = llvm_func.module
+	self.llvm_module = lc.Module.new(self.name)
+	self.llvm_module.link_in(numba_module)
+	self.llvm_module.link_in(impala_targets.precompiled_module)
+
+
+# functionality to ship code to Impala cluster
+
+# convert *Val name to Impala data type name
+udf2impala_type = {'BooleanVal': 'BOOLEAN',
+		   'TinyIntVal': 'TINYINT',
+		   'SmallIntVal': 'SMALLINT',
+		   'IntVal': 'INT',
+		   'BigIntVal': 'BIGINT',
+		   'FloatVal': 'FLOAT',
+		   'DoubleVal': 'DOUBLE',
+		   'StringVal': 'STRING',
+		   'TimestampVal': 'TIMESTAMP'}
+
+# TODO: in the future, consider taking an "ImpalaContext" if there is some info I
 # want to store.  But this could also all be in the cursor object potentially
 try:
     from pywebhdfs.webhdfs import PyWebHdfsClient
@@ -37,8 +85,8 @@ try:
 	    udf_name = function.name
 	symbol = function.llvm_func.name
 	ir = function.llvm_module.to_bitcode()
-	return_type = udf2impala[function.signature.return_type.name]
-	arg_types = [udf2impala[arg.name] for arg in function.signature.args[1:]]
+	return_type = udf2impala_type[function.signature.return_type.name]
+	arg_types = [udf2impala_type[arg.name] for arg in function.signature.args[1:]]
 
 	# ship the IR to the cluster
 	hdfs_client = PyWebHdfsClient(host=host, port=webhdfs_port, user_name=user)
