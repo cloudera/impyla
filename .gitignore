@@ -35,7 +35,7 @@ nosetests.xml
 .project
 .pydevproject
 
-CMakeFiles
-cmake_install.cmake
-CMakeCache.txt
-Makefile
+test-udf/**/CMakeFiles
+test-udf/**/cmake_install.cmake
+test-udf/**/CMakeCache.txt
+test-udf/**/Makefile
