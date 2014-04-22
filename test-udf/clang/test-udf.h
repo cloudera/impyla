@@ -32,6 +32,7 @@ using namespace impala_udf;
 
 // bool StringTest(FunctionContext* context, const StringVal& arg1);
 
-int test_size_t(const char* arg);
+// int test_size_t(const char* arg);
+int test_something();
 
 #endif

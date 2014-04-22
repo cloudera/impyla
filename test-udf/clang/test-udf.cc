@@ -98,18 +98,18 @@
 //     }
 // }
 
-bool StringEq(FunctionContext* context,
-	      const StringVal& arg1,
-	      const StringVal& arg2) {
-    if (arg1.is_null != arg2.is_null)
-	return false;
-    if (arg1.is_null)
-	return true;
-    if (arg1.len != arg2.len)
-	return false;
-    return (arg1.ptr == arg2.ptr) ||
-	    memcmp(arg1.ptr, arg2.ptr, arg1.len) == 0;
-}
+// bool StringEq(FunctionContext* context,
+//               const StringVal& arg1,
+//               const StringVal& arg2) {
+//     if (arg1.is_null != arg2.is_null)
+//         return false;
+//     if (arg1.is_null)
+//         return true;
+//     if (arg1.len != arg2.len)
+//         return false;
+//     return (arg1.ptr == arg2.ptr) ||
+//             memcmp(arg1.ptr, arg2.ptr, arg1.len) == 0;
+// }
 
 
 // bool StringEq3(FunctionContext* context,
@@ -137,3 +137,8 @@ bool StringEq(FunctionContext* context,
     // int a = strlen(arg);
     // return a;
 // }
+
+int test_something() {
+    int x[3] = {1729, 13, 113};
+    return x[2];
+}
