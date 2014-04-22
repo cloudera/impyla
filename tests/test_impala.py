@@ -152,6 +152,15 @@ class TestImpala(unittest.TestCase):
 	def fn(context, a, b):
 	    return a[b]
 
+    def test_string_split(self):
+	import string
+
+	@udf(StringVal(FunctionContext, StringVal))
+	def fn(context, a):
+	    return string.split(a, ",")[0]
+
+
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

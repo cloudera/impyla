@@ -23,6 +23,7 @@ from numba.typing.templates import (AttributeTemplate, ConcreteTemplate,
 
 from . import types
 from . import typeconv
+from . import stringdecl
 from .types import (FunctionContext, AnyVal, BooleanVal, BooleanValType,
 		    TinyIntVal, TinyIntValType, SmallIntVal, SmallIntValType,
 		    IntVal, IntValType, BigIntVal, BigIntValType, FloatVal,
@@ -139,6 +140,6 @@ def impala_typing_context():
 
     base.install(types.registry)
     base.install(registry)
-    # base.install(stringdecl.registry)
+    base.install(stringdecl.registry)
 
     return base

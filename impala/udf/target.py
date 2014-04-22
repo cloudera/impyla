@@ -26,6 +26,7 @@ from numba import cgutils, lowering
 from numba.targets.base import BaseContext
 from numba.targets.imputils import Registry, implement, impl_attribute
 
+from . import stringimpl
 from .abi import ABIHandling, raise_return_type
 from .types import (FunctionContext, AnyVal, BooleanVal, BooleanValType,
 		    TinyIntVal, TinyIntValType, SmallIntVal, SmallIntValType,
@@ -35,7 +36,7 @@ from .types import (FunctionContext, AnyVal, BooleanVal, BooleanValType,
 from .impl_utils import (AnyValStruct, BooleanValStruct, TinyIntValStruct,
 			 SmallIntValStruct, IntValStruct, BigIntValStruct,
 			 FloatValStruct, DoubleValStruct, StringValStruct)
-from .impl_utils import _get_is_null, _set_is_null
+from .impl_utils import _get_is_null, _set_is_null, _conv_numba_struct_to_clang
 
 
 registry = Registry()
@@ -132,12 +133,6 @@ def StringVal_ptr(context, builder, typ, value):
 
 # impl "builtins"
 
-def _conv_numba_struct_to_clang(builder, numba_arg, clang_arg_type):
-    stack_var = cgutils.alloca_once(builder, numba_arg.type)
-    builder.store(numba_arg, stack_var)
-    clang_arg = builder.bitcast(stack_var, clang_arg_type)
-    return clang_arg
-
 @register_function
 @implement('is', AnyVal, ntypes.none)
 def is_none_impl(context, builder, sig, args):
@@ -162,7 +157,7 @@ def eq_ptr_impl(context, builder, sig, args):
 @implement("==", StringVal, StringVal)
 def eq_stringval(context, builder, sig, args):
     module = cgutils.get_module(builder)
-    precomp_func = context.precompiled_fns["EqStringValImpl"]
+    precomp_func = context._get_precompiled_function("EqStringValImpl")
     func = module.get_or_insert_function(precomp_func.type.pointee, precomp_func.name)
     [s1, s2] = args
     cs1 = _conv_numba_struct_to_clang(builder, s1, func.args[0].type)
@@ -174,7 +169,7 @@ def eq_stringval(context, builder, sig, args):
 @implement("getitem", StringVal, ntypes.intc)
 def getitem_stringval(context, builder, sig, args):
     module = cgutils.get_module(builder)
-    precomp_func = context.precompiled_fns["GetItemStringValImpl"]
+    precomp_func = context._get_precompiled_function("GetItemStringValImpl")
     func = module.get_or_insert_function(precomp_func.type.pointee, precomp_func.name)
     [s, i] = args
     cs = _conv_numba_struct_to_clang(builder, s, func.args[0].type)
@@ -185,7 +180,7 @@ def getitem_stringval(context, builder, sig, args):
 @implement("+", StringVal, StringVal)
 def add_stringval(context, builder, sig, args):
     module = cgutils.get_module(builder)
-    precomp_func = context.precompiled_fns["AddStringValImpl"]
+    precomp_func = context._get_precompiled_function("AddStringValImpl")
     func = module.get_or_insert_function(precomp_func.type.pointee, precomp_func.name)
     fnctx_arg = context.get_arguments(cgutils.get_function(builder))[0]
     cfnctx_arg = builder.bitcast(fnctx_arg, func.args[0].type)
@@ -215,9 +210,13 @@ class ImpalaTargetContext(BaseContext):
 
     def init(self):
 	self.tm = le.TargetMachine.new()
+
 	# insert registered impls
 	self.insert_func_defn(registry.functions)
 	self.insert_attr_defn(registry.attributes)
+	self.insert_func_defn(stringimpl.registry.functions)
+	self.insert_attr_defn(stringimpl.registry.attributes)
+
 	self.optimizer = self.build_pass_manager()
 	self._load_precompiled()
 
@@ -227,18 +226,14 @@ class ImpalaTargetContext(BaseContext):
 	self._fnctxtype = lc.Type.struct(fnctxbody,
 					 name="class.impala_udf::FunctionContext")
 
-    def _load_precompiled_function(self, name):
+    def _get_precompiled_function(self, name):
 	fns = [fn for fn in self.precompiled_module.functions if name in fn.name]
 	assert len(fns) == 1
-	self.precompiled_fns[name] = fns[0]
+	return fns[0]
 
     def _load_precompiled(self):
 	binary_data = pkgutil.get_data("impala.udf", "precompiled/impala-precompiled.bc")
 	self.precompiled_module = lc.Module.from_bitcode(binary_data)
-	self.precompiled_fns = {}
-	self._load_precompiled_function("EqStringValImpl")
-	self._load_precompiled_function("GetItemStringValImpl")
-	self._load_precompiled_function("AddStringValImpl")
 
     def cast(self, builder, val, fromty, toty):
 	if fromty not in self._impala_types and toty not in self._impala_types:
@@ -364,6 +359,13 @@ class ImpalaTargetContext(BaseContext):
 	    return lc.Type.pointer(self._fnctxtype)
 	else:
 	    return super(ImpalaTargetContext, self).get_data_type(ty)
+
+    def get_array(self, builder, itemvals, itemtys):
+	# only handle uniform type
+	assert all(x == itemtys[0] for x in itemtys)
+	if ty not in self._impala_types:
+	    raise NotImplementedError("Arrays of non-Impala types not supported")
+
 
     def build_pass_manager(self):
 	opt = 0 # let Impala optimize

@@ -1,3 +1,16 @@
+# Copyright 2014 Cloudera Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import llvm.core as lc
 from numba import types as ntypes
@@ -71,3 +84,12 @@ class StringValStruct(cgutils.Structure):
     _fields = [('parent',  AnyVal),
 	       ('len',     ntypes.int32),
 	       ('ptr',     ntypes.CPointer(ntypes.uint8))]
+
+
+# misc impl utilies
+
+def _conv_numba_struct_to_clang(builder, numba_arg, clang_arg_type):
+    stack_var = cgutils.alloca_once(builder, numba_arg.type)
+    builder.store(numba_arg, stack_var)
+    clang_arg = builder.bitcast(stack_var, clang_arg_type)
+    return clang_arg
