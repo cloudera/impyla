@@ -35,7 +35,7 @@ For the latest (dev) version, clone the repo:
     python setup.py install
 
 NOTE: running `pip install impyla` will install version 0.7 of this package,
-which *very* different. We suggest you either clone or download the repo from
+which is *very* different. We suggest you either clone or download the repo from
 the GitHub page.
 
 
