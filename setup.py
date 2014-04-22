@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from distutils.core import setup
+from setuptools import setup
 
 def readme():
   with open('README.md', 'r') as ip:
@@ -28,5 +28,6 @@ setup(
   url='https://github.com/laserson/impyla',
   packages=['impala', 'impala.cli_service'],
   keywords='cloudera impala python hadoop sql hdfs mpp madlib spark distributed',
-  license='Apache License, Version 2.0'
+  license='Apache License, Version 2.0',
+  install_requires = ['thrift>=0.9']
 )
