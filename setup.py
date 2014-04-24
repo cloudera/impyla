@@ -20,7 +20,7 @@ def readme():
 
 setup(
   name='impyla',
-  version='1.2',
+  version='0.8.0-dev',
   description='Python client for Cloudera Impala',
   long_description=readme(),
   author='Uri Laserson',
