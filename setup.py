@@ -26,7 +26,7 @@ setup(
   author='Uri Laserson',
   author_email='laserson@cloudera.com',
   url='https://github.com/laserson/impyla',
-  packages=['impala', 'impala.cli_service'],
+  packages=['impala', 'impala.cli_service', 'impala.tests'],
   keywords='cloudera impala python hadoop sql hdfs mpp madlib spark distributed',
   license='Apache License, Version 2.0'
 )

@@ -12,20 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implements the Python DB API 2.0 for Impala (PEP 249)"""
+"""Implements the Python DB API 2.0 (PEP 249) for Impala"""
 
 import getpass
-from time import sleep
+import time
+import datetime
 
 from impala.cli_service.ttypes import TTypeId
-
-import impala.error
 import impala.rpc
+from impala.error import (Error, Warning, InterfaceError, DatabaseError,
+                          InternalError, OperationalError, ProgrammingError,
+                          IntegrityError, DataError, NotSupportedError,
+                          RPCError)
 
 
 # PEP 249 module globals
 apilevel = '2.0'
-threadsafety = 0 # Threads may not share the module.
+threadsafety = 1 # Threads may share the module, but not connections
 paramstyle = 'pyformat'
 
 
@@ -34,8 +37,8 @@ def connect(host='localhost', port=21050, timeout=45, use_ssl=False,
         use_kerberos=False, kerberos_service_name='impala'):
     # PEP 249
     service = impala.rpc.connect_to_impala(host, port, timeout, use_ssl,
-        ca_cert, use_ldap, ldap_user, ldap_password, use_kerberos,
-        kerberos_service_name)
+            ca_cert, use_ldap, ldap_user, ldap_password, use_kerberos,
+            kerberos_service_name)
     return Connection(service)
 
 
@@ -69,6 +72,18 @@ class Connection(object):
         if session_handle is None:
             session_handle = impala.rpc.open_session(self.service, user, configuration)
         return Cursor(self.service, session_handle)
+    
+    # optional DB API addition to make the errors attributes of Connection
+    Error = Error
+    Warning = Warning
+    InterfaceError = InterfaceError
+    DatabaseError = DatabaseError
+    InternalError = InternalError
+    OperationalError = OperationalError
+    ProgrammingError = ProgrammingError
+    IntegrityError = IntegrityError
+    DataError = DataError
+    NotSupportedError = NotSupportedError
 
 
 class Cursor(object):
@@ -83,7 +98,7 @@ class Cursor(object):
         self._last_operation_string = None
         self._last_operation_handle = None
         self._last_operation_active = False
-        self._arraysize = 100
+        self._buffersize = None
         self._buffer = []
 
         # initial values, per PEP 249
@@ -104,10 +119,21 @@ class Cursor(object):
     def query_string(self):
         return self._last_operation_string
 
+    def get_arraysize(self):
+        # PEP 249
+        return self._buffersize if self._buffersize else 1
     def set_arraysize(self, arraysize):
         # PEP 249
-        self._arraysize = arraysize
-    arraysize = property(lambda self: self._arraysize, set_arraysize)
+        self._buffersize = arraysize
+    arraysize = property(get_arraysize, set_arraysize)
+
+    @property
+    def buffersize(self):
+        # this is for internal use.  it provides an alternate default value for
+        # the size of the buffer, so that calling .next() will read multiple
+        # rows into a buffer if arraysize hasn't been set.  (otherwise, we'd get
+        # an unbuffered impl because the PEP 249 default value of arraysize is 1)
+        return self._buffersize if self._buffersize else 100
 
     @property
     def has_result_set(self):
@@ -118,13 +144,13 @@ class Cursor(object):
         # PEP 249
         impala.rpc.close_session(self.service, self.session_handle)
 
-    def execute(self, operation, parameters={}):
+    def execute(self, operation, parameters=None):
         # PEP 249
         def op():
-            self._last_operation_string = operation
             if parameters:
-                # TODO: Handle various parameter types
-                self._last_operation_string %= parameters
+                self._last_operation_string = _bind_parameters(operation, parameters)
+            else:
+                self._last_operation_string = operation
             self._last_operation_handle = impala.rpc.execute_statement(
                     self.service, self.session_handle, self._last_operation_string)
         self._execute_sync(op)
@@ -159,7 +185,7 @@ class Cursor(object):
                     self._last_operation_handle)
             if operation_state not in ['INITIALIZED_STATE', 'RUNNING_STATE']:
                 break
-            sleep(0.1)
+            time.sleep(0.1)
 
     def executemany(self, operation, seq_of_parameters=[]):
         # PEP 249
@@ -220,7 +246,7 @@ class Cursor(object):
             # self._buffer is empty here and op is active: try to pull more rows
             rows = impala.rpc.fetch_results(self.service,
                     self._last_operation_handle, self.description,
-                    self.arraysize)
+                    self.buffersize)
             self._buffer.extend(rows)
             if len(self._buffer) == 0:
                 self._last_operation_active = False
@@ -305,10 +331,51 @@ class _DBAPITypeObject(object):
 STRING = _DBAPITypeObject(TTypeId._VALUES_TO_NAMES[TTypeId.STRING_TYPE])
 BINARY = _DBAPITypeObject(TTypeId._VALUES_TO_NAMES[TTypeId.BINARY_TYPE])
 NUMBER = _DBAPITypeObject(TTypeId._VALUES_TO_NAMES[TTypeId.BOOLEAN_TYPE],
-                         TTypeId._VALUES_TO_NAMES[TTypeId.TINYINT_TYPE],
-                         TTypeId._VALUES_TO_NAMES[TTypeId.SMALLINT_TYPE],
-                         TTypeId._VALUES_TO_NAMES[TTypeId.INT_TYPE],
-                         TTypeId._VALUES_TO_NAMES[TTypeId.BIGINT_TYPE],
-                         TTypeId._VALUES_TO_NAMES[TTypeId.DOUBLE_TYPE],)
+                          TTypeId._VALUES_TO_NAMES[TTypeId.TINYINT_TYPE],
+                          TTypeId._VALUES_TO_NAMES[TTypeId.SMALLINT_TYPE],
+                          TTypeId._VALUES_TO_NAMES[TTypeId.INT_TYPE],
+                          TTypeId._VALUES_TO_NAMES[TTypeId.BIGINT_TYPE],
+                          TTypeId._VALUES_TO_NAMES[TTypeId.FLOAT_TYPE],
+                          TTypeId._VALUES_TO_NAMES[TTypeId.DOUBLE_TYPE],
+                          TTypeId._VALUES_TO_NAMES[TTypeId.DECIMAL_TYPE])
 DATETIME = _DBAPITypeObject(TTypeId._VALUES_TO_NAMES[TTypeId.TIMESTAMP_TYPE])
 ROWID = _DBAPITypeObject()
+
+Date = datetime.date
+Time = datetime.time
+Timestamp = datetime.datetime
+
+def DateFromTicks(ticks):
+    return Date(*time.localtime(ticks)[:3])
+
+def TimeFromTicks(ticks):
+    return Time(*time.localtime(ticks)[3:6])
+
+def TimestampFromTicks(ticks):
+    return Timestamp(*time.localtime(ticks)[:6])
+
+Binary = buffer
+
+def _bind_parameters(operation, parameters):
+    # inspired by MySQL Python Connector (conversion.py)
+    string_parameters = {}
+    for (name, value) in parameters.iteritems():
+        if value is None:
+            string_parameters[name] = 'NULL'
+        elif isinstance(value, basestring):
+            string_parameters[name] = "'" + _escape(value) + "'"
+        else:
+            string_parameters[name] = str(value)
+    return operation % string_parameters
+
+def _escape(s):
+    e = s
+    e = e.replace('\\', '\\\\')
+    e = e.replace('\n', '\\n')
+    e = e.replace('\r', '\\r')
+    e = e.replace("'", "\\'")
+    e = e.replace('"', '\\"')
+    return e
+    
+    
+    
