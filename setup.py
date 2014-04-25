@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from distutils.core import setup
+import ez_setup
+ez_setup.use_setuptools()
+
+from setuptools import setup
 
 def readme():
   with open('README.md', 'r') as ip:
@@ -20,13 +23,15 @@ def readme():
 
 setup(
   name='impyla',
-  version='0.8.0-dev',
-  description='Python client for Cloudera Impala',
+  version='0.8.0',
+  description='Python client for the Impala distributed query engine',
   long_description=readme(),
   author='Uri Laserson',
   author_email='laserson@cloudera.com',
-  url='https://github.com/laserson/impyla',
+  url='https://github.com/cloudera/impyla',
   packages=['impala', 'impala.cli_service', 'impala.tests'],
-  keywords='cloudera impala python hadoop sql hdfs mpp madlib spark distributed',
+  install_requires=['thrift'],
+  keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark'
+            'distributed db api pep 249'),
   license='Apache License, Version 2.0'
 )
