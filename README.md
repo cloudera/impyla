@@ -38,7 +38,7 @@ Optional:
 
 * `pandas` for the `.as_pandas()` function to work
 
-This project is installed with `setuptools`.
+This project is installed with `setuptools>=2`.
 
 ### Installation
 
