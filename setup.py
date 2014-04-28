@@ -18,20 +18,25 @@ ez_setup.use_setuptools(version='2')
 from setuptools import setup
 
 def readme():
-  with open('README.md', 'r') as ip:
-    return ip.read()
+    with open('README.md', 'r') as ip:
+        return ip.read()
 
 setup(
-  name='impyla',
-  version='0.9.0-dev',
-  description='Python client for the Impala distributed query engine',
-  long_description=readme(),
-  author='Uri Laserson',
-  author_email='laserson@cloudera.com',
-  url='https://github.com/cloudera/impyla',
-  packages=['impala', 'impala.cli_service', 'impala.tests'],
-  install_requires=['thrift'],
-  keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark'
+    name='impyla',
+    version='0.9.0-dev',
+    description='Python client for the Impala distributed query engine',
+    long_description=readme(),
+    author='Uri Laserson',
+    author_email='laserson@cloudera.com',
+    url='https://github.com/cloudera/impyla',
+    packages=['impala', 'impala.cli_service', 'impala.tests'],
+    install_requires=['thrift'],
+    keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark'
             'distributed db api pep 249'),
-  license='Apache License, Version 2.0'
+    license='Apache License, Version 2.0',
+    classifiers=[
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7'
+    ]
 )
