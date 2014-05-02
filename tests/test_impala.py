@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  unittest
+import string
 
 # from numba import cffi_support
 from numba import boolean, int32, int64
@@ -153,8 +154,6 @@ class TestImpala(unittest.TestCase):
 	    return a[b]
 
     def test_string_split(self):
-	import string
-
 	@udf(StringVal(FunctionContext, StringVal))
 	def fn(context, a):
 	    return string.split(a, ",")[0]
