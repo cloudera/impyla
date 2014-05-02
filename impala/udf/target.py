@@ -166,6 +166,13 @@ def eq_stringval(context, builder, sig, args):
     return result # ret bool so no need to raise type
 
 @register_function
+@implement("!=", StringVal, StringVal)
+def neq_stringval(context, builder, sig, args):
+    eq = eq_stringval(context, builder, sig, args)
+    neq = builder.xor(lc.Constant.int(lc.Type.int(1), 1), eq)
+    return eq
+
+@register_function
 @implement("getitem", StringVal, ntypes.intc)
 def getitem_stringval(context, builder, sig, args):
     module = cgutils.get_module(builder)

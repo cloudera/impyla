@@ -116,6 +116,12 @@ class CmpOpEqStringVal(ConcreteTemplate):
 
 
 @register_function
+class CmpOpNEqStringVal(ConcreteTemplate):
+    key = '!='
+    cases = [signature(ntypes.boolean, StringVal, StringVal)]
+
+
+@register_function
 class BinOpIs(ConcreteTemplate):
     key = 'is'
     cases = [signature(ntypes.int8, AnyVal, ntypes.none)]
