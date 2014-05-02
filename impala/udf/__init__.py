@@ -22,6 +22,9 @@ from numba.compiler import compile_extra, Flags
 
 from .target import ImpalaTargetContext
 from .typing import impala_typing_context
+from .types import (FunctionContext, BooleanVal, TinyIntVal, SmallIntVal,
+		    IntVal, BigIntVal, FloatVal, DoubleVal, StringVal)
+
 
 
 # functionality to compile Python UDFs into Impala-executable IR
