@@ -170,7 +170,7 @@ def eq_stringval(context, builder, sig, args):
 def neq_stringval(context, builder, sig, args):
     eq = eq_stringval(context, builder, sig, args)
     neq = builder.xor(lc.Constant.int(lc.Type.int(1), 1), eq)
-    return eq
+    return neq
 
 @register_function
 @implement("getitem", StringVal, ntypes.intc)
