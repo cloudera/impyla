@@ -258,7 +258,7 @@ def get_databases(service, session_handle):
     req = TGetSchemasReq(sessionHandle=session_handle, schemaName='.*')
     resp = service.GetSchemas(req)
     err_if_rpc_not_ok(resp)
-    return resp.operation_handle
+    return resp.operationHandle
 
 @retry
 def database_exists(service, session_handle, db_name):
@@ -282,7 +282,7 @@ def get_tables(service, session_handle, database_name='.*'):
                         tableName='.*')
     resp = service.GetTables(req)
     err_if_rpc_not_ok(resp)
-    return resp.operation_handle
+    return resp.operationHandle
 
 @retry
 def table_exists(service, session_handle, table_name, database_name='.*'):
