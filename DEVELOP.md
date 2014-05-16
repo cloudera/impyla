@@ -29,15 +29,30 @@ performed with Thrift 0.9.
 
 1. Generate a summary of all the commits since the last release
 
-    ```
+    ```bash
     git log $LAST_RELEASE_TAG..HEAD
     ```
 
-2. Set the release version in `setup.py` (remove the `-dev` tag)
+2. Set the release version in `setup.py` (remove the `-dev` tag if applicable)
+and commit the version number change
 
-3. Commit version number change and summarize changes in the commit message
+3. Tag version number and summarize changes in the tag message
 
-4. Add branch at that commit as `vX.Y.Z` and push to upstream
+    ```bash
+    git tag -a vX.Y.Z
+    ```
+
+4. Push the tag upstream
+
+    ```bash
+    git push upstream vX.Y.Z
+    ```
+    
+    or
+    
+    ```bash
+    git push upstream --tags
+    ```
 
 5. Register the release with PyPI
 
@@ -45,13 +60,21 @@ performed with Thrift 0.9.
     python setup.py register sdist bdist_egg upload
     ```
 
-6. If working on master, bump up to the next version with a `-dev` tag
+6. If working on master, bump up to the next anticipated version with a `-dev`
+tag and commit
 
 
 *Backporting*
 
-1. Checkout the branch for the version to backport onto
+1. Checkout the tag for the version to backport onto and create a new branch
 
-2. Cherry pick the relevant commits onto the branch
+    ```bash
+    git checkout vX.Y.Z
+    git checkout -b backport
+    ```
+
+2. Cherry pick the relevant commits onto the `backport` branch
 
 3. Goto #1 for main release flow
+
+4. Remove the `backport` branch
