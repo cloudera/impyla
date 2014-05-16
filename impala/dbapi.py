@@ -22,8 +22,7 @@ from impala.cli_service.ttypes import TTypeId
 import impala.rpc
 from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           InternalError, OperationalError, ProgrammingError,
-                          IntegrityError, DataError, NotSupportedError,
-                          RPCError)
+                          IntegrityError, DataError, NotSupportedError)
 
 
 # PEP 249 module globals
@@ -298,14 +297,14 @@ class Cursor(object):
         results = self.fetchall()
         if len(results) == 0:
             # TODO: the error raised here should be different
-            raise RPCError("no schema results for table %s.%s" % (database_name, table_name))
+            raise OperationalError("no schema results for table %s.%s" % (database_name, table_name))
         # check that results are derived from a unique table
         tables = set()
         for col in results:
             tables.add((col[1], col[2]))
         if len(tables) > 1:
             # TODO: the error raised here should be different
-            raise RPCError("db: %s, table: %s is not unique" % (database_name, table_name))
+            raise ProgrammingError("db: %s, table: %s is not unique" % (database_name, table_name))
         return [(r[3], impala.rpc._PrimitiveType_to_TTypeId[r[5]]) for r in results]
 
     def get_functions(self, database_name=None):

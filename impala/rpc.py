@@ -32,7 +32,7 @@ from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport, TTransportException
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
 
-from impala.error import RPCError, err_if_rpc_not_ok
+from impala.error import HS2Error, err_if_rpc_not_ok
 from impala.cli_service import TCLIService
 from impala.cli_service.ttypes import (TOpenSessionReq, TFetchResultsReq,
         TCloseSessionReq, TExecuteStatementReq, TGetInfoReq, TGetInfoType,
@@ -108,7 +108,7 @@ def retry(func):
         elif len(args) > 0 and isinstance(args[0], TCLIService.Client):
             transport = args[0]._iprot.trans
         else:
-            raise RPCError("RPC function does not have expected 'service' arg")
+            raise HS2Error("RPC function does not have expected 'service' arg")
 
         tries_left = 3
         while tries_left > 0:
@@ -357,6 +357,6 @@ def ping(service, session_handle):
 
     try:
         err_if_rpc_not_ok(resp)
-    except RPCError as e:
+    except HS2Error as e:
         return False
     return True
