@@ -34,7 +34,8 @@ performed with Thrift 0.9.
     ```
 
 2. Set the release version in `setup.py` (remove the `-dev` tag if applicable)
-and commit the version number change
+and commit the version number change.  Also set the new version number in the
+readme (under "Installation")
 
 3. Tag version number and summarize changes in the tag message
 

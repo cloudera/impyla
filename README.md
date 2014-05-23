@@ -42,7 +42,7 @@ This project is installed with `setuptools>=2`.
 
 ### Installation
 
-Install the latest release (`0.8.0`) with `pip`:
+Install the latest release (`0.8.1`) with `pip`:
 
 ```bash
 pip install impyla
