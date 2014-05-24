@@ -71,7 +71,7 @@ class Connection(object):
         if session_handle is None:
             session_handle = impala.rpc.open_session(self.service, user, configuration)
         return Cursor(self.service, session_handle)
-    
+
     # optional DB API addition to make the errors attributes of Connection
     Error = Error
     Warning = Warning
@@ -375,6 +375,6 @@ def _escape(s):
     e = e.replace("'", "\\'")
     e = e.replace('"', '\\"')
     return e
-    
-    
-    
+
+
+
