@@ -45,8 +45,6 @@ def string_capitalize(context, builder, sig, args):
 @register_function
 @implement(string.split, StringVal, StringVal)
 def string_split_2(context, builder, sig, args):
-    import ipdb
-    ipdb.set_trace()
     module = cgutils.get_module(builder)
     precomp_func = context._get_precompiled_function("StringSplitImpl")
     func = module.get_or_insert_function(precomp_func.type.pointee, precomp_func.name)
