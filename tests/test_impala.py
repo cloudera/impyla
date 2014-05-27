@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  unittest
+import unittest
 import string
 
 # from numba import cffi_support
@@ -159,7 +159,5 @@ class TestImpala(unittest.TestCase):
 	    return string.split(a, ",")[0]
 
 
-
-
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main()
