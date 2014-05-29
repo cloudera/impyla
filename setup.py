@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ez_setup
-ez_setup.use_setuptools(version='2')
+ez_setup.use_setuptools()
 
 from setuptools import setup
 
