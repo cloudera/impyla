@@ -71,7 +71,8 @@ def StringVal_ctor(context, builder, sig, args):
     [x] = args
     iv = StringValStruct(context, builder)
     _set_is_null(builder, iv, cgutils.false_bit)
-    fndesc = lowering.describe_external('strlen', ntypes.uintp, [ntypes.CPointer(ntypes.char)])
+    fndesc = lowering.ExternalFunctionDescriptor('strlen', ntypes.uintp,
+	    [ntypes.CPointer(ntypes.char)])
     func = context.declare_external_function(cgutils.get_module(builder), fndesc)
     strlen_x = context.call_external_function(builder, func, fndesc.argtypes, [x])
     len_x = builder.trunc(strlen_x, lc.Type.int(32))
