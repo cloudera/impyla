@@ -38,6 +38,8 @@ Optional:
 
 * `pandas` for the `.as_pandas()` function to work
 
+* `boost` for Python UDFs (`udf.h` depends on `boost/cstdint.hpp`)
+
 This project is installed with `setuptools>=2`.
 
 ### Installation
