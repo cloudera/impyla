@@ -18,8 +18,8 @@ import getpass
 import time
 import datetime
 
+from . import rpc
 from impala.cli_service.ttypes import TTypeId
-import impala.rpc
 from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           InternalError, OperationalError, ProgrammingError,
                           IntegrityError, DataError, NotSupportedError)
@@ -35,7 +35,7 @@ def connect(host='localhost', port=21050, timeout=45, use_ssl=False,
         ca_cert=None, use_ldap=False, ldap_user=None, ldap_password=None,
         use_kerberos=False, kerberos_service_name='impala'):
     # PEP 249
-    service = impala.rpc.connect_to_impala(host, port, timeout, use_ssl,
+    service = rpc.connect_to_impala(host, port, timeout, use_ssl,
             ca_cert, use_ldap, ldap_user, ldap_password, use_kerberos,
             kerberos_service_name)
     return Connection(service)
@@ -52,7 +52,7 @@ class Connection(object):
     def close(self):
         """Close the session and the Thrift transport."""
         # PEP 249
-        impala.rpc.close_service(self.service)
+        rpc.close_service(self.service)
 
     def commit(self):
         """Impala doesn't support transactions; does nothing."""
@@ -69,7 +69,7 @@ class Connection(object):
         if user is None:
             user = getpass.getuser()
         if session_handle is None:
-            session_handle = impala.rpc.open_session(self.service, user, configuration)
+            session_handle = rpc.open_session(self.service, user, configuration)
         return Cursor(self.service, session_handle)
     
     # optional DB API addition to make the errors attributes of Connection
@@ -141,7 +141,7 @@ class Cursor(object):
 
     def close(self):
         # PEP 249
-        impala.rpc.close_session(self.service, self.session_handle)
+        rpc.close_session(self.service, self.session_handle)
 
     def execute(self, operation, parameters=None):
         # PEP 249
@@ -150,7 +150,7 @@ class Cursor(object):
                 self._last_operation_string = _bind_parameters(operation, parameters)
             else:
                 self._last_operation_string = operation
-            self._last_operation_handle = impala.rpc.execute_statement(
+            self._last_operation_handle = rpc.execute_statement(
                     self.service, self.session_handle, self._last_operation_string)
         self._execute_sync(op)
 
@@ -162,25 +162,25 @@ class Cursor(object):
         self._last_operation_active = True
         self._wait_to_finish()  # make execute synchronous
         if self.has_result_set:
-            schema = impala.rpc.get_result_schema(self.service,
+            schema = rpc.get_result_schema(self.service,
                     self._last_operation_handle)
             self._description = [tup + (None, None, None, None, None) for tup in schema]
         else:
             self._last_operation_active = False
-            impala.rpc.close_operation(self.service, self._last_operation_handle)
+            rpc.close_operation(self.service, self._last_operation_handle)
 
     def _reset_state(self):
         self._buffer = []
         self._description = None
         if self._last_operation_active:
             self._last_operation_active = False
-            impala.rpc.close_operation(self.service, self._last_operation_handle)
+            rpc.close_operation(self.service, self._last_operation_handle)
         self._last_operation_string = None
         self._last_operation_handle = None
 
     def _wait_to_finish(self):
         while True:
-            operation_state = impala.rpc.get_operation_status(self.service,
+            operation_state = rpc.get_operation_status(self.service,
                     self._last_operation_handle)
             if operation_state not in ['INITIALIZED_STATE', 'RUNNING_STATE']:
                 break
@@ -243,13 +243,13 @@ class Cursor(object):
             return self._buffer.pop(0)
         elif self._last_operation_active:
             # self._buffer is empty here and op is active: try to pull more rows
-            rows = impala.rpc.fetch_results(self.service,
+            rows = rpc.fetch_results(self.service,
                     self._last_operation_handle, self.description,
                     self.buffersize)
             self._buffer.extend(rows)
             if len(self._buffer) == 0:
                 self._last_operation_active = False
-                impala.rpc.close_operation(self.service, self._last_operation_handle)
+                rpc.close_operation(self.service, self._last_operation_handle)
                 raise StopIteration
             return self._buffer.pop(0)
         else:
@@ -258,17 +258,17 @@ class Cursor(object):
 
     def ping(self):
         """Checks connection to server by requesting some info from the server."""
-        return impala.rpc.ping(self.service, self.session_handle)
+        return rpc.ping(self.service, self.session_handle)
 
     def get_databases(self):
         def op():
             self._last_operation_string = "RPC_GET_DATABASES"
-            self._last_operation_handle = impala.rpc.get_databases(self.service,
+            self._last_operation_handle = rpc.get_databases(self.service,
                         self.session_handle)
         self._execute_sync(op)
 
     def database_exists(self, db_name):
-        return impala.rpc.database_exists(self.service, self.session_handle,
+        return rpc.database_exists(self.service, self.session_handle,
                 db_name)
 
     def get_tables(self, database_name=None):
@@ -276,14 +276,14 @@ class Cursor(object):
             database_name = '.*'
         def op():
             self._last_operation_string = "RPC_GET_TABLES"
-            self._last_operation_handle = impala.rpc.get_tables(self.service,
+            self._last_operation_handle = rpc.get_tables(self.service,
                     self.session_handle, database_name)
         self._execute_sync(op)
 
     def table_exists(self, table_name, database_name=None):
         if database_name is None:
             database_name = '.*'
-        return impala.rpc.table_exists(self.service, self.session_handle,
+        return rpc.table_exists(self.service, self.session_handle,
                     table_name, database_name)
 
     def get_table_schema(self, table_name, database_name=None):
@@ -291,7 +291,7 @@ class Cursor(object):
             database_name = '.*'
         def op():
             self._last_operation_string = "RPC_DESCRIBE_TABLE"
-            self._last_operation_handle = impala.rpc.get_table_schema(self.service,
+            self._last_operation_handle = rpc.get_table_schema(self.service,
                     self.session_handle, table_name, database_name)
         self._execute_sync(op)
         results = self.fetchall()
@@ -305,14 +305,14 @@ class Cursor(object):
         if len(tables) > 1:
             # TODO: the error raised here should be different
             raise ProgrammingError("db: %s, table: %s is not unique" % (database_name, table_name))
-        return [(r[3], impala.rpc._PrimitiveType_to_TTypeId[r[5]]) for r in results]
+        return [(r[3], rpc._PrimitiveType_to_TTypeId[r[5]]) for r in results]
 
     def get_functions(self, database_name=None):
         if database_name is None:
             database_name = '.*'
         def op():
             self._last_operation_string = "RPC_GET_FUNCTIONS"
-            self._last_operation_handle = impala.rpc.get_functions(self.service,
+            self._last_operation_handle = rpc.get_functions(self.service,
                     self.session_handle, database_name)
         self._execute_sync(op)
 
