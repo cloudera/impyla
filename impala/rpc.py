@@ -28,6 +28,8 @@ import operator
 import exceptions
 import re
 
+from decimal import Decimal
+
 from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport, TTransportException
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
@@ -52,7 +54,8 @@ _TTypeId_to_TColumnValue_getters = {
         'TIMESTAMP_TYPE': operator.attrgetter('stringVal'),
         'FLOAT_TYPE': operator.attrgetter('doubleVal'),
         'DOUBLE_TYPE': operator.attrgetter('doubleVal'),
-        'STRING_TYPE': operator.attrgetter('stringVal')
+        'STRING_TYPE': operator.attrgetter('stringVal'),
+        'DECIMAL_TYPE': operator.attrgetter('stringVal')
 }
 
 # the type specifiers returned from GetColumns use the strings from
@@ -68,6 +71,7 @@ _PrimitiveType_to_TTypeId = {
         'FLOAT': 'FLOAT_TYPE',
         'DOUBLE': 'DOUBLE_TYPE',
         'STRING': 'STRING_TYPE',
+        'DECIMAL': 'DECIMAL_TYPE',
 }
 
 # datetime only supports 6 digits of microseconds but Impala supports 9.
@@ -244,6 +248,8 @@ def fetch_results(service, operation_handle, schema=None, max_rows=100,
             value = _TTypeId_to_TColumnValue_getters[type_](col_val).value
             if type_ == 'TIMESTAMP_TYPE':
                 value = _parse_timestamp(value)
+            elif type_ == 'DECIMAL_TYPE':
+                if value: value = Decimal(value)
             row.append(value)
         rows.append(tuple(row))
 
