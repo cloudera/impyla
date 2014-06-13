@@ -25,6 +25,7 @@ except ImportError:
     print "Failed to import pandas"
 
 def generate_random_table_name(prefix='tmp', safe=False, cursor=None):
+    # unlikely but can be problematic if generated table name is taken in the interim
     tries_left = 3
     while tries_left > 0:
         date = time.localtime(time.time())
@@ -43,7 +44,7 @@ def generate_random_table_name(prefix='tmp', safe=False, cursor=None):
     raise ValueError("Failed to generate a safe table name")
 
 def compute_result_schema(cursor, query_string):
-    temp_name = generate_random_table_name()
+    temp_name = generate_random_table_name(safe=True, cursor=cursor)
     try:
         cursor.execute("CREATE VIEW %s AS %s" % (temp_name, query_string))
         cursor.execute("SELECT * FROM %s LIMIT 0" % temp_name)
