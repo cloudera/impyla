@@ -132,7 +132,7 @@ class Cursor(object):
         # the size of the buffer, so that calling .next() will read multiple
         # rows into a buffer if arraysize hasn't been set.  (otherwise, we'd get
         # an unbuffered impl because the PEP 249 default value of arraysize is 1)
-        return self._buffersize if self._buffersize else 100
+        return self._buffersize if self._buffersize else 1024
 
     @property
     def has_result_set(self):
