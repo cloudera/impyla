@@ -23,7 +23,7 @@ def readme():
 
 setup(
     name='impyla',
-    version='0.9.0-dev',
+    version='0.9.0-dev-bdf',
     description='Python client for the Impala distributed query engine',
     long_description=readme(),
     author='Uri Laserson',
@@ -31,8 +31,8 @@ setup(
     url='https://github.com/cloudera/impyla',
     packages=find_packages(),
     install_requires=['thrift'],
-    keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark'
-            'distributed db api pep 249'),
+    keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark pydata'
+	      'pandas distributed db api pep 249'),
     license='Apache License, Version 2.0',
     classifiers=[
         'Programming Language :: Python :: 2',
