@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
+import os
 import string
 import random
 import datetime
@@ -20,6 +23,7 @@ from cStringIO import StringIO
 
 import pandas as pd
 
+from .dbapi import connect, _py_to_sql_string
 from .util import as_pandas
 
 # some rando utilities
@@ -78,45 +82,27 @@ def _numpy_dtype_to_impala_PrimitiveType(ty):
 	return 'TIMESTAMP'
     if pd.core.common.is_timedelta64_dtype(ty):
 	return 'BIGINT'
-    elif pd.core.common.is_float_dtype(ty):
+    if pd.core.common.is_float_dtype(ty):
 	return 'DOUBLE'
-    elif pd.core.common.is_integer_dtype(ty):
+    if pd.core.common.is_integer_dtype(ty):
 	# TODO: BIGINT may be excessive?
 	return 'BIGINT'
-    elif pd.core.common.is_bool(ty):
+    if pd.core.common.is_bool(ty):
 	return 'BOOLEAN'
     return 'STRING'
 
-
-# PUBLIC API
-
-def read_sql_query(cursor, query, alias=None):
-    """Create a BDF from a SQL query executed by Impala"""
-    query_alias = alias if alias else _random_id('inline_', 4)
-    table_ref = InlineView(query, query_alias)
-    schema = _get_schema_hack(cursor, table_ref)
-    select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
-    return BigDataFrame(SelectStmt(select_list, table_ref))
-
-def read_sql_table(cursor, table):
-    """Create a BDF from a table name usable in Impala"""
-    table_name = _to_TableName(table)
-    table_ref = BaseTableRef(table_name)
-    schema = _get_schema_hack(cursor, table_ref)
-    select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
-    return BigDataFrame(SelectStmt(select_list, table_ref))
-
-def register_external_table(cursor, table, table_schema, path,
+def _register_table(cursor, table_name, table_schema, path=None,
 	file_format='TEXTFILE', partition_schema=None, field_terminator='\\t',
 	line_terminator='\\n'):
-    table_name = _to_TableName(table)
-    query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
-    schema_string = ', '.join(['%s %s' % (col, _TTypeId_to_PrimitiveType[ty])
-	    for (col, ty) in table_schema])
+    external = path is not None
+    if external:
+	query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
+    else:
+	query = "CREATE TABLE %s" % table_name.to_sql()
+    schema_string = ', '.join(['%s %s' % (col, ty) for (col, ty) in table_schema])
     query += " (%s)" % schema_string
     if partition_schema:
-	schema_string = ', '.join(['%s %s' % (col, _TTypeId_to_PrimitiveType[ty])
-		for (col, ty) in partition_schema])
+	schema_string = ', '.join(['%s %s' % (col, ty) for (col, ty) in partition_schema])
 	query += " PARTITIONED BY (%s)" % schema_string
     if file_format == 'PARQUET':
 	query += " STORED AS PARQUET"
@@ -124,58 +110,96 @@ def register_external_table(cursor, table, table_schema, path,
 	query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY '%s' "
 		   "LINES TERMINATED BY '%s' STORED AS TEXTFILE") %
 		   (field_terminator, line_terminator))
-    query += " LOCATION '%s'" % path
+    if external:
+	query += " LOCATION '%s'" % path
     cursor.execute(query)
 
-def from_pandas(cursor, df, table, path, method='in_query',
-	file_format='TEXTFILE', field_terminator='\\t', line_terminator='\\n',
-	hdfs_host=None, webhdfs_port=50070, hdfs_user=None):
-    """Create a BDF by shipping an in-memory pandas `DataFrame` into Impala
 
-    TBD: could possible translate into a `VALUES()` statement instead of writing
-    the data to HDFS first.
-    """
-    table_name = _to_TableName(table)
-    columns = list(df.columns)
-    types = [_numpy_dtype_to_impala_PrimitiveType(ty) for ty in df.dtypes]
-    schema = zip(columns, types)
-    if method == 'in_query':
-	query = "INSERT INTO %s VALUES %s" % ', '.join([str(tuple(row))
-		for row in df.values])
-	cursor.execute(query)
-	register_external_table(cursor, table_name, schema, path,
+# PUBLIC API
+
+class ImpalaContext(object):
+    # TODO: need to clean up temporary stuff
+
+    def __init__(self, temp_dir=None, temp_db=None, *args, **kwargs):
+	# args and kwargs get passed directly into impala.dbapi.connect()
+	suffix = _random_id(length=8)
+	self._temp_dir = '/tmp/bdf-%s' % suffix if temp_dir is None else temp_dir
+	self._temp_db = 'tmp_bdf_%s' % suffix if temp_db is None else temp_db
+	self._conn = connect(*args, **kwargs)
+	self._cursor = self._conn.cursor()
+	if temp_db is None:
+	    self._cursor.execute("CREATE DATABASE %s LOCATION '%s'" %
+		    (self._temp_db, self._temp_dir))
+
+    def read_sql_query(self, query, alias=None):
+	"""Create a BDF from a SQL query executed by Impala"""
+	query_alias = alias if alias else _random_id('inline_', 4)
+	table_ref = InlineView(query, query_alias)
+	schema = _get_schema_hack(self._cursor, table_ref)
+	select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
+	return BigDataFrame(self, SelectStmt(select_list, table_ref))
+
+    def read_sql_table(self, table):
+	"""Create a BDF from a table name usable in Impala"""
+	table_name = _to_TableName(table)
+	table_ref = BaseTableRef(table_name)
+	schema = _get_schema_hack(self._cursor, table_ref)
+	select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
+	return BigDataFrame(self, SelectStmt(select_list, table_ref))
+
+    def from_pandas(self, df, table=None, path=None, method='in_query',
+	    file_format='TEXTFILE', field_terminator='\\t', line_terminator='\\n',
+	    hdfs_host=None, webhdfs_port=50070, hdfs_user=None, overwrite=False):
+	"""Create a BDF by shipping an in-memory pandas `DataFrame` into Impala"""
+	# TODO: this is not atomic
+	suffix = _random_id('tmp_table_', 8)
+	if table is None:
+	    table = "%s.%s" % (self._temp_db, suffix)
+	if path is None:
+	    path = os.path.join(self._temp_dir, suffix)
+	table_name = _to_TableName(table)
+	if overwrite:
+	    self._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
+	columns = list(df.columns)
+	types = [_numpy_dtype_to_impala_PrimitiveType(ty) for ty in df.dtypes]
+	schema = zip(columns, types)
+	_register_table(self._cursor, table_name, schema, path=path,
 		file_format=file_format, field_terminator=field_terminator,
 		line_terminator=line_terminator)
-    elif method == 'webhdfs':
-	if file_format != 'TEXTFILE':
-	    raise ValueError("only TEXTFILE format supported for webhdfs")
-	from pywebdfs.webhdfs import PyWebHdfsClient
-	hdfs_client = PyWebHdfsClient(host=hdfs_host, port=webhdfs_port,
-		user=hdfs_user)
-	raw_data = StringIO()
-	df.to_csv(raw_data, sep=field_terminator,
-		line_terminator=line_terminator, header=False, index=False)
-	hdfs_client.create_file(path.lstrip('/'), raw_data.getvalue(), overwrite=overwrite)
-	raw_data.close()
-	register_external_table(cursor, table_name, schema, path,
-		file_format=file_format, field_terminator=field_terminator,
-		line_terminator=line_terminator)
-    else:
-	raise ValueError("method must be 'in_query' or 'webhdfs'; got %s" % method)
-    return read_sql_table(cursor, table_name.to_sql())
+	if method == 'in_query':
+	    query = "INSERT INTO %s VALUES " % table_name.to_sql()
+	    query += ', '.join(['(%s)' % ', '.join(map(_py_to_sql_string, row)) for row in df.values])
+	    self._cursor.execute(query)
+	elif method == 'webhdfs':
+	    if file_format != 'TEXTFILE':
+		raise ValueError("only TEXTFILE format supported for webhdfs")
+	    if path is None:
+		raise ValueError("must supply a path for EXTERNAL table for webhdfs")
+	    from pywebdfs.webhdfs import PyWebHdfsClient
+	    hdfs_client = PyWebHdfsClient(host=hdfs_host, port=webhdfs_port,
+		    user=hdfs_user)
+	    raw_data = StringIO()
+	    df.to_csv(raw_data, sep=field_terminator,
+		    line_terminator=line_terminator, header=False, index=False)
+	    hdfs_client.create_file(path.lstrip('/'), raw_data.getvalue(), overwrite=overwrite)
+	    raw_data.close()
+	else:
+	    raise ValueError("method must be 'in_query' or 'webhdfs'; got %s" % method)
+	return self.read_sql_table(table_name.to_sql())
 
 
 class BigDataFrame(object):
 
-    def __init__(self, ast):
+    def __init__(self, ic, ast):
+	self._ic = ic
 	self._query_ast = ast
 
-    def fetch(self, cursor):
-	"""Return the cursor object ready for iterating over rows"""
-	cursor.execute(self._query_ast.to_sql())
-	return cursor
+    def __iter__(self):
+	"""Return an iterator object to iterate over rows locally"""
+	self._ic._cursor.execute(self._query_ast.to_sql())
+	return self._ic._cursor.__iter__()
 
-    def store(self, cursor, name, path):
+    def store(self, path, name=None):
 	"""Materialize the results and stores them in HFDS
 
 	Implemented through a `CREATE TABLE AS SELECT`.
@@ -187,15 +211,17 @@ class BigDataFrame(object):
 	cursor.execute(sql)
 	return read_sql_table(cursor, name)
 
-    def save_view(self, cursor, view):
+    def save_view(self, name, overwrite=False):
 	"""Create a named view representing this BDF for later reference"""
-	table_name = _to_TableName(view)
+	table_name = _to_TableName(name)
+	if overwrite:
+	    self._ic._cursor.execute('DROP VIEW IF EXISTS %s' % table_name.to_sql())
 	sql = 'CREATE VIEW %s AS %s' % (table_name.to_sql(),
 		self._query_ast.to_sql())
-	cursor.execute(sql)
-	return read_sql_table(cursor, table_name.to_sql())
+	self._ic._cursor.execute(sql)
+	return self._ic.read_sql_table(table_name.to_sql())
 
-    def take(self, cursor, n):
+    def take(self, n):
 	"""Return `n` rows as a pandas `DataFrame`
 
 	Distributed and no notion of order, so not guaranteed to be
@@ -212,8 +238,24 @@ class BigDataFrame(object):
 	else:
 	    limit_elt = LimitElement(Literal(n), None)
 	ast._limit = limit_elt
-	bdf = BigDataFrame(ast)
-	return as_pandas(bdf.fetch(cursor))
+	bdf = BigDataFrame(self._ic, ast)
+	return as_pandas(bdf.__iter__())
+
+    def head(self, n):
+	"""Return `n` rows as a pandas `DataFrame`
+
+	Distributed and no notion of order, so not guaranteed to be
+	reproducible.
+	"""
+	return self.take(n)
+
+    def tail(self, n):
+	"""Return `n` rows as a pandas `DataFrame`
+
+	Distributed and no notion of order, so not guaranteed to be
+	reproducible.
+	"""
+	return self.take(n)
 
     # for emulation of Pandas API
     @property
@@ -235,18 +277,15 @@ class BigDataFrame(object):
 	    table_ref = InlineView(self._query_ast.to_sql(), alias)
 	    (limit_elt, where) = self._getitem_filter(obj[0])
 	    select_list = self._getitem_projection(obj[1])
-	    return BigDataFrame(SelectStmt(select_list, table_ref, where=where, limit=limit_elt))
+	    return BigDataFrame(self._ic, SelectStmt(select_list, table_ref, where=where, limit=limit_elt))
 	elif isinstance(obj, list):
 	    alias = _random_id('inline_', 4)
 	    table_ref = InlineView(self._query_ast.to_sql(), alias)
 	    select_list = self._getitem_projection(obj)
-	    return BigDataFrame(SelectStmt(select_list, table_ref))
+	    return BigDataFrame(self._ic, SelectStmt(select_list, table_ref))
 	else:
 	    # single object, possibly a slice; wrap in list and get projection
 	    return self[[obj]]
-
-    def _getitem_tuple(self, obj):
-	raise NotImplementedError
 
     def _getitem_projection(self, obj):
 	# obj is list; possible types would be:
@@ -317,7 +356,18 @@ class BigDataFrame(object):
 	    return (LimitElement(obj.stop - obj.start, obj.start), None)
 	raise ValueError("row indexer must be int/long/slice/Expr")
 
+    def join(self, other, on=None, how='inner', hint=None):
+	left = InlineView(self._query_ast.to_sql(), 'left_tbl')
+	right = InlineView(other._query_ast.to_sql(), 'right_tbl')
+	# SELECT left.*, right.*
+	select_list = [SelectItem(table_name=TableName(left.name)),
+		       SelectItem(table_name=TableName(right.name))]
+	table_ref = JoinTableRef(left, right, on=on, op=how, hint=hint)
+	ast = SelectStmt(select_list, table_ref)
+	return BigDataFrame(self._ic, ast)
 
+
+# SQL AST
 
 class SQLNodeMixin(object):
     def to_sql(self):
@@ -345,8 +395,8 @@ class Literal(Expr):
 class BinaryExpr(Expr):
     _operators = ['=', '==', '!=', '>', '>=', '<', '<=', 'and', 'or']
     def __init__(self, op, expr1, expr2):
-	if op not in _operators:
-	    raise ValueError("op %s not one of %s" % (op, str(_operators)))
+	if op not in BinaryExpr._operators:
+	    raise ValueError("op %s not one of %s" % (op, str(BinaryExpr._operators)))
 	self._op = op
 	if not isinstance(expr1, Expr):
 	    raise ValueError("expr1 %s is not of type Expr" % str(expr1))
@@ -356,22 +406,34 @@ class BinaryExpr(Expr):
 	self._expr2 = expr2
 
     def to_sql(self):
-	return "%s %s %s" % (self._expr1.to_sql(), self._op, self._expr2.to_sql())
+	return "(%s) %s (%s)" % (self._expr1.to_sql(), self._op, self._expr2.to_sql())
 
 
+# TableRef hierarchy
 
 class TableRef(SQLNodeMixin):
     def __init__(self, alias):
-	self._alias = alias
+	self._alias = alias # string
+
+    @property
+    def name(self):
+	return self._alias
 
     def to_sql(self):
-	return " %s " % self._alias
+	return self._alias
 
 
 class BaseTableRef(TableRef):
     def __init__(self, name, alias=None):
+	super(BaseTableRef, self).__init__(alias)
 	self._name = name # TableName
-	self._alias = alias # string
+
+    @property
+    def name(self):
+	if self._alias:
+	    return self._alias
+	else:
+	    return self._name.to_sql()
 
     def to_sql(self):
 	if self._alias:
@@ -385,16 +447,58 @@ class InlineView(TableRef):
 	super(InlineView, self).__init__(alias)
 	self._query = query
 
+    @property
+    def name(self):
+	return self._alias
+
     def to_sql(self):
 	return "(%s) AS %s" % (self._query, self._alias)
 
 
 class JoinTableRef(TableRef):
-    def __init__(self):
-	raise NotImplementedError
+    def __init__(self, left, right, on, op='inner', hint=None, alias=None):
+	super(JoinTableRef, self).__init__(alias)
+	self._left = left # TableRef
+	self._right = right # TableRef
+	self._op = op # string, inner, left outer, cross, etc.
+	self._hint = hint # string, shuffle or broadcast
+	# on is None, string, Expr, list[string]
+	if on is None:
+	    # for CROSS join
+	    self._on = None
+	elif isinstance(on, BinaryExpr):
+	    self._on = on
+	elif isinstance(on, Literal):
+	    self._on = BinaryExpr('=', on, on)
+	elif isinstance(on, basestring):
+	    le = Literal('%s.%s' % (left.name, on))
+	    re = Literal('%s.%s' % (right.name, on))
+	    self._on = BinaryExpr('=', le, re)
+	elif isinstance(on, (list, tuple)):
+	    if not all([isinstance(x, basestring) for x in on]):
+		raise ValueError("if on is a list/tuple, must only contain strings")
+	    exprs = []
+	    for s in on:
+		le = Literal('%s.%s' % (left.name, s))
+		re = Literal('%s.%s' % (right.name, s))
+		exprs.append(BinaryExpr('=', le, re))
+	    # reduce by conjunction
+	    self._on = exprs[0]
+	    for expr in exprs:
+		self._on = BinaryExpr('and', self._on, expr)
+	else:
+	    raise ValueError("I don't know what to do with your on argument")
+
+    def to_sql(self):
+	hint = '' if not self._hint else '[%s]' % self._hint
+	sql = '%s %s JOIN %s %s' % (self._left.to_sql(), self._op,
+		hint, self._right.to_sql())
+	if self._on is not None:
+	    sql += ' ON %s' % self._on.to_sql()
+	return sql
 
 
-
+# other SQL elements
 
 class OrderByElement(SQLNodeMixin):
     def __init__(self, expr, is_asc=None, nulls_first=None):
@@ -447,7 +551,7 @@ class SelectItem(SQLNodeMixin):
 	self._alias = alias # string
 	self._expr = expr # Expr
 	self._table_name = table_name # TableName
-	self._is_star = True if not self._expr else False
+	self._is_star = True if self._expr is None else False
 
     @property
     def name(self):
@@ -473,28 +577,9 @@ class SelectItem(SQLNodeMixin):
 	    return '*'
 
 
+# SQL object
 
-
-
-class RelationalMixin(object):
-    def projection(self):
-	raise NotImplementedError
-
-    def select(self):
-	raise NotImplementedError
-
-    def rename(self):
-	raise NotImplementedError
-
-    def join(self):
-	raise NotImplementedError
-
-    def limit(self, n, offset=None):
-	raise NotImplementedError
-
-
-
-class SelectStmt(SQLNodeMixin, RelationalMixin):
+class SelectStmt(SQLNodeMixin):
     def __init__(self, select_list, from_, where=None, order_by=None,
 		 group_by=None, having=None, limit=None):
 	self._select_list = tuple(select_list) # Iter[SelectItem]
@@ -508,33 +593,6 @@ class SelectStmt(SQLNodeMixin, RelationalMixin):
 	# do I need these?
 	# self._has_groupby = False
 	# self._has_agg = False
-
-    # def projection(self, select_list):
-    #     table_ref = InlineView(self.to_sql(), _random_id())
-    #     return SelectStmt(select_list, table_ref)
-
-    # def limit(self, n, offset=None):
-    #     # TODO: should this wrap the current query in an InlineView and then
-    #     # LIMIT?  Or should it just return a copy of the current query but with
-    #     # a modified LIMIT clause?
-
-    #     # this impl modifies.
-    #     ast = copy(self)
-    #     ast._limit = LimitElement(n, offset)
-    #     return ast
-
-    #     # this impl wraps.  But it breaks on queries like: SELECT * FROM (SELECT
-    #     # sepal_width, sepal_width FROM (SELECT sepal_length, sepal_width,
-    #     # petal_length, petal_width FROM (SELECT * FROM iris_text LIMIT 100) AS
-    #     # inline_IKDZ) AS inline_OMTW) AS RJZMILSQ LIMIT 5
-    #     # which was generated like this:
-    #     # query = 'SELECT * FROM iris_text LIMIT 100'
-    #     # bdf = impala.pandas.read_sql_query(cursor, query)
-    #     # bdf2 = bdf[['sepal_width','sepal_width']]
-    #     # bdf2.take(cursor, 5)
-    #     select_list = [SelectItem()] # SELECT *
-    #     table_ref = InlineView(self.to_sql(), _random_id())
-    #     return SelectStmt(select_list, table_ref, limit=LimitElement(n, offset))
 
     def to_sql(self):
 	sql = 'SELECT ' + ', '.join([s.to_sql() for s in self._select_list])
