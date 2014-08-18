@@ -17,10 +17,10 @@ import string
 import random
 
 try:
-    import pandas as pd    
+    import pandas as pd
     def as_pandas(cursor):
         names = [metadata[0] for metadata in cursor.description]
-        return pd.DataFrame([dict(zip(names, row)) for row in cursor], columns=names)
+        return pd.DataFrame.from_records(cursor.fetchall(), columns=names)
 except ImportError:
     print "Failed to import pandas"
 
@@ -33,7 +33,7 @@ def generate_random_table_name(prefix='tmp', safe=False, cursor=None):
                 date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec)
         random_string = ''.join(random.sample(string.ascii_lowercase, 8))
         name = "%s%s%s" % (prefix, date_string, random_string)
-        if safe == False:
+        if not safe:
             return name
         # safe is True; check cursor
         if cursor is None:
