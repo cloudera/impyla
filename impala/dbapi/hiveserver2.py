@@ -120,13 +120,12 @@ class HiveServer2Cursor(Cursor):
 
     def cancel_operation(self):
         if self._last_operation_active:
-            self._last_operation_active = False
             rpc.cancel_operation(self.service, self._last_operation_handle)
+            self._reset_state()
 
     def close_operation(self):
         if self._last_operation_active:
-            self._last_operation_active = False
-            rpc.close_operation(self.service, self._last_operation_handle)
+            self._reset_state()
 
     def execute(self, operation, parameters=None, configuration=None):
         # PEP 249
@@ -150,9 +149,6 @@ class HiveServer2Cursor(Cursor):
             schema = rpc.get_result_schema(self.service,
                     self._last_operation_handle)
             self._description = [tup + (None, None, None, None, None) for tup in schema]
-        else:
-            self._last_operation_active = False
-            rpc.close_operation(self.service, self._last_operation_handle)
 
     def _reset_state(self):
         self._buffer = []
@@ -247,12 +243,10 @@ class HiveServer2Cursor(Cursor):
                     self.buffersize)
             self._buffer.extend(rows)
             if len(self._buffer) == 0:
-                self._last_operation_active = False
-                rpc.close_operation(self.service, self._last_operation_handle)
                 raise StopIteration
             return self._buffer.pop(0)
         else:
-            # empty buffer and op is now closed: raise StopIteration
+            # buffer is already empty
             raise StopIteration
 
     def ping(self):
