@@ -91,7 +91,7 @@ def _numpy_dtype_to_impala_PrimitiveType(ty):
 	return 'BOOLEAN'
     return 'STRING'
 
-def _register_table(cursor, table_name, table_schema, path=None,
+def _create_table(table_name, table_schema, path=None,
 	file_format='TEXTFILE', partition_schema=None, field_terminator='\\t',
 	line_terminator='\\n'):
     external = path is not None
@@ -112,7 +112,25 @@ def _register_table(cursor, table_name, table_schema, path=None,
 		   (field_terminator, line_terminator))
     if external:
 	query += " LOCATION '%s'" % path
-    cursor.execute(query)
+    return query
+
+def _create_table_as_select(table_name, path=None, file_format='TEXTFILE',
+	field_terminator='\\t', line_terminator='\\n'):
+    external = path is not None
+    if external:
+	query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
+    else:
+	query = "CREATE TABLE %s" % table_name.to_sql()
+    if file_format == 'PARQUET':
+	query += " STORED AS PARQUET"
+    elif file_format == 'TEXTFILE':
+	query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY '%s' "
+		   "LINES TERMINATED BY '%s' STORED AS TEXTFILE") %
+		   (field_terminator, line_terminator))
+    if external:
+	query += " LOCATION '%s'" % path
+    query += " AS "
+    return query
 
 
 # PUBLIC API
@@ -147,25 +165,43 @@ class ImpalaContext(object):
 	select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
 	return BigDataFrame(self, SelectStmt(select_list, table_ref))
 
+    def read_hdfs(self, path, schema, table=None, overwrite=False):
+	"""Create a BDF backed by an external file in HDFS.
+
+	File must be Impala-compatible
+	"""
+	temp_table = _random_id('tmp_table_', 8)
+	if table is None:
+	    table = "%s.%s" % (self._temp_db, temp_table)
+	table_name = _to_TableName(table)
+	if overwrite:
+	    self._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
+	create_stmt = _create_table(table_name, schema, path=path,
+		file_format=file_format, field_terminator=field_terminator,
+		line_terminator=line_terminator)
+	self._cursor.execute(create_stmt)
+	return self.read_sql_table(table_name.to_sql())
+
     def from_pandas(self, df, table=None, path=None, method='in_query',
 	    file_format='TEXTFILE', field_terminator='\\t', line_terminator='\\n',
 	    hdfs_host=None, webhdfs_port=50070, hdfs_user=None, overwrite=False):
 	"""Create a BDF by shipping an in-memory pandas `DataFrame` into Impala"""
 	# TODO: this is not atomic
-	suffix = _random_id('tmp_table_', 8)
+	temp_table = _random_id('tmp_table_', 8)
 	if table is None:
-	    table = "%s.%s" % (self._temp_db, suffix)
+	    table = "%s.%s" % (self._temp_db, temp_table)
 	if path is None:
-	    path = os.path.join(self._temp_dir, suffix)
+	    path = os.path.join(self._temp_dir, temp_table)
 	table_name = _to_TableName(table)
 	if overwrite:
 	    self._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
 	columns = list(df.columns)
 	types = [_numpy_dtype_to_impala_PrimitiveType(ty) for ty in df.dtypes]
 	schema = zip(columns, types)
-	_register_table(self._cursor, table_name, schema, path=path,
+	create_stmt = _create_table(table_name, schema, path=path,
 		file_format=file_format, field_terminator=field_terminator,
 		line_terminator=line_terminator)
+	self._cursor.execute(create_stmt)
 	if method == 'in_query':
 	    query = "INSERT INTO %s VALUES " % table_name.to_sql()
 	    query += ', '.join(['(%s)' % ', '.join(map(_py_to_sql_string, row)) for row in df.values])
@@ -187,29 +223,91 @@ class ImpalaContext(object):
 	    raise ValueError("method must be 'in_query' or 'webhdfs'; got %s" % method)
 	return self.read_sql_table(table_name.to_sql())
 
+    def merge(left, right, on=None, how='inner', hint=None):
+	"""Merge two BDFs.
+
+	`on` is `None`, `string`, `Expr`, or `list[string]`
+	"""
+	return left.join(right, on=on, how=how, hint=hint)
+
+    def concat(bdfs):
+	"""Concatenate BDFs using a UNION statement.
+
+	Schemas must be compatible.
+	"""
+	if not all([isinstance(bdf, BigDataFrame) for bdf in bdfs]):
+	    raise ValueError("bdfs must be an iterable of BigDataFrame objects")
+	if len(bdfs) == 0:
+	    raise ValueError("bdfs was empty")
+	if len(bdfs) == 1:
+	    return bdfs[0]
+	schema = bdfs[0].schema
+	if not all([schema == bdf.schema for bdf in bdfs[1:]]):
+	    raise ValueError("schema mismatch")
+	ast = UnionStmt([bdf._query_ast for bdf in bdfs])
+	return BigDataFrame(bdf[0]._ic, ast)
+
+    def get_dummies(bdf, categoricals, prefix=None, dummy_na=False):
+	"""Convert categorical columns to one-hot encoding.
+
+	categoricals is an iterable of column names that should be treated as
+	categorical variables
+	"""
+	unique_values = {}
+	for col in categoricals:
+	    distinct_query = "SELECT DISTINCT %s FROM %s" % (col, bdf.to_sql())
+	    self._cursor.execute(distinct_query)
+	    unique_values[col] = self._cursor.fetchall()
+
+
+
 
 class BigDataFrame(object):
 
     def __init__(self, ic, ast):
 	self._ic = ic
 	self._query_ast = ast
+	self._schema = None
+
+    @property
+    def schema(self):
+	if self._schema is None:
+	    table_ref = InlineView(self.to_sql(), _random_id('inline_', 4))
+	    self._schema = _get_schema_hack(self._ic._cursor, table_ref)
+	return self._schema
 
     def __iter__(self):
 	"""Return an iterator object to iterate over rows locally"""
 	self._ic._cursor.execute(self._query_ast.to_sql())
 	return self._ic._cursor.__iter__()
 
-    def store(self, path, name=None):
+    def itertuples(self):
+	"""Return an iterator object to iterate over rows locally
+
+	Alias for __iter__()
+	"""
+	return self.__iter__()
+
+    def store(self, path=None, table=None, file_format='TEXTFILE',
+	    field_terminator='\\t', line_terminator='\\n', overwrite=False):
 	"""Materialize the results and stores them in HFDS
 
 	Implemented through a `CREATE TABLE AS SELECT`.
 	"""
-	raise NotImplementedError
-	# TODO: finish this
-	sql = 'CREATE TABLE %s AS %s STORED AS %s ...' % (name,
-		self._query_ast.to_sql())
-	cursor.execute(sql)
-	return read_sql_table(cursor, name)
+	temp_table = _random_id('tmp_table_', 8)
+	if table is None:
+	    table = "%s.%s" % (self._temp_db, temp_table)
+	if path is None:
+	    path = os.path.join(self._temp_dir, temp_table)
+	table_name = _to_TableName(table)
+	if overwrite:
+	    self._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
+	create_stmt = _create_table_as_select(table_name, path=path,
+		file_format=file_format, field_terminator=field_terminator,
+		line_terminator=line_terminator)
+	query = create_stmt + self.to_sql()
+	self._cursor.execute(query)
+	return self._ic.read_sql_table(table_name.to_sql())
 
     def save_view(self, name, overwrite=False):
 	"""Create a named view representing this BDF for later reference"""
@@ -357,6 +455,10 @@ class BigDataFrame(object):
 	raise ValueError("row indexer must be int/long/slice/Expr")
 
     def join(self, other, on=None, how='inner', hint=None):
+	"""Join this BDF to another one.
+
+	`on` is `None`, `string`, `Expr`, or `list[string]`
+	"""
 	left = InlineView(self._query_ast.to_sql(), 'left_tbl')
 	right = InlineView(other._query_ast.to_sql(), 'right_tbl')
 	# SELECT left.*, right.*
@@ -365,6 +467,13 @@ class BigDataFrame(object):
 	table_ref = JoinTableRef(left, right, on=on, op=how, hint=hint)
 	ast = SelectStmt(select_list, table_ref)
 	return BigDataFrame(self._ic, ast)
+
+    def append(self, other, on, how='inner', hint=None):
+	"""Append columns of `other` onto this BDF; impl. as a join.
+
+	You must supply a join clause to decide which rows go with which
+	"""
+	return self.join(other, on=on, how=how, hint=hint)
 
 
 # SQL AST
@@ -579,7 +688,11 @@ class SelectItem(SQLNodeMixin):
 
 # SQL object
 
-class SelectStmt(SQLNodeMixin):
+class QueryStmt(SQLNodeMixin):
+    pass
+
+
+class SelectStmt(QueryStmt):
     def __init__(self, select_list, from_, where=None, order_by=None,
 		 group_by=None, having=None, limit=None):
 	self._select_list = tuple(select_list) # Iter[SelectItem]
@@ -608,3 +721,11 @@ class SelectStmt(SQLNodeMixin):
 	if self._limit:
 	    sql += self._limit.to_sql()
 	return sql
+
+
+class UnionStmt(QueryStmt):
+    def __init__(self, queries):
+	self._union_list = tuple(queries) # Tuple[QueryStmt]
+
+    def to_sql(self):
+	return ' UNION ALL '.join([u.to_sql() for u in self._union_list])
