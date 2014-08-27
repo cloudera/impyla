@@ -20,7 +20,7 @@
 #       hue/apps/beeswax/src/beeswax/server/hive_server2_lib.py
 #       hue/desktop/core/src/desktop/lib/thrift_util.py
 # 2. the Impala shell:
-#       Impala/shell/impala_shell.py
+#       Impala/shell/original_impala_shell.py
 
 import datetime
 import socket
@@ -42,6 +42,10 @@ from impala.cli_service.ttypes import (TOpenSessionReq, TFetchResultsReq,
         TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
         TGetOperationStatusReq, TOperationState, TCancelOperationReq,
         TCloseOperationReq, TGetLogReq)
+
+from impala.ImpalaService.ImpalaHiveServer2Service import TGetRuntimeProfileReq, TGetExecSummaryReq
+from impala.ImpalaService import ImpalaHiveServer2Service
+from impala.ExecStats.ttypes import TExecStats
 
 # mapping between Thrift TTypeId (in schema) and TColumnValue (in returned rows)
 # helper object for converting from TRow to something friendlier
@@ -109,7 +113,7 @@ def retry(func):
         # get the thrift transport
         if 'service' in kwargs:
             transport = kwargs['service']._iprot.trans
-        elif len(args) > 0 and isinstance(args[0], TCLIService.Client):
+        elif len(args) > 0 and isinstance(args[0], ImpalaHiveServer2Service.Client):
             transport = args[0]._iprot.trans
         else:
             raise HS2Error("RPC function does not have expected 'service' arg")
@@ -148,10 +152,10 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password, use_kerberos,
     if not use_ldap and not use_kerberos:
         return TBufferedTransport(sock)
     try:
-      import saslwrapper as sasl
+        import saslwrapper as sasl
     except ImportError:
-      import sasl
-    from impala.thrift_sasl import TSaslClientTransport
+        import sasl
+    from thrift_sasl import TSaslClientTransport
     def sasl_factory():
         sasl_client = sasl.Client()
         sasl_client.setAttr("host", host)
@@ -176,7 +180,7 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
                                use_kerberos, kerberos_service_name)
     transport.open()
     protocol = TBinaryProtocol(transport)
-    service = TCLIService.Client(protocol)
+    service = ImpalaHiveServer2Service.Client(protocol)
     return service
 
 def close_service(service):
@@ -191,7 +195,7 @@ def open_session(service, user, configuration=None):
     req = TOpenSessionReq(username=user, configuration=configuration)
     resp = service.OpenSession(req)
     err_if_rpc_not_ok(resp)
-    return resp.sessionHandle
+    return resp.sessionHandle, resp.configuration
 
 @retry
 def close_session(service, session_handle):
@@ -366,3 +370,127 @@ def ping(service, session_handle):
     except HS2Error as e:
         return False
     return True
+
+def get_profile(service, operation_handle, session_handle):
+    req = TGetRuntimeProfileReq(operationHandle=operation_handle,
+                                sessionHandle=session_handle)
+    resp = service.GetRuntimeProfile(req)
+    err_if_rpc_not_ok(resp)
+    return resp.profile
+
+def get_summary(service, operation_handle, session_handle):
+    req = TGetExecSummaryReq(operationHandle=operation_handle,
+                             sessionHandle=session_handle)
+    resp = service.GetExecSummary(req)
+    err_if_rpc_not_ok(resp)
+    return resp.summary
+
+def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
+    """Direct translation of Coordinator::PrintExecSummary() to recursively build a list
+    of rows of summary statistics, one per exec node
+
+    summary: the TExecSummary object that contains all the summary data
+
+    idx: the index of the node to print
+
+    is_fragment_root: true if the node to print is the root of a fragment (and therefore
+    feeds into an exchange)
+
+    indent_level: the number of spaces to print before writing the node's label, to give
+    the appearance of a tree. The 0th child of a node has the same indent_level as its
+    parent. All other children have an indent_level of one greater than their parent.
+
+    output: the list of rows into which to append the rows produced for this node and its
+    children.
+
+    Returns the index of the next exec node in summary.exec_nodes that should be
+    processed, used internally to this method only.
+    """
+    attrs = ["latency_ns", "cpu_time_ns", "cardinality", "memory_used"]
+
+    # Initialise aggregate and maximum stats
+    agg_stats, max_stats = TExecStats(), TExecStats()
+    for attr in attrs:
+        setattr(agg_stats, attr, 0)
+        setattr(max_stats, attr, 0)
+
+    node = summary.nodes[idx]
+    for stats in node.exec_stats:
+        for attr in attrs:
+            val = getattr(stats, attr)
+            if val is not None:
+                setattr(agg_stats, attr, getattr(agg_stats, attr) + val)
+                setattr(max_stats, attr, max(getattr(max_stats, attr), val))
+
+    if len(node.exec_stats) > 0:
+        avg_time = agg_stats.latency_ns / len(node.exec_stats)
+    else:
+        avg_time = 0
+
+    # If the node is a broadcast-receiving exchange node, the cardinality of rows produced
+    # is the max over all instances (which should all have received the same number of
+    # rows). Otherwise, the cardinality is the sum over all instances which process
+    # disjoint partitions.
+    if node.is_broadcast and is_fragment_root:
+        cardinality = max_stats.cardinality
+    else:
+        cardinality = agg_stats.cardinality
+
+    est_stats = node.estimated_stats
+    label_prefix = ""
+    if indent_level > 0:
+        label_prefix = "|"
+        if is_fragment_root:
+            label_prefix += "    " * indent_level
+        else:
+            label_prefix += "--" * indent_level
+
+    def prettyprint(val, units, divisor):
+        for unit in units:
+            if val < divisor:
+                if unit == units[0]:
+                    return "%d%s" % (val, unit)
+                else:
+                    return "%3.2f%s" % (val, unit)
+            val /= divisor
+
+    def prettyprint_bytes(byte_val):
+        return prettyprint(byte_val, [' B', ' KB', ' MB', ' GB', ' TB'], 1024.0)
+
+    def prettyprint_units(unit_val):
+        return prettyprint(unit_val, ["", "K", "M", "B"], 1000.0)
+
+    def prettyprint_time(time_val):
+        return prettyprint(time_val, ["ns", "us", "ms", "s"], 1000.0)
+
+    row = [ label_prefix + node.label,
+                    len(node.exec_stats),
+                    prettyprint_time(avg_time),
+                    prettyprint_time(max_stats.latency_ns),
+                    prettyprint_units(cardinality),
+                    prettyprint_units(est_stats.cardinality),
+                    prettyprint_bytes(max_stats.memory_used),
+                    prettyprint_bytes(est_stats.memory_used),
+                    node.label_detail ]
+
+    output.append(row)
+    try:
+        sender_idx = summary.exch_to_sender_map[idx]
+        # This is an exchange node, so the sender is a fragment root, and should be printed
+        # next.
+        build_summary_table(summary, sender_idx, True, indent_level, output)
+    except (KeyError, TypeError):
+        # Fall through if idx not in map, or if exch_to_sender_map itself is not set
+        pass
+
+    idx += 1
+    if node.num_children > 0:
+        first_child_output = []
+        idx = \
+            build_summary_table(summary, idx, False, indent_level, first_child_output)
+        for child_idx in xrange(1, node.num_children):
+            # All other children are indented (we only have 0, 1 or 2 children for every exec
+            # node at the moment)
+            idx = build_summary_table(summary, idx, False, indent_level + 1, output)
+        output += first_child_output
+    return idx
