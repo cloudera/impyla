@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from impala.error import RPCError, QueryStateError, DisconnectedError
 from impala._thrift_gen.beeswax import BeeswaxService
 from impala._thrift_gen.ImpalaService import ImpalaService
 from impala._thrift_gen.Status.ttypes import TStatus, TStatusCode
@@ -22,28 +23,11 @@ from thrift.transport.TTransport import TBufferedTransport, TTransportException
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
 from thrift.Thrift import TApplicationException
 
+
 class RpcStatus:
     """Convenience enum to describe Rpc return statuses"""
     OK = 0
     ERROR = 1
-
-class RPCException(Exception):
-    def __init__(self, value=""):
-        self.value = value
-    def __str__(self):
-        return self.value
-
-class QueryStateException(Exception):
-    def __init__(self, value=""):
-        self.value = value
-    def __str__(self):
-        return self.value
-
-class DisconnectedException(Exception):
-    def __init__(self, value=""):
-        self.value = value
-    def __str__(self):
-        return self.value
 
 def __options_to_string_list(set_query_options):
     return ["%s=%s" % (k, v) for (k, v) in set_query_options.iteritems()]
@@ -60,7 +44,7 @@ def build_default_query_options_dict(service):
     rpc_result = __do_rpc(lambda: get_default_query_options)
     options, status = rpc_result
     if status != RpcStatus.OK:
-        raise RPCException("Unable to retrieve default query options")
+        raise RPCError("Unable to retrieve default query options")
     return options
 
 def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
@@ -247,7 +231,7 @@ def execute_statement(service, query):
     rpc_result = __do_rpc(lambda: service.query(query))
     last_query_handle, status = rpc_result
     if status != RpcStatus.OK:
-        raise RPCException("Error executing the query")
+        raise RPCError("Error executing the query")
     return last_query_handle
 
 def fetch_internal(service, last_query_handle, buffer_size):
@@ -264,7 +248,7 @@ def fetch_internal(service, last_query_handle, buffer_size):
         result, status = rpc_result
 
         if status != RpcStatus.OK:
-            raise RPCException()
+            raise RPCError()
 
         result_rows.extend(result.data)
 
@@ -279,7 +263,7 @@ def close_insert(service, last_query_handle):
     insert_result, status = rpc_result
 
     if status != RpcStatus.OK:
-        raise RPCException()
+        raise RPCError()
 
     num_rows = sum([int(k) for k in insert_result.rows_appended.values()])
     return num_rows
@@ -326,7 +310,7 @@ def get_summary(service, last_query_handle):
 def __do_rpc(rpc):
     """Executes the provided callable."""
 #     if not self.connected:
-#         raise DisconnectedException("Not connected (use CONNECT to establish a connection)")
+#         raise DisconnectedError("Not connected (use CONNECT to establish a connection)")
 #         return None, RpcStatus.ERROR
     try:
         ret = rpc()
@@ -338,20 +322,20 @@ def __do_rpc(rpc):
             if ret.status_code != TStatusCode.OK:
                 print(ret.error_msgs)
                 if ret.error_msgs:
-                    raise RPCException ('RPC Error: %s' % '\n'.join(ret.error_msgs))
+                    raise RPCError ('RPC Error: %s' % '\n'.join(ret.error_msgs))
                 status = RpcStatus.ERROR
         return ret, status
     except BeeswaxService.QueryNotFoundException:
-        raise QueryStateException('Error: Stale query handle')
+        raise QueryStateError('Error: Stale query handle')
     # beeswaxException prints out the entire object, printing
     # just the message is far more readable/helpful.
     except BeeswaxService.BeeswaxException, b:
-            raise RPCException("ERROR: %s" % (b.message))
+            raise RPCError("ERROR: %s" % (b.message))
     except TTransportException, e:
         # issue with the connection with the impalad
-        raise DisconnectedException("Error communicating with impalad: %s" % e)
+        raise DisconnectedError("Error communicating with impalad: %s" % e)
     except TApplicationException, t:
-        raise RPCException("Application Exception : %s" % (t))
+        raise RPCError("Application Exception : %s" % (t))
     return None, RpcStatus.ERROR
 
 def get_column_names(service, last_query_handle):
@@ -361,9 +345,16 @@ def get_column_names(service, last_query_handle):
     if not metadata is None:
         return [fs.name for fs in metadata.schema.fieldSchemas]
 
+def get_results_metadata(service, last_query_handle):
+    rpc_result = __do_rpc(
+            lambda: service.get_results_metadata(last_query_handle))
+    metadata, _ = rpc_result
+    if not metadata is None:
+        return metadata.schema.fieldSchemas
+
 def expect_result_metadata(query_str):
     """ Given a query string, return True if impalad expects result metadata"""
-    excluded_query_types = ['use', 'alter', 'drop']
+    excluded_query_types = ['use', 'alter', 'drop', 'create', 'insert']
     if True in set(map(query_str.startswith, excluded_query_types)):
         return False
     return True
