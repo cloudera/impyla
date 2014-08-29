@@ -72,7 +72,7 @@ class BeeswaxError(RPCError):
     pass
 
 class QueryStateError(BeeswaxError):
-  pass
+    pass
 
 class DisconnectedError(BeeswaxError):
-  pass
+    pass

@@ -127,7 +127,7 @@ class BeeswaxCursor(Cursor):
     def execute(self, operation, parameters=None, configuration=None):
         # PEP 249
         if configuration is None:
-          configuration = {}
+            configuration = {}
         def op():
             if parameters:
                 self._last_operation_string = _bind_parameters(operation, parameters)
