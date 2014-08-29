@@ -15,7 +15,7 @@
 import ez_setup
 ez_setup.use_setuptools(version='2')
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 def readme():
     with open('README.md', 'r') as ip:
@@ -29,7 +29,7 @@ setup(
     author='Uri Laserson',
     author_email='laserson@cloudera.com',
     url='https://github.com/cloudera/impyla',
-    packages=['impala', 'impala.cli_service', 'impala.tests'],
+    packages=find_packages(),
     install_requires=['thrift'],
     keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark'
             'distributed db api pep 249'),

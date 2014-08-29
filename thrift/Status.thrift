@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace py impala._thrift_gen.Status
 namespace cpp impala
 namespace java com.cloudera.impala.thrift
 

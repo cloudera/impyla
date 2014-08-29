@@ -1,18 +1,26 @@
-import time
-import sys
+# Copyright 2014 Cloudera Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-from impala.beeswaxd import BeeswaxService
-from impala.ImpalaService import ImpalaService
-from impala.ImpalaService.ImpalaService import TImpalaQueryOptions, TResetTableReq
-from impala.ImpalaService.ImpalaService import TPingImpalaServiceResp
-from impala.Status.ttypes import TStatus, TStatusCode
+from impala._thrift_gen.beeswax import BeeswaxService
+from impala._thrift_gen.ImpalaService import ImpalaService
+from impala._thrift_gen.Status.ttypes import TStatus, TStatusCode
+from impala._thrift_gen.ExecStats.ttypes import TExecStats
 
 from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport, TTransportException
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
 from thrift.Thrift import TApplicationException
-
-from impala.ExecStats.ttypes import TExecStats
 
 class RpcStatus:
     """Convenience enum to describe Rpc return statuses"""

@@ -34,49 +34,38 @@ from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport, TTransportException
 from thrift.protocol.TBinaryProtocol import TBinaryProtocol
 
-from impala.error import HS2Error, err_if_rpc_not_ok
-from impala.cli_service import TCLIService
-from impala.cli_service.ttypes import (TOpenSessionReq, TFetchResultsReq,
-        TCloseSessionReq, TExecuteStatementReq, TGetInfoReq, TGetInfoType,
-        TTypeId, TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
-        TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
-        TGetOperationStatusReq, TOperationState, TCancelOperationReq,
-        TCloseOperationReq, TGetLogReq)
+from impala.error import HiveServer2Error
+from impala._thrift_gen.cli_service import TCLIService
+from impala._thrift_gen.cli_service.ttypes import (TOpenSessionReq,
+        TFetchResultsReq, TCloseSessionReq, TExecuteStatementReq, TGetInfoReq,
+        TGetInfoType, TTypeId, TFetchOrientation, TGetResultSetMetadataReq,
+        TStatusCode, TGetColumnsReq, TGetSchemasReq, TGetTablesReq,
+        TGetFunctionsReq, TGetOperationStatusReq, TOperationState,
+        TCancelOperationReq, TCloseOperationReq, TGetLogReq)
+from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import TGetRuntimeProfileReq, TGetExecSummaryReq
+from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
+from impala._thrift_gen.ExecStats.ttypes import TExecStats
 
-from impala.ImpalaService.ImpalaHiveServer2Service import TGetRuntimeProfileReq, TGetExecSummaryReq
-from impala.ImpalaService import ImpalaHiveServer2Service
-from impala.ExecStats.ttypes import TExecStats
-
-# mapping between Thrift TTypeId (in schema) and TColumnValue (in returned rows)
+# mapping between the schema types (based on
+# com.cloudera.impala.catalog.PrimitiveType) and TColumnValue (in returned rows)
 # helper object for converting from TRow to something friendlier
 _TTypeId_to_TColumnValue_getters = {
-        'BOOLEAN_TYPE': operator.attrgetter('boolVal'),
-        'TINYINT_TYPE': operator.attrgetter('byteVal'),
-        'SMALLINT_TYPE': operator.attrgetter('i16Val'),
-        'INT_TYPE': operator.attrgetter('i32Val'),
-        'BIGINT_TYPE': operator.attrgetter('i64Val'),
-        'TIMESTAMP_TYPE': operator.attrgetter('stringVal'),
-        'FLOAT_TYPE': operator.attrgetter('doubleVal'),
-        'DOUBLE_TYPE': operator.attrgetter('doubleVal'),
-        'STRING_TYPE': operator.attrgetter('stringVal'),
-        'DECIMAL_TYPE': operator.attrgetter('stringVal')
+        'BOOLEAN': operator.attrgetter('boolVal'),
+        'TINYINT': operator.attrgetter('byteVal'),
+        'SMALLINT': operator.attrgetter('i16Val'),
+        'INT': operator.attrgetter('i32Val'),
+        'BIGINT': operator.attrgetter('i64Val'),
+        'TIMESTAMP': operator.attrgetter('stringVal'),
+        'FLOAT': operator.attrgetter('doubleVal'),
+        'DOUBLE': operator.attrgetter('doubleVal'),
+        'STRING': operator.attrgetter('stringVal'),
+        'DECIMAL': operator.attrgetter('stringVal')
 }
 
-# the type specifiers returned from GetColumns use the strings from
-# com.cloudera.impala.catalog.PrimitiveType; here we map those strings to
-# TTypeId strings specified in TCLIService
-_PrimitiveType_to_TTypeId = {
-        'BOOLEAN': 'BOOLEAN_TYPE',
-        'TINYINT': 'TINYINT_TYPE',
-        'SMALLINT': 'SMALLINT_TYPE',
-        'INT': 'INT_TYPE',
-        'BIGINT': 'BIGINT_TYPE',
-        'TIMESTAMP': 'TIMESTAMP_TYPE',
-        'FLOAT': 'FLOAT_TYPE',
-        'DOUBLE': 'DOUBLE_TYPE',
-        'STRING': 'STRING_TYPE',
-        'DECIMAL': 'DECIMAL_TYPE',
-}
+def err_if_rpc_not_ok(resp):
+    if (resp.status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_STATUS'] and
+            resp.status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_WITH_INFO_STATUS']):
+        raise HiveServer2Error(resp.status.errorMessage)
 
 # datetime only supports 6 digits of microseconds but Impala supports 9.
 # If present, the trailing 3 digits will be ignored without warning.
@@ -116,7 +105,8 @@ def retry(func):
         elif len(args) > 0 and isinstance(args[0], ImpalaHiveServer2Service.Client):
             transport = args[0]._iprot.trans
         else:
-            raise HS2Error("RPC function does not have expected 'service' arg")
+            raise HiveServer2Error(
+                "RPC function does not have expected 'service' arg")
 
         tries_left = 3
         while tries_left > 0:
@@ -223,7 +213,7 @@ def get_result_schema(service, operation_handle):
     for column in resp.schema.columns:
         name = column.columnName
         type_ = TTypeId._VALUES_TO_NAMES[
-                column.typeDesc.types[0].primitiveEntry.type]
+                column.typeDesc.types[0].primitiveEntry.type].split('_')[0]
         schema.append((name, type_))
 
     return schema
@@ -367,7 +357,7 @@ def ping(service, session_handle):
 
     try:
         err_if_rpc_not_ok(resp)
-    except HS2Error as e:
+    except HiveServer2Error as e:
         return False
     return True
 
