@@ -24,12 +24,27 @@ if 'IMPALA_HOST' not in os.environ:
 if 'IMPALA_PORT' not in os.environ:
     print >>sys.stderr, "Using default Impala HS2 port of 21050, or set IMPALA_PORT env variable"
 host = os.environ['IMPALA_HOST']
-port = int(os.environ.get('IMPALA_PORT', 21050))
+hs2_port = int(os.environ.get('HS2_PORT', 21050))
+beeswax_port = int(os.environ.get('BEESWAX_PORT', 21000))
 
-class ImpylaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
+class ImpylaHiveServer2DBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
     driver = impala.dbapi
     connect_kw_args = {'host': host,
-                       'port': port}
+                       'port': hs2_port,
+                       'protocol': 'hiveserver2'}
+    table_prefix = 'dbapi20test_'
+    ddl1 = 'create table %sbooze (name string)' % table_prefix
+    ddl2 = 'create table %sbarflys (name string)' % table_prefix
+    
+    def test_nextset(self): pass
+    def test_setoutputsize(self): pass
+
+
+class ImpylaBeeswax2DBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
+    driver = impala.dbapi
+    connect_kw_args = {'host': host,
+                       'port': beeswax_port,
+                       'protocol': 'beeswax'}
     table_prefix = 'dbapi20test_'
     ddl1 = 'create table %sbooze (name string)' % table_prefix
     ddl2 = 'create table %sbarflys (name string)' % table_prefix

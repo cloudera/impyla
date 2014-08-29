@@ -32,6 +32,7 @@
 // * Service names begin with the letter "T", use a capital letter for each
 //   new word (with no underscores), and end with the word "Service".
 
+namespace py impala._thrift_gen.cli_service
 namespace java org.apache.hive.service.cli.thrift
 namespace cpp apache.hive.service.cli.thrift
 
@@ -283,9 +284,9 @@ union TColumnValue {
   2: TByteValue   byteVal      // TINYINT
   3: TI16Value    i16Val       // SMALLINT
   4: TI32Value    i32Val       // INT
-  5: TI64Value    i64Val       // BIGINT
+  5: TI64Value    i64Val       // BIGINT, TIMESTAMP
   6: TDoubleValue doubleVal    // FLOAT, DOUBLE
-  7: TStringValue stringVal    // STRING, LIST, MAP, STRUCT, UNIONTYPE, BINARY, DECIMAL, TIMESTAMP
+  7: TStringValue stringVal    // STRING, LIST, MAP, STRUCT, UNIONTYPE, BINARY, DECIMAL
 }
 
 // Represents a row in a rowset.
