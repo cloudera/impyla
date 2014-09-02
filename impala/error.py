@@ -70,3 +70,9 @@ class HiveServer2Error(RPCError):
 
 class BeeswaxError(RPCError):
     pass
+
+class QueryStateError(BeeswaxError):
+    pass
+
+class DisconnectedError(BeeswaxError):
+    pass

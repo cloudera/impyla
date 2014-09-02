@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import getpass
+import time
 
-from impala.dbapi.interface import Connection, Cursor
+from impala.dbapi.interface import Connection, Cursor, _bind_parameters
 from impala._rpc import beeswax as rpc
 from impala.error import NotSupportedError, ProgrammingError, OperationalError
 from impala._thrift_gen.beeswax.BeeswaxService import QueryState
@@ -125,6 +126,8 @@ class BeeswaxCursor(Cursor):
 
     def execute(self, operation, parameters=None, configuration=None):
         # PEP 249
+        if configuration is None:
+            configuration = {}
         def op():
             if parameters:
                 self._last_operation_string = _bind_parameters(operation, parameters)
@@ -140,12 +143,11 @@ class BeeswaxCursor(Cursor):
         self._reset_state()
         operation_fn()
         self._last_operation_active = True
-        self._rowcount = 0
         self._wait_to_finish()  # make execute synchronous
         if self.has_result_set:
-            schema = rpc.get_column_names(self.service,
+            schema = rpc.get_results_metadata(self.service,
                     self._last_operation_handle)
-            self._description = [tuple([col] + [None, None, None, None, None]) for col in schema]
+            self._description = [tuple([tup.name, tup.type.upper()] + [None, None, None, None, None]) for tup in schema]
         else:
             self._last_operation_active = False
             rpc.close_query(self.service, self._last_operation_handle)
@@ -212,7 +214,6 @@ class BeeswaxCursor(Cursor):
                 i += 1
             except StopIteration:
                 break
-        self._rowcount += len(local_buffer)
         return local_buffer
 
     def fetchall(self):
@@ -265,6 +266,6 @@ class BeeswaxCursor(Cursor):
     def get_summary(self):
         return rpc.get_summary(self.service, self._last_operation_handle)
 
-    def build_summary_table(self, summary, idx=0, is_fragment_root=False, indent_level=0, output=[]):
+    def build_summary_table(self, summary, output, idx=0, is_fragment_root=False, indent_level=0):
         return rpc.build_summary_table(summary, idx, is_fragment_root, indent_level, output)
 

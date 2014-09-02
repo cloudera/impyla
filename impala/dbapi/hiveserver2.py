@@ -268,7 +268,7 @@ class HiveServer2Cursor(Cursor):
     def get_summary(self):
         return rpc.get_summary(self.service, self._last_operation_handle, self.session_handle)
 
-    def build_summary_table(self, summary, idx=0, is_fragment_root=False, indent_level=0, output=[]):
+    def build_summary_table(self, summary, output, idx=0, is_fragment_root=False, indent_level=0):
         return rpc.build_summary_table(summary, idx, is_fragment_root, indent_level, output)
 
     def get_databases(self):
