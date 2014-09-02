@@ -26,7 +26,6 @@ class HiveServer2Connection(Connection):
 
     def __init__(self, service):
         self.service = service
-        self.default_query_options = {}
 
     def close(self):
         """Close the session and the Thrift transport."""
@@ -48,10 +47,9 @@ class HiveServer2Connection(Connection):
         if user is None:
             user = getpass.getuser()
         if session_handle is None:
-            session_handle, options = rpc.open_session(self.service, user, configuration)
-            for opt in options:
-                self.default_query_options[opt.upper()] = options[opt]
-        return HiveServer2Cursor(self.service, session_handle)
+            (session_handle, default_config) = rpc.open_session(self.service,
+                    user, configuration)
+        return HiveServer2Cursor(self.service, session_handle, default_config)
 
     def reconnect(self):
         rpc.reconnect(self.service)
@@ -62,9 +60,10 @@ class HiveServer2Cursor(Cursor):
     # HiveServer2Cursor objects are associated with a Session
     # they are instantiated with alive session_handles
 
-    def __init__(self, service, session_handle):
+    def __init__(self, service, session_handle, default_config=None):
         self.service = service
         self.session_handle = session_handle
+        self.default_config = default_config
 
         self._last_operation_string = None
         self._last_operation_handle = None
@@ -143,7 +142,7 @@ class HiveServer2Cursor(Cursor):
         operation_fn()
         self._last_operation_active = True
         self._wait_to_finish()  # make execute synchronous
-        if self.has_result_set and self._last_operation_active:
+        if self.has_result_set:
             schema = rpc.get_result_schema(self.service,
                     self._last_operation_handle)
             self._description = [tup + (None, None, None, None, None) for tup in schema]
@@ -164,11 +163,12 @@ class HiveServer2Cursor(Cursor):
         loop_start = time.time()
         while True:
             operation_state = rpc.get_operation_status(self.service,
-                                                              self._last_operation_handle)
-            if operation_state == 'FINISHED_STATE':
+                    self._last_operation_handle)
+            if operation_state == 'ERROR_STATE':
+                raise OperationalError("Operation is in ERROR_STATE")
+            if operation_state not in ['INITIALIZED_STATE', 'RUNNING_STATE']:
                 break
-            elif operation_state == 'ERROR_STATE':
-                raise OperationalError("Cancelled")
+            # I'm in INITIALIZED_STATE or RUNNING_STATE so hang out
             time.sleep(self._get_sleep_interval(loop_start))
 
     def _get_sleep_interval(self, start_time):
@@ -179,7 +179,6 @@ class HiveServer2Cursor(Cursor):
             return 0.1
         elif elapsed < 60.0:
             return 0.5
-
         return 1.0
 
     def executemany(self, operation, seq_of_parameters):
@@ -254,10 +253,7 @@ class HiveServer2Cursor(Cursor):
 
     def ping(self):
         """Checks connection to server by requesting some info from the server."""
-        if rpc.ping(self.service, self.session_handle):
-            return "Hive Server 2"
-        else:
-            return "SERVER NOT FOUND"
+        return rpc.ping(self.service, self.session_handle)
 
     def get_log(self):
         return rpc.get_log(self.service, self._last_operation_handle)

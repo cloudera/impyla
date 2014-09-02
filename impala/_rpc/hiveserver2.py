@@ -145,7 +145,7 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password, use_kerberos,
         import saslwrapper as sasl
     except ImportError:
         import sasl
-    from thrift_sasl import TSaslClientTransport
+    from impala.thrift_sasl import TSaslClientTransport
     def sasl_factory():
         sasl_client = sasl.Client()
         sasl_client.setAttr("host", host)
