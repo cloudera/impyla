@@ -21,8 +21,10 @@ import _dbapi20_tests
 
 if 'IMPALA_HOST' not in os.environ:
     raise ValueError("Please set IMPALA_HOST env variable")
-if 'IMPALA_PORT' not in os.environ:
-    print >>sys.stderr, "Using default Impala HS2 port of 21050, or set IMPALA_PORT env variable"
+if 'HS2_PORT' not in os.environ:
+    print >>sys.stderr, "Using default Impala HS2 port of 21050, or set HS2_PORT env variable"
+if 'BEESWAX_PORT' not in os.environ:
+    print >>sys.stderr, "Using default Impala Beeswax port of 21000, or set BEESWAX_PORT env variable"    
 host = os.environ['IMPALA_HOST']
 hs2_port = int(os.environ.get('HS2_PORT', 21050))
 beeswax_port = int(os.environ.get('BEESWAX_PORT', 21000))
