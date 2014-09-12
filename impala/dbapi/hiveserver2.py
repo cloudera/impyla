@@ -24,8 +24,9 @@ class HiveServer2Connection(Connection):
     # HiveServer2Connection objects are associated with a TCLIService.Client thrift service
     # it's instantiated with an alive TCLIService.Client
 
-    def __init__(self, service):
+    def __init__(self, service, default_db=None):
         self.service = service
+        self.default_db = default_db
 
     def close(self):
         """Close the session and the Thrift transport."""
@@ -49,7 +50,10 @@ class HiveServer2Connection(Connection):
         if session_handle is None:
             (session_handle, default_config) = rpc.open_session(self.service,
                     user, configuration)
-        return HiveServer2Cursor(self.service, session_handle, default_config)
+        cursor = HiveServer2Cursor(self.service, session_handle, default_config)
+        if self.default_db is not None:
+            cursor.execute('USE %s' % self.default_db)
+        return cursor
 
     def reconnect(self):
         rpc.reconnect(self.service)

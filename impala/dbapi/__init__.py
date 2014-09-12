@@ -30,20 +30,21 @@ apilevel = '2.0'
 threadsafety = 1  # Threads may share the module, but not connections
 paramstyle = 'pyformat'
 
-def connect(host='localhost', port=21050, protocol='hiveserver2', timeout=45,
-            use_ssl=False, ca_cert=None, use_ldap=False, ldap_user=None,
-            ldap_password=None, use_kerberos=False, kerberos_service_name='impala'):
+def connect(host='localhost', port=21050, protocol='hiveserver2', database=None,
+            timeout=45, use_ssl=False, ca_cert=None, use_ldap=False,
+            ldap_user=None, ldap_password=None, use_kerberos=False,
+            kerberos_service_name='impala'):
     # PEP 249
     if protocol.lower() == 'beeswax':
         service = connect_to_beeswax(host, port, timeout, use_ssl, ca_cert,
             use_ldap, ldap_user, ldap_password, use_kerberos,
             kerberos_service_name)
-        return BeeswaxConnection(service)
+        return BeeswaxConnection(service, default_db=database)
     elif protocol.lower() == 'hiveserver2':
         service = connect_to_hiveserver2(host, port, timeout, use_ssl, ca_cert,
             use_ldap, ldap_user, ldap_password, use_kerberos,
             kerberos_service_name)
-        return HiveServer2Connection(service)
+        return HiveServer2Connection(service, default_db=database)
     else:
         raise NotSupportedError("The specified protocol '%s' is not supported." % protocol)
 

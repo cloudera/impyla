@@ -38,5 +38,6 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7'
-    ]
+    ],
+    entry_points={'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect']}
 )

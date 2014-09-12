@@ -23,8 +23,9 @@ from impala._thrift_gen.beeswax.BeeswaxService import QueryState
 class BeeswaxConnection(Connection):
     # PEP 249
 
-    def __init__(self, service):
+    def __init__(self, service, default_db=None):
         self.service = service
+        self.default_db = default_db
         self.default_query_options = {}
 
     def close(self):
@@ -49,7 +50,10 @@ class BeeswaxConnection(Connection):
         options = rpc.build_default_query_options_dict(self.service)
         for opt in options:
             self.default_query_options[opt.key.upper()] = opt.value
-        return BeeswaxCursor(self.service, user)
+        cursor = BeeswaxCursor(self.service, user)
+        if self.default_db is not None:
+            cursor.execute('USE %s' % self.default_db)
+        return cursor
 
     def reconnect(self):
         rpc.reconnect(self.service)
