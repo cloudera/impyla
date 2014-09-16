@@ -87,18 +87,54 @@ def _numpy_dtype_to_impala_PrimitiveType(ty):
 # Public facing API
 
 class ImpalaContext(object):
-    # TODO: need to clean up temporary stuff; maybe with context manager?
 
-    def __init__(self, temp_dir=None, temp_db=None, *args, **kwargs):
+    def __init__(self, temp_dir=None, temp_db=None, nn_host=None,
+	    webhdfs_port=50070, hdfs_user=None, *args, **kwargs):
 	# args and kwargs get passed directly into impala.dbapi.connect()
 	suffix = _random_id(length=8)
 	self._temp_dir = '/tmp/bdf-%s' % suffix if temp_dir is None else temp_dir
 	self._temp_db = 'tmp_bdf_%s' % suffix if temp_db is None else temp_db
 	self._conn = connect(*args, **kwargs)
 	self._cursor = self._conn.cursor()
+	# used for pywebhdfs cleanup of temp dir; not required
+	self._nn_host = nn_host
+	self._webhdfs_port = webhdfs_port
+	self._hdfs_user = hdfs_user
 	if temp_db is None:
 	    self._cursor.execute("CREATE DATABASE %s LOCATION '%s'" %
 		    (self._temp_db, self._temp_dir))
+
+    def __enter__(self):
+	return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+	self.close()
+
+    def close(self):
+	# drop the temp database
+	self._cursor.execute('USE %s' % self._temp_db)
+	self._cursor.execute('SHOW TABLES')
+	temp_tables = [x[0] for x in self._cursor.fetchall()]
+	for table in temp_tables:
+	    self._cursor.execute('DROP TABLE IF EXISTS %s.%s' % (self._temp_db, table))
+	self._cursor.execute('USE default')
+	self._cursor.execute('DROP DATABASE IF EXISTS %s' % self._temp_db)
+	# drop the temp dir in HDFS
+	try:
+	    from requests.exceptions import ConnectionError
+	    from pywebhdfs.webhdfs import PyWebHdfsClient
+	except ImportError:
+	    import sys
+	    sys.stderr.write("Could not import requests or pywebhdfs. "
+		"You must delete the temporary directory manually: %s" % self._temp_dir)
+	try:
+	    hdfs_client = PyWebHdfsClient(host=self._nn_host,
+		port=self._webhdfs_port, user_name=self._hdfs_user)
+	    hdfs_client.delete_file_dir(self._temp_dir.lstrip('/'), recursive=True)
+	except ConnectionError:
+	    import sys
+	    sys.stderr.write("Could not connect via pywebhdfs. "
+		"You must delete the temporary directory manually: %s" % self._temp_dir)
 
     def from_sql_query(self, query, alias=None):
 	"""Create a BDF from a SQL query executed by Impala"""
@@ -331,6 +367,15 @@ class BigDataFrame(object):
 	ast = SelectStmt(select_list, table_ref, limit=limit_elt)
 	bdf = BigDataFrame(self._ic, ast)
 	return as_pandas(bdf.__iter__())
+
+    def collect(self):
+	"""Return the BDF data to the client as a pandas DataFrame"""
+	return as_pandas(self.__iter__())
+
+    def count(self):
+	count_query = 'SELECT COUNT(*) FROM (%s) AS count_tbl' % self._query_ast.to_sql()
+	self._ic._cursor.execute(count_query)
+	return self._ic._cursor.fetchall()[0][0]
 
 
 class GroupBy(object):
