@@ -26,20 +26,21 @@ try:
 except ImportError:
     print "Failed to import pandas"
 
-def generate_random_table_name(prefix='tmp', safe=False, cursor=None):
+def _random_id(prefix='', length=8):
+    return prefix + ''.join(random.sample(string.ascii_uppercase, length))
+
+def _get_schema_hack(cursor, table_ref):
+    # get the schema of the query result via a LIMIT 0 hack
+    cursor.execute('SELECT * FROM %s LIMIT 0' % table_ref.to_sql())
+    schema = [tup[:2] for tup in cursor.description]
+    cursor.fetchall() # resets the state of the cursor and closes operation
+    return schema
+
+def _gen_safe_random_table_name(cursor, prefix='tmp'):
     # unlikely but can be problematic if generated table name is taken in the interim
     tries_left = 3
     while tries_left > 0:
-        date = time.localtime(time.time())
-        date_string = "%04i%02i%02i%02i%02i%02i" % (date.tm_year, date.tm_mon,
-                date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec)
-        random_string = ''.join(random.sample(string.ascii_lowercase, 8))
-        name = "%s%s%s" % (prefix, date_string, random_string)
-        if not safe:
-            return name
-        # safe is True; check cursor
-        if cursor is None:
-            raise ValueError("Must supply a cursor for safe table name gen")
+	name = _random_id(prefix, 8)
         if not cursor.table_exists(name):
             return name
         tries_left -= 1

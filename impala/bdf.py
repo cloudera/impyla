@@ -18,38 +18,25 @@ import os
 import string
 import random
 import datetime
+import warnings
 from copy import copy
 from cStringIO import StringIO
 
 import pandas as pd
 
-from .dbapi import connect, _py_to_sql_string
-from .util import as_pandas
+from impala.dbapi import connect, _py_to_sql_string
+from impala.util import as_pandas, _random_id
 
-# some rando utilities
+"""
+`ImpalaContext`
+* functions to get BDFs
+"""
 
-_null_slice = slice(None, None, None)
 
-# Here we map the TTypeId types from TCLIService (which are returned for schema
-# results by the RPC/DBAPI tools) back to the Impala-recognized types (i.e.,
-# com.cloudera.impala.catalog.PrimitiveType); this is the inverse of the
-_TTypeId_to_PrimitiveType = {
-	'BOOLEAN_TYPE': 'BOOLEAN',
-	'TINYINT_TYPE': 'TINYINT',
-	'SMALLINT_TYPE': 'SMALLINT',
-	'INT_TYPE': 'INT',
-	'BIGINT_TYPE': 'BIGINT',
-	'TIMESTAMP_TYPE': 'TIMESTAMP',
-	'FLOAT_TYPE': 'FLOAT',
-	'DOUBLE_TYPE': 'DOUBLE',
-	'STRING_TYPE': 'STRING',
-	'DECIMAL_TYPE': 'DECIMAL',
-}
-
-def _random_id(prefix='', length=8):
-    return prefix + ''.join(random.sample(string.ascii_uppercase, length))
+# random utilities
 
 def _get_schema_hack(cursor, table_ref):
+    """Get the schema of TableRef by talking to Impala"""
     # get the schema of the query result via a LIMIT 0 hack
     cursor.execute('SELECT * FROM %s LIMIT 0' % table_ref.to_sql())
     schema = [tup[:2] for tup in cursor.description]
@@ -57,10 +44,11 @@ def _get_schema_hack(cursor, table_ref):
     return schema
 
 def _to_TableName(table):
+    """Convert string table name ([foo.]bar) into a TableName object."""
     if not isinstance(table, basestring):
-	raise ValueError("table must be a string")
+	raise ValueError("`table` must be a string")
     if table == '':
-	raise ValueError("table must not be the empty string")
+	raise ValueError("`table` must not be the empty string")
     fields = table.split('.')
     if len(fields) == 2:
 	db = fields[0]
@@ -69,10 +57,14 @@ def _to_TableName(table):
 	db = None
 	name = fields[0]
     else:
-	raise ValueError("your value for table (%s) is weird" % table)
+	raise ValueError("your value for `table` (%s) is weird" % table)
     return TableName(name, db)
 
 def _numpy_dtype_to_impala_PrimitiveType(ty):
+    """Convert numpy dtype to Impala type string.
+
+    Used in converting pandas DataFrame to SQL/Impala
+    """
     # based on impl in pandas.io.sql.PandasSQLTable._sqlalchemy_type()
     if ty is datetime.date:
 	# TODO: this might be wrong
@@ -91,52 +83,11 @@ def _numpy_dtype_to_impala_PrimitiveType(ty):
 	return 'BOOLEAN'
     return 'STRING'
 
-def _create_table(table_name, table_schema, path=None,
-	file_format='TEXTFILE', partition_schema=None, field_terminator='\\t',
-	line_terminator='\\n'):
-    external = path is not None
-    if external:
-	query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
-    else:
-	query = "CREATE TABLE %s" % table_name.to_sql()
-    schema_string = ', '.join(['%s %s' % (col, ty) for (col, ty) in table_schema])
-    query += " (%s)" % schema_string
-    if partition_schema:
-	schema_string = ', '.join(['%s %s' % (col, ty) for (col, ty) in partition_schema])
-	query += " PARTITIONED BY (%s)" % schema_string
-    if file_format == 'PARQUET':
-	query += " STORED AS PARQUET"
-    elif file_format == 'TEXTFILE':
-	query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY '%s' "
-		   "LINES TERMINATED BY '%s' STORED AS TEXTFILE") %
-		   (field_terminator, line_terminator))
-    if external:
-	query += " LOCATION '%s'" % path
-    return query
 
-def _create_table_as_select(table_name, path=None, file_format='TEXTFILE',
-	field_terminator='\\t', line_terminator='\\n'):
-    external = path is not None
-    if external:
-	query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
-    else:
-	query = "CREATE TABLE %s" % table_name.to_sql()
-    if file_format == 'PARQUET':
-	query += " STORED AS PARQUET"
-    elif file_format == 'TEXTFILE':
-	query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY '%s' "
-		   "LINES TERMINATED BY '%s' STORED AS TEXTFILE") %
-		   (field_terminator, line_terminator))
-    if external:
-	query += " LOCATION '%s'" % path
-    query += " AS "
-    return query
-
-
-# PUBLIC API
+# Public facing API
 
 class ImpalaContext(object):
-    # TODO: need to clean up temporary stuff
+    # TODO: need to clean up temporary stuff; maybe with context manager?
 
     def __init__(self, temp_dir=None, temp_db=None, *args, **kwargs):
 	# args and kwargs get passed directly into impala.dbapi.connect()
@@ -149,7 +100,7 @@ class ImpalaContext(object):
 	    self._cursor.execute("CREATE DATABASE %s LOCATION '%s'" %
 		    (self._temp_db, self._temp_dir))
 
-    def read_sql_query(self, query, alias=None):
+    def from_sql_query(self, query, alias=None):
 	"""Create a BDF from a SQL query executed by Impala"""
 	query_alias = alias if alias else _random_id('inline_', 4)
 	table_ref = InlineView(query, query_alias)
@@ -157,7 +108,7 @@ class ImpalaContext(object):
 	select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
 	return BigDataFrame(self, SelectStmt(select_list, table_ref))
 
-    def read_sql_table(self, table):
+    def from_sql_table(self, table):
 	"""Create a BDF from a table name usable in Impala"""
 	table_name = _to_TableName(table)
 	table_ref = BaseTableRef(table_name)
@@ -165,13 +116,15 @@ class ImpalaContext(object):
 	select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
 	return BigDataFrame(self, SelectStmt(select_list, table_ref))
 
-    def read_hdfs(self, path, schema, table=None, overwrite=False):
+    def from_hdfs(self, path, schema, table=None, overwrite=False,
+	    file_format='TEXTFILE', partition_schema=None,
+	    field_terminator='\\t', line_terminator='\\n'):
 	"""Create a BDF backed by an external file in HDFS.
 
 	File must be Impala-compatible
 	"""
-	temp_table = _random_id('tmp_table_', 8)
 	if table is None:
+	    temp_table = _random_id('tmp_table_', 8)
 	    table = "%s.%s" % (self._temp_db, temp_table)
 	table_name = _to_TableName(table)
 	if overwrite:
@@ -180,7 +133,7 @@ class ImpalaContext(object):
 		file_format=file_format, field_terminator=field_terminator,
 		line_terminator=line_terminator)
 	self._cursor.execute(create_stmt)
-	return self.read_sql_table(table_name.to_sql())
+	return self.from_sql_table(table_name.to_sql())
 
     def from_pandas(self, df, table=None, path=None, method='in_query',
 	    file_format='TEXTFILE', field_terminator='\\t', line_terminator='\\n',
@@ -221,45 +174,7 @@ class ImpalaContext(object):
 	    raw_data.close()
 	else:
 	    raise ValueError("method must be 'in_query' or 'webhdfs'; got %s" % method)
-	return self.read_sql_table(table_name.to_sql())
-
-    def merge(left, right, on=None, how='inner', hint=None):
-	"""Merge two BDFs.
-
-	`on` is `None`, `string`, `Expr`, or `list[string]`
-	"""
-	return left.join(right, on=on, how=how, hint=hint)
-
-    def concat(bdfs):
-	"""Concatenate BDFs using a UNION statement.
-
-	Schemas must be compatible.
-	"""
-	if not all([isinstance(bdf, BigDataFrame) for bdf in bdfs]):
-	    raise ValueError("bdfs must be an iterable of BigDataFrame objects")
-	if len(bdfs) == 0:
-	    raise ValueError("bdfs was empty")
-	if len(bdfs) == 1:
-	    return bdfs[0]
-	schema = bdfs[0].schema
-	if not all([schema == bdf.schema for bdf in bdfs[1:]]):
-	    raise ValueError("schema mismatch")
-	ast = UnionStmt([bdf._query_ast for bdf in bdfs])
-	return BigDataFrame(bdf[0]._ic, ast)
-
-    def get_dummies(bdf, categoricals, prefix=None, dummy_na=False):
-	"""Convert categorical columns to one-hot encoding.
-
-	categoricals is an iterable of column names that should be treated as
-	categorical variables
-	"""
-	unique_values = {}
-	for col in categoricals:
-	    distinct_query = "SELECT DISTINCT %s FROM %s" % (col, bdf.to_sql())
-	    self._cursor.execute(distinct_query)
-	    unique_values[col] = self._cursor.fetchall()
-
-
+	return self.from_sql_table(table_name.to_sql())
 
 
 class BigDataFrame(object):
@@ -272,21 +187,99 @@ class BigDataFrame(object):
     @property
     def schema(self):
 	if self._schema is None:
-	    table_ref = InlineView(self.to_sql(), _random_id('inline_', 4))
+	    table_ref = InlineView(self._query_ast.to_sql(), _random_id('inline_', 4))
 	    self._schema = _get_schema_hack(self._ic._cursor, table_ref)
 	return self._schema
 
-    def __iter__(self):
-	"""Return an iterator object to iterate over rows locally"""
-	self._ic._cursor.execute(self._query_ast.to_sql())
-	return self._ic._cursor.__iter__()
+    @property
+    def is_sorted(self):
+	if isinstance(self._query_ast, SelectStmt):
+	    return self._query_ast._order_by is not None
+	# TODO: add warning that we're not sure if the BDF is already sorted
+	# (e.g., bc this BDF is built directly from an inline view of a user-
+	# supplied query string)
+	return False
 
-    def itertuples(self):
-	"""Return an iterator object to iterate over rows locally
+    def __getitem__(self, obj):
+	"""'Indexing' functionality for the BigDataFrame
 
-	Alias for __iter__()
+	Given a single object or list, the BDF will interpret it as a relational
+	projection (i.e., a selection of columns).
+
+	Given a tuple of length 2, the first element will be interpreted for row
+	selection (i.e., predicate/filter/WHERE clause), while the second
+	element will be interpreted as a projection.
 	"""
-	return self.__iter__()
+	# other select/filter fns should be implemented with this one
+	if isinstance(obj, tuple) and len(obj) == 2:
+	    alias = _random_id('inline_', 4)
+	    table_ref = InlineView(self._query_ast.to_sql(), alias)
+	    (limit_elt, where) = self._query_ast._where(obj[0])
+	    select_list = self._query_ast._projection(obj[1])
+	    return BigDataFrame(self._ic, SelectStmt(select_list, table_ref, where=where, limit=limit_elt))
+	elif isinstance(obj, list):
+	    alias = _random_id('inline_', 4)
+	    table_ref = InlineView(self._query_ast.to_sql(), alias)
+	    select_list = self._query_ast._projection(obj)
+	    return BigDataFrame(self._ic, SelectStmt(select_list, table_ref))
+	else:
+	    # single object, possibly a slice; wrap in list and get projection
+	    return self[[obj]]
+
+    def join(self, other, on=None, how='inner', hint=None):
+	"""Join this BDF to another one.
+
+	`on` is `None`, `string`, `Expr`, or `list[string]`
+	"""
+	left = InlineView(self._query_ast.to_sql(), 'left_tbl')
+	right = InlineView(other._query_ast.to_sql(), 'right_tbl')
+	# SELECT left.*, right.*
+	select_list = [SelectItem(table_name=TableName(left.name)),
+		       SelectItem(table_name=TableName(right.name))]
+	table_ref = JoinTableRef(left, right, on=on, op=how, hint=hint)
+	ast = SelectStmt(select_list, table_ref)
+	return BigDataFrame(self._ic, ast)
+
+    def group_by(self, by):
+	"""Group the BDF
+
+	`by` is `string`, `Expr`, or `list/tuple[string/Expr]`
+	"""
+	if not isinstance(by, (tuple, list)):
+	    by = (by,)
+	if not all([isinstance(e, (basestring, Expr)) for e in by]):
+	    raise ValueError("must supply only strings or Exprs")
+	by = tuple([e if isinstance(e, Expr) else Literal(e) for e in by])
+	table_ref = InlineView(self._query_ast.to_sql(), 'inner_tbl')
+	# invalid AST; to be used by GroupBy
+	incomplete_ast = SelectStmt([], table_ref, group_by=by)
+	return GroupBy(self._ic, incomplete_ast)
+
+    def concat(self, other):
+	"""Concatenate BDFs using a UNION statement.
+
+	Schemas must be compatible.
+	"""
+	if not isinstance(other, BigDataFrame):
+	    raise ValueError("other must be a BigDataFrame objects")
+	if self.schema != other.schema:
+	    raise ValueError("schema mismatch")
+	ast = UnionStmt([self._query_ast, other._query_ast])
+	return BigDataFrame(self._ic, ast)
+
+    def one_hot_categoricals(self, categoricals, prefix=None, dummy_na=False):
+	"""Convert categorical columns to one-hot encoding.
+
+	categoricals is an iterable of column names that should be treated as
+	categorical variables
+	"""
+	# TODO
+	raise NotImplementedError
+	unique_values = {}
+	for col in categoricals:
+	    distinct_query = "SELECT DISTINCT %s FROM %s" % (col, bdf.to_sql())
+	    self._cursor.execute(distinct_query)
+	    unique_values[col] = self._cursor.fetchall()
 
     def store(self, path=None, table=None, file_format='TEXTFILE',
 	    field_terminator='\\t', line_terminator='\\n', overwrite=False):
@@ -307,17 +300,23 @@ class BigDataFrame(object):
 		line_terminator=line_terminator)
 	query = create_stmt + self.to_sql()
 	self._cursor.execute(query)
-	return self._ic.read_sql_table(table_name.to_sql())
+	return self._ic.from_sql_table(table_name.to_sql())
 
     def save_view(self, name, overwrite=False):
 	"""Create a named view representing this BDF for later reference"""
+	# TODO: is this fn useful?
 	table_name = _to_TableName(name)
 	if overwrite:
 	    self._ic._cursor.execute('DROP VIEW IF EXISTS %s' % table_name.to_sql())
 	sql = 'CREATE VIEW %s AS %s' % (table_name.to_sql(),
 		self._query_ast.to_sql())
 	self._ic._cursor.execute(sql)
-	return self._ic.read_sql_table(table_name.to_sql())
+	return self._ic.from_sql_table(table_name.to_sql())
+
+    def __iter__(self):
+	"""Return an iterator object to iterate over rows locally"""
+	self._ic._cursor.execute(self._query_ast.to_sql())
+	return self._ic._cursor.__iter__()
 
     def take(self, n):
 	"""Return `n` rows as a pandas `DataFrame`
@@ -325,70 +324,50 @@ class BigDataFrame(object):
 	Distributed and no notion of order, so not guaranteed to be
 	reproducible.
 	"""
-	ast = copy(self._query_ast)
-	# compute the new LIMIT expression
-	if ast._limit:
-	    offset_expr = ast._limit._offset_expr
-	    orig_limit_string = ast._limit._limit_expr.to_sql()
-	    new_limit_string = ("CASE WHEN (%s) < %i THEN (%s) ELSE %i END" %
-		    (orig, n, orig, n))
-	    limit_elt = LimitElement(Literal(new_limit_string), offset_expr)
-	else:
-	    limit_elt = LimitElement(Literal(n), None)
-	ast._limit = limit_elt
+	alias = _random_id('inline_', 4)
+	table_ref = InlineView(self._query_ast.to_sql(), alias)
+	select_list = [SelectItem(table_name=TableName(table_ref.name))] # SELECT alias.*
+	limit_elt = LimitElement(Literal(n), None)
+	ast = SelectStmt(select_list, table_ref, limit=limit_elt)
 	bdf = BigDataFrame(self._ic, ast)
 	return as_pandas(bdf.__iter__())
 
-    def head(self, n):
-	"""Return `n` rows as a pandas `DataFrame`
 
-	Distributed and no notion of order, so not guaranteed to be
-	reproducible.
-	"""
-	return self.take(n)
+class GroupBy(object):
 
-    def tail(self, n):
-	"""Return `n` rows as a pandas `DataFrame`
+    def __init__(self, ic, grouped_ast):
+	# NOTE: grouped_ast._select_list gets ignored
+	if grouped_ast._group_by is None:
+	    raise ValueError("GroupBy requires an AST with a valid _group_by")
+	self._ic = ic
+	self._grouped_ast = grouped_ast
 
-	Distributed and no notion of order, so not guaranteed to be
-	reproducible.
-	"""
-	return self.take(n)
-
-    # for emulation of Pandas API
     @property
-    def ix(self):
-	return self
+    def groups(self):
+	ast = copy(self._grouped_ast)
+	select_list = [SelectItem(expr=e) for e in self._grouped_ast._group_by]
+	ast._select_list = tuple(select_list)
+	return BigDataFrame(self._ic, ast)
 
     def __getitem__(self, obj):
-	"""'Indexing' functionality for the BigDataFrame
+	"""Expression evaluation against groups.
 
-	Given a single object, the BDF will interpret it as a relational
-	projection (i.e., a selection of columns).
+	Given a single object or list, the GroupBy will interpret it as a set of
+	SELECT expressions to evaluate in the context of the GROUP BY.
 
-	Given a tuple of length 2, the first element will be interpreted for row
-	selection (i.e., predicate or WHERE clause), while the second element
-	will be interpreted as a projection.
+	Given a tuple of length 2, the first element will be interpreted for
+	group selection (i.e., a HAVING clause), while the second element will
+	be interpreted as a set of expressions to evaluate against the groups.
 	"""
+	ast = copy(self._grouped_ast)
 	if isinstance(obj, tuple) and len(obj) == 2:
-	    alias = _random_id('inline_', 4)
-	    table_ref = InlineView(self._query_ast.to_sql(), alias)
-	    (limit_elt, where) = self._getitem_filter(obj[0])
-	    select_list = self._getitem_projection(obj[1])
-	    return BigDataFrame(self._ic, SelectStmt(select_list, table_ref, where=where, limit=limit_elt))
-	elif isinstance(obj, list):
-	    alias = _random_id('inline_', 4)
-	    table_ref = InlineView(self._query_ast.to_sql(), alias)
-	    select_list = self._getitem_projection(obj)
-	    return BigDataFrame(self._ic, SelectStmt(select_list, table_ref))
-	else:
-	    # single object, possibly a slice; wrap in list and get projection
-	    return self[[obj]]
-
-    def _getitem_projection(self, obj):
-	# obj is list; possible types would be:
-	# int, string, expr, slice, SelectItem
-	# need to convert to list of SelectItems
+	    if not isinstance(obj[0], Expr):
+		raise ValueError("The group filter (obj[0]) must be Expr type")
+	    ast._having = obj[0]
+	    obj = obj[1]
+	# obj is now the SELECT portion
+	if not isinstance(obj, (list, tuple)):
+	    obj = [obj]
 	select_list = []
 	for elt in obj:
 	    if isinstance(elt, SelectItem):
@@ -396,84 +375,9 @@ class BigDataFrame(object):
 	    elif isinstance(elt, basestring):
 		select_list.append(SelectItem(expr=Literal(elt)))
 	    elif isinstance(elt, Expr):
-		select_list.append(SelectItem(expr=elt))
-	    elif isinstance(elt, (int, long)):
-		select_list.append(self._query_ast._select_list[elt])
-	    elif isinstance(elt, slice):
-		# slices are relative to the query_ast select_list
-		# must be either integers or strings; if strings, must be
-		# findable in the select list; slice finally converted to range
-		if elt == _null_slice:
-		    # take all columns
-		    select_list.extend(self._query_ast._select_list)
-		    continue
-		col_strings = [s.name for s in self._query_ast._select_list]
-		# get start index
-		if isinstance(elt.start, basestring):
-		    start = col_strings.index(elt.start)
-		elif isinstance(elt.start, (int, long)):
-		    start = elt.start
-		elif elt.start is None:
-		    start = 0
-		else:
-		    raise ValueError("slice.start must be string/int/long")
-		# get stop index
-		if isinstance(elt.stop, basestring):
-		    stop = col_strings.index(elt.stop)
-		elif isinstance(elt.stop, (int, long)):
-		    stop = elt.stop
-		elif elt.stop is None:
-		    stop = len(self._query_ast._select_list)
-		else:
-		    raise ValueError("slice.stop must be string/int/long")
-		# get step value
-		if isinstance(elt.step, (int, long)):
-		    step = elt.step
-		elif step is None:
-		    step = 1
-		else:
-		    raise ValueError("slice.step must be int/long")
-		# finally pull out the corresponding SelectItem objects
-		for i in range(start, stop, step):
-		    select_list.append(self._query_ast._select_list[i])
-	return select_list
-
-    def _getitem_filter(self, obj):
-	# obj is one of int, expr, slice
-	# to be converted to a pair of LimitElement and Expr
-	if isinstance(obj, (int, long)):
-	    return (LimitElement(1, obj), None)
-	if isinstance(obj, Expr):
-	    return (None, obj)
-	if isinstance(obj, slice):
-	    if obj.step != 1 and obj.step is not None:
-		raise ValueError("slices can only have a step size of 1")
-	    if (not isinstance(obj.start, (int, long)) or
-		    not isinstance(obj.stop, (int, long))):
-		raise ValueError("slice stop and start must be int/long")
-	    return (LimitElement(obj.stop - obj.start, obj.start), None)
-	raise ValueError("row indexer must be int/long/slice/Expr")
-
-    def join(self, other, on=None, how='inner', hint=None):
-	"""Join this BDF to another one.
-
-	`on` is `None`, `string`, `Expr`, or `list[string]`
-	"""
-	left = InlineView(self._query_ast.to_sql(), 'left_tbl')
-	right = InlineView(other._query_ast.to_sql(), 'right_tbl')
-	# SELECT left.*, right.*
-	select_list = [SelectItem(table_name=TableName(left.name)),
-		       SelectItem(table_name=TableName(right.name))]
-	table_ref = JoinTableRef(left, right, on=on, op=how, hint=hint)
-	ast = SelectStmt(select_list, table_ref)
+		select_list.append(SelectItem(expr=expr))
+	ast._select_list = select_list
 	return BigDataFrame(self._ic, ast)
-
-    def append(self, other, on, how='inner', hint=None):
-	"""Append columns of `other` onto this BDF; impl. as a join.
-
-	You must supply a join clause to decide which rows go with which
-	"""
-	return self.join(other, on=on, how=how, hint=hint)
 
 
 # SQL AST
@@ -515,7 +419,7 @@ class BinaryExpr(Expr):
 	self._expr2 = expr2
 
     def to_sql(self):
-	return "(%s) %s (%s)" % (self._expr1.to_sql(), self._op, self._expr2.to_sql())
+	return "((%s) %s (%s))" % (self._expr1.to_sql(), self._op, self._expr2.to_sql())
 
 
 # TableRef hierarchy
@@ -686,10 +590,89 @@ class SelectItem(SQLNodeMixin):
 	    return '*'
 
 
-# SQL object
+# Query objects (DQL statements)
 
 class QueryStmt(SQLNodeMixin):
-    pass
+
+    def to_sql(self):
+	raise NotImplementedError
+
+    def select_list(self):
+	raise NotImplementedError
+
+    # below are internally used helper functions
+    # they only make use of the QueryStmt API above
+
+    def _projection(self, obj):
+	# obj is list; possible types would be:
+	# int, string, expr, slice, SelectItem
+	# need to convert to list of SelectItems
+	select_list = []
+	for elt in obj:
+	    if isinstance(elt, SelectItem):
+		select_list.append(elt)
+	    elif isinstance(elt, basestring):
+		select_list.append(SelectItem(expr=Literal(elt)))
+	    elif isinstance(elt, Expr):
+		select_list.append(SelectItem(expr=elt))
+	    elif isinstance(elt, (int, long)):
+		select_list.append(self.select_list[elt])
+	    elif isinstance(elt, slice):
+		# slices are relative to the query_ast select_list
+		# must be either integers or strings; if strings, must be
+		# findable in the select list; slice finally converted to range
+		if elt == slice(None, None, None):
+		    # null slice; take all columns
+		    select_list.extend(self.select_list)
+		    continue
+		col_strings = [s.name for s in self.select_list]
+		# get start index
+		if isinstance(elt.start, basestring):
+		    start = col_strings.index(elt.start)
+		elif isinstance(elt.start, (int, long)):
+		    start = elt.start
+		elif elt.start is None:
+		    start = 0
+		else:
+		    raise ValueError("slice.start must be string/int/long")
+		# get stop index
+		if isinstance(elt.stop, basestring):
+		    stop = col_strings.index(elt.stop)
+		elif isinstance(elt.stop, (int, long)):
+		    stop = elt.stop
+		elif elt.stop is None:
+		    stop = len(self.select_list)
+		else:
+		    raise ValueError("slice.stop must be string/int/long")
+		# get step value
+		if isinstance(elt.step, (int, long)):
+		    step = elt.step
+		elif step is None:
+		    step = 1
+		else:
+		    raise ValueError("slice.step must be int/long")
+		# finally pull out the corresponding SelectItem objects
+		for i in range(start, stop, step):
+		    select_list.append(self.select_list[i])
+	return select_list
+
+    def _where(self, obj):
+	# obj is one of int, expr, slice
+	# to be converted to a pair of LimitElement and Expr
+	# this fn does not currently make use of self, but his here for
+	# organizational convenience
+	if isinstance(obj, (int, long)):
+	    return (LimitElement(1, obj), None)
+	if isinstance(obj, Expr):
+	    return (None, obj)
+	if isinstance(obj, slice):
+	    if obj.step != 1 and obj.step is not None:
+		raise ValueError("slices can only have a step size of 1")
+	    if (not isinstance(obj.start, (int, long)) or
+		    not isinstance(obj.stop, (int, long))):
+		raise ValueError("slice stop and start must be int/long")
+	    return (LimitElement(obj.stop - obj.start, obj.start), None)
+	raise ValueError("row indexer must be int/long/slice/Expr")
 
 
 class SelectStmt(QueryStmt):
@@ -706,6 +689,9 @@ class SelectStmt(QueryStmt):
 	# do I need these?
 	# self._has_groupby = False
 	# self._has_agg = False
+
+    def select_list(self):
+	return self._select_list
 
     def to_sql(self):
 	sql = 'SELECT ' + ', '.join([s.to_sql() for s in self._select_list])
@@ -727,5 +713,55 @@ class UnionStmt(QueryStmt):
     def __init__(self, queries):
 	self._union_list = tuple(queries) # Tuple[QueryStmt]
 
+    def select_list(self):
+	# somewhere down the tree, there must be a SelectStmt
+	return self._union_list[0].select_list()
+
     def to_sql(self):
 	return ' UNION ALL '.join([u.to_sql() for u in self._union_list])
+
+
+# DDL statement helpers (they are not currently modeled)
+
+def _create_table(table_name, table_schema, path=None,
+	file_format='TEXTFILE', partition_schema=None, field_terminator='\\t',
+	line_terminator='\\n'):
+    external = path is not None
+    if external:
+	query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
+    else:
+	query = "CREATE TABLE %s" % table_name.to_sql()
+    schema_string = ', '.join(['%s %s' % (col, ty) for (col, ty) in table_schema])
+    query += " (%s)" % schema_string
+    if partition_schema:
+	schema_string = ', '.join(['%s %s' % (col, ty) for (col, ty) in partition_schema])
+	query += " PARTITIONED BY (%s)" % schema_string
+    if file_format == 'PARQUET':
+	query += " STORED AS PARQUET"
+    elif file_format == 'TEXTFILE':
+	query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY '%s' "
+		   "LINES TERMINATED BY '%s' STORED AS TEXTFILE") %
+		   (field_terminator, line_terminator))
+    else:
+	raise ValueError("Invalid file format")
+    if external:
+	query += " LOCATION '%s'" % path
+    return query
+
+def _create_table_as_select(table_name, path=None, file_format='TEXTFILE',
+	field_terminator='\\t', line_terminator='\\n'):
+    external = path is not None
+    if external:
+	query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
+    else:
+	query = "CREATE TABLE %s" % table_name.to_sql()
+    if file_format == 'PARQUET':
+	query += " STORED AS PARQUET"
+    elif file_format == 'TEXTFILE':
+	query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY '%s' "
+		   "LINES TERMINATED BY '%s' STORED AS TEXTFILE") %
+		   (field_terminator, line_terminator))
+    if external:
+	query += " LOCATION '%s'" % path
+    query += " AS "
+    return query
