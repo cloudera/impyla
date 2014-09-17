@@ -29,7 +29,7 @@ the side data around to other queries (e.g., cross-join).  A typical use case
 would be to store model parameters as binary data for UDFs.
 """
 
-import impala.util
+from . import util
 
 def wrap_single_quotes(x):
     return "'%s'" % x
@@ -41,7 +41,7 @@ class BlobStore(object):
         self._name = name
         
         if self._name is None:
-            self._name = impala.util.generate_random_table_name(prefix='blob',
+            self._name = util.generate_random_table_name(prefix='blob',
                     safe=True, cursor=self._cursor)
             self._create_blob_table()
         self._validate_schema()

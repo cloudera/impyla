@@ -17,14 +17,15 @@ import string
 import random
 
 try:
-    import pandas as pd    
+    import pandas as pd
     def as_pandas(cursor):
         names = [metadata[0] for metadata in cursor.description]
-        return pd.DataFrame([dict(zip(names, row)) for row in cursor], columns=names)
+        return pd.DataFrame.from_records(cursor.fetchall(), columns=names)
 except ImportError:
     print "Failed to import pandas"
 
 def generate_random_table_name(prefix='tmp', safe=False, cursor=None):
+    # unlikely but can be problematic if generated table name is taken in the interim
     tries_left = 3
     while tries_left > 0:
         date = time.localtime(time.time())
@@ -32,7 +33,7 @@ def generate_random_table_name(prefix='tmp', safe=False, cursor=None):
                 date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec)
         random_string = ''.join(random.sample(string.ascii_lowercase, 8))
         name = "%s%s%s" % (prefix, date_string, random_string)
-        if safe == False:
+        if not safe:
             return name
         # safe is True; check cursor
         if cursor is None:
@@ -43,7 +44,7 @@ def generate_random_table_name(prefix='tmp', safe=False, cursor=None):
     raise ValueError("Failed to generate a safe table name")
 
 def compute_result_schema(cursor, query_string):
-    temp_name = generate_random_table_name()
+    temp_name = generate_random_table_name(safe=True, cursor=cursor)
     try:
         cursor.execute("CREATE VIEW %s AS %s" % (temp_name, query_string))
         cursor.execute("SELECT * FROM %s LIMIT 0" % temp_name)

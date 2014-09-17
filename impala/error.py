@@ -16,42 +16,63 @@
 
 import exceptions
 
-from impala.cli_service.ttypes import TStatusCode
-
 class Error(exceptions.StandardError):
     pass
+
 
 class Warning(exceptions.StandardError):
     pass
 
+
+# DB API (PEP 249) exceptions
+
 class InterfaceError(Error):
     pass
+
 
 class DatabaseError(Error):
     pass
 
+
 class InternalError(DatabaseError):
     pass
+
 
 class OperationalError(DatabaseError):
     pass
 
+
 class ProgrammingError(DatabaseError):
     pass
+
 
 class IntegrityError(DatabaseError):
     pass
 
+
 class DataError(DatabaseError):
     pass
+
 
 class NotSupportedError(DatabaseError):
     pass
 
-class HS2Error(Error):
+
+# RPC errors
+
+class RPCError(Error):
     pass
 
-def err_if_rpc_not_ok(resp):
-    if (resp.status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_STATUS'] and
-            resp.status.statusCode != TStatusCode._NAMES_TO_VALUES['SUCCESS_WITH_INFO_STATUS']):
-        raise HS2Error(resp.status.errorMessage)
+
+class HiveServer2Error(RPCError):
+    pass
+
+
+class BeeswaxError(RPCError):
+    pass
+
+class QueryStateError(BeeswaxError):
+    pass
+
+class DisconnectedError(BeeswaxError):
+    pass

@@ -19,8 +19,8 @@ import struct
 import numpy as np
 from sklearn.base import BaseEstimator
 
-import impala.blob
-import impala.util
+from . import blob
+from . import util
 
 
 # TO CREATE A NEW ESTIMATOR:
@@ -59,8 +59,8 @@ class ImpalaEstimator(BaseEstimator):
         if len(parameter_list) > 0:
             parameter_list = ', ' + parameter_list
         
-        data_view = impala.util.create_view_from_query(cursor, data_query, safe=True)
-        data_schema = impala.util.compute_result_schema(cursor, "SELECT * FROM %s" % data_view)
+        data_view = util.create_view_from_query(cursor, data_query, safe=True)
+        data_schema = util.compute_result_schema(cursor, "SELECT * FROM %s" % data_view)
         columns = [tup[0] for tup in data_schema]
         if label_column not in columns:
             raise ValueError("%s is not a column in the provided data_query" % label_column)
@@ -74,7 +74,7 @@ class ImpalaEstimator(BaseEstimator):
                        'parameter_list': parameter_list}
         derived_from_clause = model_store.distribute_value_to_table(prev_key, data_view)
         model_store.put(next_key, model_value, derived_from_clause)   # actual query execution here
-        impala.util.drop_view(cursor, data_view)
+        util.drop_view(cursor, data_view)
         self.coef_ = self._decode_coef(model_store[next_key])
     
     def partial_fit(self, cursor, model_store, data_query, label_column, epoch):
@@ -97,7 +97,7 @@ class ImpalaEstimator(BaseEstimator):
         
         label_column is the string name of the column that contains the labels.
         """
-        model_store = impala.blob.BlobStore(cursor)
+        model_store = blob.BlobStore(cursor)
         model_store.send_null('0')
         for i in xrange(self.n_iter):
             epoch = i + 1
