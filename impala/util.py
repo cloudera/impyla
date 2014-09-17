@@ -64,3 +64,20 @@ def create_view_from_query(cursor, query_string, view_name=None, safe=False):
 
 def drop_view(cursor, view_name):
     cursor.execute("DROP VIEW %s" % view_name)
+
+def _escape(s):
+    e = s
+    e = e.replace('\\', '\\\\')
+    e = e.replace('\n', '\\n')
+    e = e.replace('\r', '\\r')
+    e = e.replace("'", "\\'")
+    e = e.replace('"', '\\"')
+    return e
+
+def _py_to_sql_string(value):
+    if value is None:
+	return 'NULL'
+    elif isinstance(value, basestring):
+	return "'" + _escape(value) + "'"
+    else:
+	return str(value)

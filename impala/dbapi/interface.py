@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from impala.util import _escape
 from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           InternalError, OperationalError, ProgrammingError,
                           IntegrityError, DataError, NotSupportedError)
@@ -145,12 +146,3 @@ def _bind_parameters(operation, parameters):
         else:
             string_parameters[name] = str(value)
     return operation % string_parameters
-
-def _escape(s):
-    e = s
-    e = e.replace('\\', '\\\\')
-    e = e.replace('\n', '\\n')
-    e = e.replace('\r', '\\r')
-    e = e.replace("'", "\\'")
-    e = e.replace('"', '\\"')
-    return e

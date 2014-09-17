@@ -24,8 +24,8 @@ from cStringIO import StringIO
 
 import pandas as pd
 
-from impala.dbapi import connect, _py_to_sql_string
-from impala.util import as_pandas, _random_id
+from impala.dbapi import connect
+from impala.util import as_pandas, _random_id, _py_to_sql_string
 
 """
 `ImpalaContext`
