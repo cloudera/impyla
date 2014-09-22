@@ -240,9 +240,9 @@ def fetch_results(service, operation_handle, schema=None, max_rows=100,
         for (i, col_val) in enumerate(trow.colVals):
             type_ = schema[i][1]
             value = _TTypeId_to_TColumnValue_getters[type_](col_val).value
-            if type_ == 'TIMESTAMP_TYPE':
+            if type_ == 'TIMESTAMP':
                 value = _parse_timestamp(value)
-            elif type_ == 'DECIMAL_TYPE':
+            elif type_ == 'DECIMAL':
                 if value: value = Decimal(value)
             row.append(value)
         rows.append(tuple(row))
