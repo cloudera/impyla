@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# some inspiration from Dropbox's PyHive
+
 from __future__ import absolute_import
 
 import re
 
 from sqlalchemy.dialects import registry
-from sqlalchemy.dialects.postgresql.base import PGDialect
 from sqlalchemy.engine.default import DefaultDialect
+from sqlalchemy.sql.compiler import IdentifierPreparer
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
         DECIMAL, Integer, Float, String)
 
@@ -53,10 +55,47 @@ _impala_type_to_sqlalchemy_type = {
         'DECIMAL': DECIMAL}
 
 
+class ImpalaIdentifierPreparer(IdentifierPreparer):
+    # https://github.com/cloudera/Impala/blob/master/fe/src/main/jflex/sql-scanner.flex
+    reserved_words = frozenset(['add', 'aggregate', 'all', 'alter', 'analytic',
+	    'and', 'anti', 'api_version', 'array', 'as', 'asc', 'avro',
+	    'between', 'bigint', 'binary', 'boolean', 'by', 'cached', 'case',
+	    'cast', 'change', 'char', 'class', 'close_fn', 'column', 'columns',
+	    'comment', 'compute', 'create', 'cross', 'current', 'data',
+	    'database', 'databases', 'date', 'datetime', 'decimal', 'delimited',
+	    'desc', 'describe', 'distinct', 'div', 'double', 'drop', 'else',
+	    'end', 'escaped', 'exists', 'explain', 'external', 'false',
+	    'fields', 'fileformat', 'finalize_fn', 'first', 'float',
+	    'following', 'for', 'format', 'formatted', 'from', 'full',
+	    'function', 'functions', 'grant', 'group', 'having', 'if', 'in',
+	    'init_fn', 'inner', 'inpath', 'insert', 'int', 'integer',
+	    'intermediate', 'interval', 'into', 'invalidate', 'is', 'join',
+	    'last', 'left', 'like', 'limit', 'lines', 'load', 'location', 'map',
+	    'merge_fn', 'metadata', 'not', 'null', 'nulls', 'offset', 'on',
+	    'or', 'order', 'outer', 'over', 'overwrite', 'parquet',
+	    'parquetfile', 'partition', 'partitioned', 'partitions',
+	    'preceding', 'prepare_fn', 'produced', 'range', 'rcfile', 'real',
+	    'refresh', 'regexp', 'rename', 'replace', 'returns', 'revoke',
+	    'right', 'rlike', 'role', 'roles', 'row', 'rows', 'schema',
+	    'schemas', 'select', 'semi', 'sequencefile', 'serdeproperties',
+	    'serialize_fn', 'set', 'show', 'smallint', 'stats', 'stored',
+	    'straight_join', 'string', 'struct', 'symbol', 'table', 'tables',
+	    'tblproperties', 'terminated', 'textfile', 'then', 'timestamp',
+	    'tinyint', 'to', 'true', 'unbounded', 'uncached', 'union',
+	    'update_fn', 'use', 'using', 'values', 'varchar', 'view', 'when',
+	    'where', 'with'])
+
+    legal_characters = re.compile(r'^[A-Z0-9_]+$', re.I)
+
+    def __init__(self, dialect):
+	super(ImpalaIdentifierPreparer, self).__init__(dialect, initial_quote='`')
+
+
 class ImpalaDialect(DefaultDialect):
     name = 'impala'
     driver = 'impala'
     paramstyle = 'pyformat'
+    preparer = ImpalaIdentifierPreparer
     max_identifier_length = 128
     supports_sane_rowcount = False
     supports_sane_multi_rowcount = False
