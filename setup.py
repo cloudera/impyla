@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ez_setup
-ez_setup.use_setuptools(version='2')
+ez_setup.use_setuptools()
 
 from setuptools import setup, find_packages
 
@@ -30,6 +30,8 @@ setup(
     author_email='laserson@cloudera.com',
     url='https://github.com/cloudera/impyla',
     packages=find_packages(),
+    package_data={'impala.udf': ['precompiled/*.bc']},
+    scripts=['bin/register-impala-udfs.py'],
     install_requires=['thrift'],
     keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark pydata'
 	      'pandas distributed db api pep 249'),
@@ -39,5 +41,6 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7'
     ],
-    entry_points={'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect']}
+    entry_points={'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect']},
+    zip_safe=False
 )

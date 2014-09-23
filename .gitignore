@@ -3,6 +3,7 @@ scratch.py
 
 # C extensions
 *.so
+*.bc
 
 # Packages
 *.egg
@@ -12,7 +13,6 @@ dist
 build
 eggs
 parts
-bin
 var
 sdist
 develop-eggs
@@ -34,3 +34,8 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+test-udf/**/CMakeFiles
+test-udf/**/cmake_install.cmake
+test-udf/**/CMakeCache.txt
+test-udf/**/Makefile

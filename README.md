@@ -38,6 +38,8 @@ Optional:
 
 * `pandas` for the `.as_pandas()` function to work
 
+* `boost` for Python UDFs (`udf.h` depends on `boost/cstdint.hpp`)
+
 This project is installed with `setuptools>=2`.
 
 ### Installation
@@ -53,6 +55,7 @@ For the latest (dev) version, clone the repo:
 ```bash
 git clone https://github.com/cloudera/impyla.git
 cd impyla
+make # optional: only for Numba-compiled UDFs; requires LLVM/clang
 python setup.py install
 ```
 
