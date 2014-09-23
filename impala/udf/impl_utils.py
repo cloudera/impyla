@@ -26,8 +26,8 @@ from .types import AnyVal
 
 def _get_is_null_pointer(builder, val):
     ptr = builder.gep(val._getpointer(),
-		      [lc.Constant.int(lc.Type.int(32), 0)] * 3, # gep(0, 0, 0)
-		      inbounds=True)
+                      [lc.Constant.int(lc.Type.int(32), 0)] * 3, # gep(0, 0, 0)
+                      inbounds=True)
     return ptr
 
 def _get_is_null(builder, val):
@@ -47,43 +47,43 @@ class AnyValStruct(cgutils.Structure):
 
 class BooleanValStruct(cgutils.Structure):
     _fields = [('parent',  AnyVal),
-	       ('val',     ntypes.int8),]
+               ('val',     ntypes.int8),]
 
 
 class TinyIntValStruct(cgutils.Structure):
     _fields = [('parent',  AnyVal),
-	       ('val',     ntypes.int8),]
+               ('val',     ntypes.int8),]
 
 
 class SmallIntValStruct(cgutils.Structure):
     _fields = [('parent',  AnyVal),
-	       ('val',     ntypes.int16),]
+               ('val',     ntypes.int16),]
 
 
 class IntValStruct(cgutils.Structure):
     _fields = [('parent',  AnyVal),
-	       ('val',     ntypes.int32),]
+               ('val',     ntypes.int32),]
 
 
 class BigIntValStruct(cgutils.Structure):
     _fields = [('parent',  AnyVal),
-	       ('val',     ntypes.int64),]
+               ('val',     ntypes.int64),]
 
 
 class FloatValStruct(cgutils.Structure):
     _fields = [('parent',  AnyVal),
-	       ('val',     ntypes.float32),]
+               ('val',     ntypes.float32),]
 
 
 class DoubleValStruct(cgutils.Structure):
     _fields = [('parent',  AnyVal),
-	       ('val',     ntypes.float64),]
+               ('val',     ntypes.float64),]
 
 
 class StringValStruct(cgutils.Structure):
     _fields = [('parent',  AnyVal),
-	       ('len',     ntypes.int32),
-	       ('ptr',     ntypes.CPointer(ntypes.uint8))]
+               ('len',     ntypes.int32),
+               ('ptr',     ntypes.CPointer(ntypes.uint8))]
 
 
 # misc impl utilies

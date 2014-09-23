@@ -255,7 +255,7 @@ class FunctionContext {
 // will be called once per fragment with 'scope' set to FRAGMENT_LOCAL, and once per
 // execution thread with 'scope' set to THREAD_LOCAL.
 typedef void (*UdfPrepare)(FunctionContext* context,
-			   FunctionContext::FunctionStateScope scope);
+                           FunctionContext::FunctionStateScope scope);
 
 // The UDF can also optionally include a close function, specified in the "CREATE
 // FUNCTION" statement using "close_fn=<close function symbol>". The close function is
@@ -268,7 +268,7 @@ typedef void (*UdfPrepare)(FunctionContext* context,
 // will be called once per fragment with 'scope' set to FRAGMENT_LOCAL, and once per
 // execution thread with 'scope' set to THREAD_LOCAL.
 typedef void (*UdfClose)(FunctionContext* context,
-			 FunctionContext::FunctionStateScope scope);
+                         FunctionContext::FunctionStateScope scope);
 
 //----------------------------------------------------------------------------
 //------------------------------- UDAs ---------------------------------------

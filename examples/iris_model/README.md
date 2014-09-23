@@ -50,7 +50,7 @@ Finally, the classifier function itself was provided by BigML:
 ```python
 def predict_species(sepal_width=None, petal_length=None, petal_width=None):
     """ Predictor for species from model/52952081035d07727e01d836
-	Predictive model by BigML - Machine Learning Made Easy
+        Predictive model by BigML - Machine Learning Made Easy
     """
     # 0 == Iris-virginica
     # 1 == Iris-versicolor
@@ -58,36 +58,36 @@ def predict_species(sepal_width=None, petal_length=None, petal_width=None):
 #    if (petal_width is None):
 #        return 0
     if (petal_width > 0.8):
-	if (petal_width <= 1.75):
+        if (petal_width <= 1.75):
 #            if (petal_length is None):
 #                return 1
-	    if (petal_length > 4.95):
-		if (petal_width <= 1.55):
-		    return 0
-		if (petal_width > 1.55):
-		    if (petal_length > 5.45):
-			return 0
-		    if (petal_length <= 5.45):
-			return 1
-	    if (petal_length <= 4.95):
-		if (petal_width <= 1.65):
-		    return 1
-		if (petal_width > 1.65):
-		    return 0
-	if (petal_width > 1.75):
+            if (petal_length > 4.95):
+                if (petal_width <= 1.55):
+                    return 0
+                if (petal_width > 1.55):
+                    if (petal_length > 5.45):
+                        return 0
+                    if (petal_length <= 5.45):
+                        return 1
+            if (petal_length <= 4.95):
+                if (petal_width <= 1.65):
+                    return 1
+                if (petal_width > 1.65):
+                    return 0
+        if (petal_width > 1.75):
 #            if (petal_length is None):
 #                return 0
-	    if (petal_length > 4.85):
-		return 0
-	    if (petal_length <= 4.85):
+            if (petal_length > 4.85):
+                return 0
+            if (petal_length <= 4.85):
 #                if (sepal_width is None):
 #                    return 0
-		if (sepal_width <= 3.1):
-		    return 0
-		if (sepal_width > 3.1):
-		    return 1
+                if (sepal_width <= 3.1):
+                    return 0
+                if (sepal_width > 3.1):
+                    return 1
     if (petal_width <= 0.8):
-	return 2
+        return 2
 ```
 
 ## Spark solution
@@ -96,7 +96,7 @@ Spark lets you easily write distributed computations using Python.
 
 ```python
 observations = sc.textFile('/user/laserson/bigml/iris_text') \
-	.map(lambda line: tuple([float(val) for val in line.split('\t')[1:]]))
+        .map(lambda line: tuple([float(val) for val in line.split('\t')[1:]]))
 predictions = observations.map(lambda tup: predict_species(*tup))
 predictions.distinct().collect()
 ```
@@ -112,49 +112,49 @@ from numba.ext.impala import udf, FunctionContext, DoubleVal, IntVal
 
 def predict_species(context, sepal_width, petal_length, petal_width):
     """ Predictor for species from model/52952081035d07727e01d836
-	Predictive model by BigML - Machine Learning Made Easy
+        Predictive model by BigML - Machine Learning Made Easy
     """
     # 0 == Iris-virginica
     # 1 == Iris-versicolor
     # 2 == Iris-setosa
     if sepal_width.is_null or petal_length.is_null or petal_width.is_null:
-	return IntVal.null
+        return IntVal.null
     sepal_width = sepal_width.val
     petal_length = petal_length.val
     petal_width = petal_width.val
 #    if (petal_width is None):
 #        return IntVal(0)
     if (petal_width > 0.8):
-	if (petal_width <= 1.75):
+        if (petal_width <= 1.75):
 #            if (petal_length is None):
 #                return IntVal(1)
-	    if (petal_length > 4.95):
-		if (petal_width <= 1.55):
-		    return IntVal(0)
-		if (petal_width > 1.55):
-		    if (petal_length > 5.45):
-			return IntVal(0)
-		    if (petal_length <= 5.45):
-			return IntVal(1)
-	    if (petal_length <= 4.95):
-		if (petal_width <= 1.65):
-		    return IntVal(1)
-		if (petal_width > 1.65):
-		    return IntVal(0)
-	if (petal_width > 1.75):
+            if (petal_length > 4.95):
+                if (petal_width <= 1.55):
+                    return IntVal(0)
+                if (petal_width > 1.55):
+                    if (petal_length > 5.45):
+                        return IntVal(0)
+                    if (petal_length <= 5.45):
+                        return IntVal(1)
+            if (petal_length <= 4.95):
+                if (petal_width <= 1.65):
+                    return IntVal(1)
+                if (petal_width > 1.65):
+                    return IntVal(0)
+        if (petal_width > 1.75):
 #            if (petal_length is None):
 #                return IntVal(0)
-	    if (petal_length > 4.85):
-		return IntVal(0)
-	    if (petal_length <= 4.85):
+            if (petal_length > 4.85):
+                return IntVal(0)
+            if (petal_length <= 4.85):
 #                if (sepal_width is None):
 #                    return IntVal(0)
-		if (sepal_width <= 3.1):
-		    return IntVal(0)
-		if (sepal_width > 3.1):
-		    return IntVal(1)
+                if (sepal_width <= 3.1):
+                    return IntVal(0)
+                if (sepal_width > 3.1):
+                    return IntVal(1)
     if (petal_width <= 0.8):
-	return IntVal(2)
+        return IntVal(2)
 
 # connect to impala
 host = 'bottou01-10g.pa.cloudera.com'

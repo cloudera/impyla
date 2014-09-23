@@ -19,15 +19,15 @@ sc.addPyFile('/home/laserson/models/model_2000.py')
 sizes = [0, 100, 500, 1000, 1500, 2000]
 
 udfs = {0: predict_income_0,
-	100: predict_income_100,
-	500: predict_income_500,
-	1000: predict_income_1000,
-	1500: predict_income_1500,
-	2000: predict_income_2000}
+        100: predict_income_100,
+        500: predict_income_500,
+        1000: predict_income_1000,
+        1500: predict_income_1500,
+        2000: predict_income_2000}
 
 ident = lambda x: x # do nothing for strings
 types = (int, ident, int, ident, int, ident, ident, ident, ident, ident, int,
-	ident, ident)
+        ident, ident)
 num_fields = len(types)
 
 def parse_obs(line):

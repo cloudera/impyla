@@ -40,7 +40,7 @@ def _gen_safe_random_table_name(cursor, prefix='tmp'):
     # unlikely but can be problematic if generated table name is taken in the interim
     tries_left = 3
     while tries_left > 0:
-	name = _random_id(prefix, 8)
+        name = _random_id(prefix, 8)
         if not cursor.table_exists(name):
             return name
         tries_left -= 1
@@ -76,8 +76,8 @@ def _escape(s):
 
 def _py_to_sql_string(value):
     if value is None:
-	return 'NULL'
+        return 'NULL'
     elif isinstance(value, basestring):
-	return "'" + _escape(value) + "'"
+        return "'" + _escape(value) + "'"
     else:
-	return str(value)
+        return str(value)

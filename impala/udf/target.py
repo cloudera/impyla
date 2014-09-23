@@ -29,13 +29,13 @@ from numba.targets.imputils import Registry, implement, impl_attribute
 from . import stringimpl
 from .abi import ABIHandling, raise_return_type
 from .types import (FunctionContext, AnyVal, BooleanVal, BooleanValType,
-		    TinyIntVal, TinyIntValType, SmallIntVal, SmallIntValType,
-		    IntVal, IntValType, BigIntVal, BigIntValType, FloatVal,
-		    FloatValType, DoubleVal, DoubleValType, StringVal,
-		    StringValType)
+                    TinyIntVal, TinyIntValType, SmallIntVal, SmallIntValType,
+                    IntVal, IntValType, BigIntVal, BigIntValType, FloatVal,
+                    FloatValType, DoubleVal, DoubleValType, StringVal,
+                    StringValType)
 from .impl_utils import (AnyValStruct, BooleanValStruct, TinyIntValStruct,
-			 SmallIntValStruct, IntValStruct, BigIntValStruct,
-			 FloatValStruct, DoubleValStruct, StringValStruct)
+                         SmallIntValStruct, IntValStruct, BigIntValStruct,
+                         FloatValStruct, DoubleValStruct, StringValStruct)
 from .impl_utils import _get_is_null, _set_is_null, _conv_numba_struct_to_clang
 
 
@@ -49,11 +49,11 @@ register_attribute = registry.register_attr
 def _ctor_factory(Struct, Type, *input_args):
     @implement(Type, *input_args)
     def Val_ctor(context, builder, sig, args):
-	[x] = args
-	v = Struct(context, builder)
-	_set_is_null(builder, v, cgutils.false_bit)
-	v.val = x
-	return v._getvalue()
+        [x] = args
+        v = Struct(context, builder)
+        _set_is_null(builder, v, cgutils.false_bit)
+        v.val = x
+        return v._getvalue()
     return register_function(Val_ctor)
 
 BooleanVal_ctor = _ctor_factory(BooleanValStruct, BooleanValType, ntypes.int8)
@@ -72,7 +72,7 @@ def StringVal_ctor(context, builder, sig, args):
     iv = StringValStruct(context, builder)
     _set_is_null(builder, iv, cgutils.false_bit)
     fndesc = lowering.ExternalFunctionDescriptor('strlen', ntypes.uintp,
-	    [ntypes.CPointer(ntypes.char)])
+            [ntypes.CPointer(ntypes.char)])
     func = context.declare_external_function(cgutils.get_module(builder), fndesc)
     strlen_x = context.call_external_function(builder, func, fndesc.argtypes, [x])
     len_x = builder.trunc(strlen_x, lc.Type.int(32))
@@ -86,16 +86,16 @@ def StringVal_ctor(context, builder, sig, args):
 def _is_null_attr_factory(Struct, Val):
     @impl_attribute(Val, "is_null", ntypes.boolean)
     def Val_is_null(context, builder, typ, value):
-	v = Struct(context, builder, value=value)
-	is_null = _get_is_null(builder, v)
-	return is_null
+        v = Struct(context, builder, value=value)
+        is_null = _get_is_null(builder, v)
+        return is_null
     return register_attribute(Val_is_null)
 
 def _val_attr_factory(Struct, Val, retty):
     @impl_attribute(Val, "val", retty)
     def Val_val(context, builder, typ, value):
-	v = Struct(context, builder, value=value)
-	return v.val
+        v = Struct(context, builder, value=value)
+        return v.val
     return register_attribute(Val_val)
 
 # *Val.is_null
@@ -214,183 +214,183 @@ TYPE_LAYOUT = {
 
 class ImpalaTargetContext(BaseContext):
     _impala_types = (AnyVal, BooleanVal, TinyIntVal, SmallIntVal, IntVal,
-		     BigIntVal, FloatVal, DoubleVal, StringVal)
+                     BigIntVal, FloatVal, DoubleVal, StringVal)
 
     def init(self):
-	self.tm = le.TargetMachine.new()
+        self.tm = le.TargetMachine.new()
 
-	# insert registered impls
-	self.insert_func_defn(registry.functions)
-	self.insert_attr_defn(registry.attributes)
-	self.insert_func_defn(stringimpl.registry.functions)
-	self.insert_attr_defn(stringimpl.registry.attributes)
+        # insert registered impls
+        self.insert_func_defn(registry.functions)
+        self.insert_attr_defn(registry.attributes)
+        self.insert_func_defn(stringimpl.registry.functions)
+        self.insert_attr_defn(stringimpl.registry.attributes)
 
-	self.optimizer = self.build_pass_manager()
-	self._load_precompiled()
+        self.optimizer = self.build_pass_manager()
+        self._load_precompiled()
 
-	# once per context
-	self._fnctximpltype = lc.Type.opaque("FunctionContextImpl")
-	fnctxbody = [lc.Type.pointer(self._fnctximpltype)]
-	self._fnctxtype = lc.Type.struct(fnctxbody,
-					 name="class.impala_udf::FunctionContext")
+        # once per context
+        self._fnctximpltype = lc.Type.opaque("FunctionContextImpl")
+        fnctxbody = [lc.Type.pointer(self._fnctximpltype)]
+        self._fnctxtype = lc.Type.struct(fnctxbody,
+                                         name="class.impala_udf::FunctionContext")
 
     def _get_precompiled_function(self, name):
-	fns = [fn for fn in self.precompiled_module.functions if name in fn.name]
-	assert len(fns) == 1
-	return fns[0]
+        fns = [fn for fn in self.precompiled_module.functions if name in fn.name]
+        assert len(fns) == 1
+        return fns[0]
 
     def _load_precompiled(self):
-	binary_data = pkgutil.get_data("impala.udf", "precompiled/impala-precompiled.bc")
-	self.precompiled_module = lc.Module.from_bitcode(binary_data)
+        binary_data = pkgutil.get_data("impala.udf", "precompiled/impala-precompiled.bc")
+        self.precompiled_module = lc.Module.from_bitcode(binary_data)
 
     def cast(self, builder, val, fromty, toty):
-	if fromty not in self._impala_types and toty not in self._impala_types:
-	    return super(ImpalaTargetContext, self).cast(builder, val, fromty, toty)
+        if fromty not in self._impala_types and toty not in self._impala_types:
+            return super(ImpalaTargetContext, self).cast(builder, val, fromty, toty)
 
-	if fromty == toty:
-	    return val
+        if fromty == toty:
+            return val
 
-	# handle NULLs and Nones
-	if fromty == ntypes.none and toty in self._impala_types:
-	    iv = TYPE_LAYOUT[toty](self, builder)
-	    _set_is_null(builder, iv, cgutils.true_bit)
-	    return iv._getvalue()
-	if fromty in self._impala_types and toty == AnyVal:
-	    iv1 = TYPE_LAYOUT[fromty](self, builder, value=val)
-	    is_null = _get_is_null(builder, iv1)
-	    iv2 = AnyValStruct(self, builder)
-	    # this is equiv to _set_is_null, but changes the GEP bc of AnyVal's structure
-	    byte = builder.zext(is_null, lc.Type.int(8))
-	    builder.store(byte, builder.gep(iv2._getpointer(),
-		    [lc.Constant.int(lc.Type.int(32), 0)] * 2, inbounds=True))
-	    return iv2._getvalue()
+        # handle NULLs and Nones
+        if fromty == ntypes.none and toty in self._impala_types:
+            iv = TYPE_LAYOUT[toty](self, builder)
+            _set_is_null(builder, iv, cgutils.true_bit)
+            return iv._getvalue()
+        if fromty in self._impala_types and toty == AnyVal:
+            iv1 = TYPE_LAYOUT[fromty](self, builder, value=val)
+            is_null = _get_is_null(builder, iv1)
+            iv2 = AnyValStruct(self, builder)
+            # this is equiv to _set_is_null, but changes the GEP bc of AnyVal's structure
+            byte = builder.zext(is_null, lc.Type.int(8))
+            builder.store(byte, builder.gep(iv2._getpointer(),
+                    [lc.Constant.int(lc.Type.int(32), 0)] * 2, inbounds=True))
+            return iv2._getvalue()
 
-	if fromty == BooleanVal:
-	    v = BooleanValStruct(self, builder, val)
-	    return self.cast(builder, v.val, ntypes.boolean, toty)
-	if fromty == TinyIntVal:
-	    v = TinyIntValStruct(self, builder, val)
-	    return self.cast(builder, v.val, ntypes.int8, toty)
-	if fromty == SmallIntVal:
-	    v = SmallIntValStruct(self, builder, val)
-	    return self.cast(builder, v.val, ntypes.int16, toty)
-	if fromty == IntVal:
-	    v = IntValStruct(self, builder, val)
-	    return self.cast(builder, v.val, ntypes.int32, toty)
-	if fromty == BigIntVal:
-	    v = BigIntValStruct(self, builder, val)
-	    return self.cast(builder, v.val, ntypes.int64, toty)
-	if fromty == FloatVal:
-	    v = FloatValStruct(self, builder, val)
-	    return self.cast(builder, v.val, ntypes.float32, toty)
-	if fromty == DoubleVal:
-	    v = DoubleValStruct(self, builder, val)
-	    return self.cast(builder, v.val, ntypes.float64, toty)
+        if fromty == BooleanVal:
+            v = BooleanValStruct(self, builder, val)
+            return self.cast(builder, v.val, ntypes.boolean, toty)
+        if fromty == TinyIntVal:
+            v = TinyIntValStruct(self, builder, val)
+            return self.cast(builder, v.val, ntypes.int8, toty)
+        if fromty == SmallIntVal:
+            v = SmallIntValStruct(self, builder, val)
+            return self.cast(builder, v.val, ntypes.int16, toty)
+        if fromty == IntVal:
+            v = IntValStruct(self, builder, val)
+            return self.cast(builder, v.val, ntypes.int32, toty)
+        if fromty == BigIntVal:
+            v = BigIntValStruct(self, builder, val)
+            return self.cast(builder, v.val, ntypes.int64, toty)
+        if fromty == FloatVal:
+            v = FloatValStruct(self, builder, val)
+            return self.cast(builder, v.val, ntypes.float32, toty)
+        if fromty == DoubleVal:
+            v = DoubleValStruct(self, builder, val)
+            return self.cast(builder, v.val, ntypes.float64, toty)
 
-	# no way fromty is a *Val starting here
-	if toty == BooleanVal:
-	    val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int8)
-	    return BooleanVal_ctor(self, builder, None, [val])
-	if toty == TinyIntVal:
-	    val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int8)
-	    return TinyIntVal_ctor(self, builder, None, [val])
-	if toty == SmallIntVal:
-	    val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int16)
-	    return SmallIntVal_ctor(self, builder, None, [val])
-	if toty == IntVal:
-	    val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int32)
-	    return IntVal_ctor(self, builder, None, [val])
-	if toty == BigIntVal:
-	    val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int64)
-	    return BigIntVal_ctor(self, builder, None, [val])
-	if toty == FloatVal:
-	    val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.float32)
-	    return FloatVal_ctor(self, builder, None, [val])
-	if toty == DoubleVal:
-	    val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.float64)
-	    return DoubleVal_ctor(self, builder, None, [val])
-	if toty == StringVal:
-	    return StringVal_ctor(self, builder, None, [val])
+        # no way fromty is a *Val starting here
+        if toty == BooleanVal:
+            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int8)
+            return BooleanVal_ctor(self, builder, None, [val])
+        if toty == TinyIntVal:
+            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int8)
+            return TinyIntVal_ctor(self, builder, None, [val])
+        if toty == SmallIntVal:
+            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int16)
+            return SmallIntVal_ctor(self, builder, None, [val])
+        if toty == IntVal:
+            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int32)
+            return IntVal_ctor(self, builder, None, [val])
+        if toty == BigIntVal:
+            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int64)
+            return BigIntVal_ctor(self, builder, None, [val])
+        if toty == FloatVal:
+            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.float32)
+            return FloatVal_ctor(self, builder, None, [val])
+        if toty == DoubleVal:
+            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.float64)
+            return DoubleVal_ctor(self, builder, None, [val])
+        if toty == StringVal:
+            return StringVal_ctor(self, builder, None, [val])
 
-	return super(ImpalaTargetContext, self).cast(builder, val, fromty, toty)
+        return super(ImpalaTargetContext, self).cast(builder, val, fromty, toty)
 
     def get_constant_string(self, builder, ty, val):
-	assert ty == ntypes.string
-	literal = lc.Constant.stringz(val)
-	gv = cgutils.get_module(builder).add_global_variable(literal.type, 'str_literal')
-	gv.linkage = lc.LINKAGE_PRIVATE
-	gv.initializer = literal
-	gv.global_constant = True
-	# gep gets pointer to first element of the constant byte array
-	return gv.gep([lc.Constant.int(lc.Type.int(32), 0)] * 2)
+        assert ty == ntypes.string
+        literal = lc.Constant.stringz(val)
+        gv = cgutils.get_module(builder).add_global_variable(literal.type, 'str_literal')
+        gv.linkage = lc.LINKAGE_PRIVATE
+        gv.initializer = literal
+        gv.global_constant = True
+        # gep gets pointer to first element of the constant byte array
+        return gv.gep([lc.Constant.int(lc.Type.int(32), 0)] * 2)
 
     def get_constant_struct(self, builder, ty, val):
-	# override for converting literals to *Vals, incl. None
-	if ty in self._impala_types and val is None:
-	    iv = TYPE_LAYOUT[ty](self, builder)
-	    _set_is_null(builder, iv, cgutils.true_bit)
-	    return iv._getvalue()
-	elif ty == BooleanVal:
-	    const = lc.Constant.int(lc.Type.int(8), val)
-	    return BooleanVal_ctor(self, builder, None, [const])
-	elif ty == TinyIntVal:
-	    const = lc.Constant.int(lc.Type.int(8), val)
-	    return TinyIntVal_ctor(self, builder, None, [const])
-	elif ty == SmallIntVal:
-	    const = lc.Constant.int(lc.Type.int(16), val)
-	    return SmallIntVal_ctor(self, builder, None, [const])
-	elif ty == IntVal:
-	    const = lc.Constant.int(lc.Type.int(32), val)
-	    return IntVal_ctor(self, builder, None, [const])
-	elif ty == BigIntVal:
-	    const = lc.Constant.int(lc.Type.int(64), val)
-	    return BigIntVal_ctor(self, builder, None, [const])
-	elif ty == FloatVal:
-	    const = lc.Constant.real(lc.Type.float(), val)
-	    return FloatVal_ctor(self, builder, None, [const])
-	elif ty == DoubleVal:
-	    const = lc.Constant.real(lc.Type.double(), val)
-	    return DoubleVal_ctor(self, builder, None, [const])
-	elif ty == StringVal:
-	    iv = StringValStruct(self, builder)
-	    _set_is_null(builder, iv, cgutils.false_bit)
-	    iv.len = lc.Constant.int(lc.Type.int(32), len(val))
-	    iv.ptr = self.get_constant_string(builder, ntypes.string, val)
-	    return iv._getvalue()
-	else:
-	    return super(ImpalaTargetContext, self).get_constant_struct(builder, ty, val)
+        # override for converting literals to *Vals, incl. None
+        if ty in self._impala_types and val is None:
+            iv = TYPE_LAYOUT[ty](self, builder)
+            _set_is_null(builder, iv, cgutils.true_bit)
+            return iv._getvalue()
+        elif ty == BooleanVal:
+            const = lc.Constant.int(lc.Type.int(8), val)
+            return BooleanVal_ctor(self, builder, None, [const])
+        elif ty == TinyIntVal:
+            const = lc.Constant.int(lc.Type.int(8), val)
+            return TinyIntVal_ctor(self, builder, None, [const])
+        elif ty == SmallIntVal:
+            const = lc.Constant.int(lc.Type.int(16), val)
+            return SmallIntVal_ctor(self, builder, None, [const])
+        elif ty == IntVal:
+            const = lc.Constant.int(lc.Type.int(32), val)
+            return IntVal_ctor(self, builder, None, [const])
+        elif ty == BigIntVal:
+            const = lc.Constant.int(lc.Type.int(64), val)
+            return BigIntVal_ctor(self, builder, None, [const])
+        elif ty == FloatVal:
+            const = lc.Constant.real(lc.Type.float(), val)
+            return FloatVal_ctor(self, builder, None, [const])
+        elif ty == DoubleVal:
+            const = lc.Constant.real(lc.Type.double(), val)
+            return DoubleVal_ctor(self, builder, None, [const])
+        elif ty == StringVal:
+            iv = StringValStruct(self, builder)
+            _set_is_null(builder, iv, cgutils.false_bit)
+            iv.len = lc.Constant.int(lc.Type.int(32), len(val))
+            iv.ptr = self.get_constant_string(builder, ntypes.string, val)
+            return iv._getvalue()
+        else:
+            return super(ImpalaTargetContext, self).get_constant_struct(builder, ty, val)
 
     def get_data_type(self, ty):
-	if ty in TYPE_LAYOUT:
-	    return self.get_struct_type(TYPE_LAYOUT[ty])
-	elif ty == FunctionContext:
-	    return lc.Type.pointer(self._fnctxtype)
-	else:
-	    return super(ImpalaTargetContext, self).get_data_type(ty)
+        if ty in TYPE_LAYOUT:
+            return self.get_struct_type(TYPE_LAYOUT[ty])
+        elif ty == FunctionContext:
+            return lc.Type.pointer(self._fnctxtype)
+        else:
+            return super(ImpalaTargetContext, self).get_data_type(ty)
 
     def get_array(self, builder, itemvals, itemtys):
-	# only handle uniform type
-	assert all(x == itemtys[0] for x in itemtys)
-	if ty not in self._impala_types:
-	    raise NotImplementedError("Arrays of non-Impala types not supported")
+        # only handle uniform type
+        assert all(x == itemtys[0] for x in itemtys)
+        if ty not in self._impala_types:
+            raise NotImplementedError("Arrays of non-Impala types not supported")
 
 
     def build_pass_manager(self):
-	opt = 0 # let Impala optimize
-	# opt = 3 # optimize ourselves
-	pms = lp.build_pass_managers(tm=self.tm, opt=opt, loop_vectorize=True,
-				     fpm=False)
-	return pms.pm
+        opt = 0 # let Impala optimize
+        # opt = 3 # optimize ourselves
+        pms = lp.build_pass_managers(tm=self.tm, opt=opt, loop_vectorize=True,
+                                     fpm=False)
+        return pms.pm
 
     def finalize(self, func, restype, argtypes):
-	func.verify()
-	func.linkage = lc.LINKAGE_INTERNAL
+        func.verify()
+        func.linkage = lc.LINKAGE_INTERNAL
 
-	module = func.module
-	# Generate wrapper to adapt into Impala ABI
-	abi = ABIHandling(self, func, restype, argtypes)
-	wrapper = abi.build_wrapper("numba_udf." + func.name)
-	module.verify()
+        module = func.module
+        # Generate wrapper to adapt into Impala ABI
+        abi = ABIHandling(self, func, restype, argtypes)
+        wrapper = abi.build_wrapper("numba_udf." + func.name)
+        module.verify()
 
-	self.optimizer.run(module)
-	return wrapper
+        self.optimizer.run(module)
+        return wrapper

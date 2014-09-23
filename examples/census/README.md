@@ -50,7 +50,7 @@ Also generate a data set that replaces the strings with numbers
 ```python
 ident = lambda x: x # do nothing for strings
 types = (ident, hash, ident, hash, ident, hash, hash, hash, hash, hash, ident,
-	hash, hash)
+        hash, hash)
 categ_single = single.map(lambda line: '\t'.join([str(p[0](p[1])) for p in zip(types, line.split('\t'))]))
 categ_replicated = categ_single.flatMap(lambda x: [x]*15000)
 categ_replicated.saveAsTextFile('/user/laserson/bigml/census_categ_text')
@@ -69,10 +69,10 @@ from impala.udf import ship_udf, udf, FunctionContext, StringVal, IntVal
 
 create_table_query = """
     CREATE EXTERNAL TABLE IF NOT EXISTS census_text (age INT, workclass STRING,
-	    final_weight INT, education STRING, education_num INT,
-	    marital_status STRING, occupation STRING, relationship STRING,
-	    race STRING, sex STRING, hours_per_week INT, native_country STRING,
-	    income STRING)
+            final_weight INT, education STRING, education_num INT,
+            marital_status STRING, occupation STRING, relationship STRING,
+            race STRING, sex STRING, hours_per_week INT, native_country STRING,
+            income STRING)
     ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
     STORED AS TEXTFILE
     LOCATION '/user/laserson/bigml/census_text'
@@ -80,13 +80,13 @@ create_table_query = """
 
 score_obs_query = """
     SELECT DISTINCT predict_income(age, workclass, final_weight, education,
-	    education_num, marital_status, occupation, relationship, race, sex,
-	    hours_per_week, native_country, income) FROM census_text
+            education_num, marital_status, occupation, relationship, race, sex,
+            hours_per_week, native_country, income) FROM census_text
 """
 
 signature = StringVal(FunctionContext, IntVal, StringVal, IntVal, StringVal,
-	IntVal, StringVal, StringVal, StringVal, StringVal, StringVal, IntVal,
-	StringVal, StringVal)
+        IntVal, StringVal, StringVal, StringVal, StringVal, StringVal, IntVal,
+        StringVal, StringVal)
 predict_income = udf(signature)(predict_income)
 
 ship_udf
@@ -100,7 +100,7 @@ ship_udf
 ```python
 ident = lambda x: x # do nothing for strings
 types = (int, ident, int, ident, int, ident, ident, ident, ident, ident, int,
-	ident, ident)
+        ident, ident)
 num_fields = len(types)
 
 def parse_obs(line):
@@ -158,7 +158,7 @@ from glob import glob
 paths = glob('models/model_[1-9]*.py')
 for path in paths:
     with open(path, 'r') as ip:
-	lines = ip.readlines()
+        lines = ip.readlines()
 
     num_nodes = len(filter(lambda l:  l.strip()[:2] == 'if', lines))
     num_memcmp = len(filter(lambda l: re.match(r".*if.*[!=]=.*'.*'", l) is not None, lines))

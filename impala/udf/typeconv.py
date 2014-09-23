@@ -21,7 +21,7 @@ import itertools
 from numba import types as ntypes
 
 from .types import (AnyVal, BooleanVal, TinyIntVal, SmallIntVal, IntVal,
-		    BigIntVal, FloatVal, DoubleVal, StringVal)
+                    BigIntVal, FloatVal, DoubleVal, StringVal)
 
 def register_impala_numeric_type_conversions(base):
     impala_integral = (BooleanVal, TinyIntVal, SmallIntVal, IntVal, BigIntVal)
@@ -34,53 +34,53 @@ def register_impala_numeric_type_conversions(base):
 
     # first, all Impala numeric types can cast to all others
     for a, b in itertools.product(impala_all, all_numeric):
-	base.tm.set_unsafe_convert(a, b)
-	base.tm.set_unsafe_convert(b, a)
+        base.tm.set_unsafe_convert(a, b)
+        base.tm.set_unsafe_convert(b, a)
 
     # match Numba-Impala types
     for a, b in zip(impala_all, numba_all):
-	# base.tm.set_safe_convert(a, b)
-	# base.tm.set_safe_convert(b, a)
-	base.tm.set_unsafe_convert(a, b)
-	base.tm.set_promote(b, a)
+        # base.tm.set_safe_convert(a, b)
+        # base.tm.set_safe_convert(b, a)
+        base.tm.set_unsafe_convert(a, b)
+        base.tm.set_promote(b, a)
 
     # set up promotions
     for i in range(len(impala_integral)):
-	for j in range(i + 1, len(numba_integral)):
-	    base.tm.set_promote(impala_integral[i], numba_integral[j])
-	    base.tm.set_promote(numba_integral[i], impala_integral[j])
-	    base.tm.set_promote(impala_integral[i], impala_integral[j])
+        for j in range(i + 1, len(numba_integral)):
+            base.tm.set_promote(impala_integral[i], numba_integral[j])
+            base.tm.set_promote(numba_integral[i], impala_integral[j])
+            base.tm.set_promote(impala_integral[i], impala_integral[j])
     for i in range(len(impala_float)):
-	for j in range(i + 1, len(numba_float)):
-	    base.tm.set_promote(impala_float[i], numba_float[j])
-	    base.tm.set_promote(numba_float[i], impala_float[j])
-	    base.tm.set_promote(impala_float[i], impala_float[j])
+        for j in range(i + 1, len(numba_float)):
+            base.tm.set_promote(impala_float[i], numba_float[j])
+            base.tm.set_promote(numba_float[i], impala_float[j])
+            base.tm.set_promote(impala_float[i], impala_float[j])
 
     # boolean safely promotes to everything
     for b in impala_all:
-	base.tm.set_promote(ntypes.boolean, b)
+        base.tm.set_promote(ntypes.boolean, b)
     for b in all_numeric:
-	base.tm.set_promote(BooleanVal, b)
+        base.tm.set_promote(BooleanVal, b)
 
     # int to float conversions
     for a in impala_integral[:-2]:
-	base.tm.set_safe_convert(a, ntypes.float32)
-	base.tm.set_safe_convert(a, ntypes.float64)
-	base.tm.set_safe_convert(a, FloatVal)
-	base.tm.set_safe_convert(a, DoubleVal)
+        base.tm.set_safe_convert(a, ntypes.float32)
+        base.tm.set_safe_convert(a, ntypes.float64)
+        base.tm.set_safe_convert(a, FloatVal)
+        base.tm.set_safe_convert(a, DoubleVal)
     for a in numba_integral[:-2]:
-	base.tm.set_safe_convert(a, FloatVal)
-	base.tm.set_safe_convert(a, DoubleVal)
+        base.tm.set_safe_convert(a, FloatVal)
+        base.tm.set_safe_convert(a, DoubleVal)
     base.tm.set_safe_convert(impala_integral[-2], ntypes.float64)
     base.tm.set_safe_convert(impala_integral[-2], DoubleVal)
     base.tm.set_safe_convert(numba_integral[-2], DoubleVal)
 
     # *Val to AnyVal (numeric)
     for a in impala_all:
-	base.tm.set_unsafe_convert(a, AnyVal)
+        base.tm.set_unsafe_convert(a, AnyVal)
 
     for a in impala_all:
-	base.tm.set_safe_convert(ntypes.none, a)
+        base.tm.set_safe_convert(ntypes.none, a)
 
 def register_impala_other_type_conversions(base):
     # base.tm.set_unsafe_convert(ntypes.CPointer(ntypes.uint8), ntypes.Dummy('void*'))

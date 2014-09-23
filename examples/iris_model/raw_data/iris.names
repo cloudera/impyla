@@ -1,5 +1,5 @@
 1. Title: Iris Plants Database
-	Updated Sept 21 by C.Blake - Added discrepency information
+        Updated Sept 21 by C.Blake - Added discrepency information
 
 2. Sources:
      (a) Creator: R.A. Fisher
@@ -18,11 +18,11 @@
       Environments".  IEEE Transactions on Pattern Analysis and Machine
       Intelligence, Vol. PAMI-2, No. 1, 67-71.
       -- Results:
-	 -- very low misclassification rates (0% for the setosa class)
+         -- very low misclassification rates (0% for the setosa class)
    4. Gates, G.W. (1972) "The Reduced Nearest Neighbor Rule".  IEEE
       Transactions on Information Theory, May 1972, 431-433.
       -- Results:
-	 -- very low misclassification rates again
+         -- very low misclassification rates again
    5. See also: 1988 MLC Proceedings, 54-64.  Cheeseman et al's AUTOCLASS II
       conceptual clustering system finds 3 classes in the data.
 
@@ -37,11 +37,11 @@
    --- Predicted attribute: class of iris plant.
    --- This is an exceedingly simple domain.
    --- This data differs from the data presented in Fishers article
-	(identified by Steve Chadwick,  spchadwick@espeedaz.net )
-	The 35th sample should be: 4.9,3.1,1.5,0.2,"Iris-setosa"
-	where the error is in the fourth feature.
-	The 38th sample: 4.9,3.6,1.4,0.1,"Iris-setosa"
-	where the errors are in the second and third features.
+        (identified by Steve Chadwick,  spchadwick@espeedaz.net )
+        The 35th sample should be: 4.9,3.1,1.5,0.2,"Iris-setosa"
+        where the error is in the fourth feature.
+        The 38th sample: 4.9,3.6,1.4,0.1,"Iris-setosa"
+        where the errors are in the second and third features.
 
 5. Number of Instances: 150 (50 in each of three classes)
 
@@ -60,7 +60,7 @@
 8. Missing Attribute Values: None
 
 Summary Statistics:
-		 Min  Max   Mean    SD   Class Correlation
+                 Min  Max   Mean    SD   Class Correlation
    sepal length: 4.3  7.9   5.84  0.83    0.7826
     sepal width: 2.0  4.4   3.05  0.43   -0.4194
    petal length: 1.0  6.9   3.76  1.76    0.9490  (high!)

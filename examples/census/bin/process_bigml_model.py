@@ -57,10 +57,10 @@ num_sigs = 0
 for line in old_model:
     m = re.match(signature_re, line)
     if m:
-	new_model.append('def %s(%s):\n' % (m.group(1), arg_string))
-	num_sigs += 1
+        new_model.append('def %s(%s):\n' % (m.group(1), arg_string))
+        num_sigs += 1
     else:
-	new_model.append(line)
+        new_model.append(line)
 
 if num_sigs != 1:
     raise ValueError("Expected a single signature line; found %i" % num_sigs)

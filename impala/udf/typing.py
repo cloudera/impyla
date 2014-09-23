@@ -19,16 +19,16 @@ from __future__ import absolute_import
 from numba import types as ntypes
 from numba.typing import Context
 from numba.typing.templates import (AttributeTemplate, ConcreteTemplate,
-				    Registry, signature)
+                                    Registry, signature)
 
 from . import types
 from . import typeconv
 from . import stringdecl
 from .types import (FunctionContext, AnyVal, BooleanVal, BooleanValType,
-		    TinyIntVal, TinyIntValType, SmallIntVal, SmallIntValType,
-		    IntVal, IntValType, BigIntVal, BigIntValType, FloatVal,
-		    FloatValType, DoubleVal, DoubleValType, StringVal,
-		    StringValType)
+                    TinyIntVal, TinyIntValType, SmallIntVal, SmallIntValType,
+                    IntVal, IntValType, BigIntVal, BigIntValType, FloatVal,
+                    FloatValType, DoubleVal, DoubleValType, StringVal,
+                    StringValType)
 
 
 registry = Registry()
@@ -41,8 +41,8 @@ register_global = registry.register_global
 
 def _ctor_factory(Val, ValType, argty):
     class ValCtor(ConcreteTemplate):
-	key = ValType
-	cases = [signature(Val, argty)]
+        key = ValType
+        cases = [signature(Val, argty)]
     return register_function(ValCtor)
 
 BooleanValCtor = _ctor_factory(BooleanVal, BooleanValType, ntypes.int8)
@@ -59,15 +59,15 @@ StringValCtor = _ctor_factory(StringVal, StringValType, ntypes.CPointer(ntypes.c
 
 def _attr_factory(Val, ValType, retty):
     class ValAttr(AttributeTemplate):
-	key = Val
+        key = Val
 
-	def resolve_is_null(self, val):
-	    # *Val::is_null
-	    return ntypes.boolean
+        def resolve_is_null(self, val):
+            # *Val::is_null
+            return ntypes.boolean
 
-	def resolve_val(self, val):
-	    # *Val::val
-	    return retty
+        def resolve_val(self, val):
+            # *Val::val
+            return retty
     return register_attribute(ValAttr)
 
 BooleanValAttr = _attr_factory(BooleanVal, BooleanValType, ntypes.int8)
@@ -83,16 +83,16 @@ class StringValAttr(AttributeTemplate):
     key = StringVal
 
     def resolve_is_null(self, val):
-	# StringVal::is_null
-	return ntypes.boolean
+        # StringVal::is_null
+        return ntypes.boolean
 
     def resolve_len(self, val):
-	# StringVal::len
-	return ntypes.int32
+        # StringVal::len
+        return ntypes.int32
 
     def resolve_ptr(self, val):
-	# StringVal::ptr
-	return ntypes.CPointer(ntypes.uint8)
+        # StringVal::ptr
+        return ntypes.CPointer(ntypes.uint8)
 
 
 # register "builtins"

@@ -20,7 +20,7 @@ import string
 
 from numba import types as ntypes
 from numba.typing.templates import (AttributeTemplate, ConcreteTemplate,
-				    signature, Registry)
+                                    signature, Registry)
 
 from .types import StringVal, IntVal
 
@@ -35,10 +35,10 @@ class StringModuleAttr(AttributeTemplate):
     key = ntypes.Module(string)
 
     def resolve_capitalize(self, mod):
-	return ntypes.Function(String_capitalize)
+        return ntypes.Function(String_capitalize)
 
     def resolve_split(self, mod):
-	return ntypes.Function(String_split)
+        return ntypes.Function(String_split)
 
 
 class String_capitalize(ConcreteTemplate):
@@ -49,8 +49,8 @@ class String_capitalize(ConcreteTemplate):
 class String_split(ConcreteTemplate):
     key = string.split
     cases = [signature(ntypes.Array(StringVal, 1, 'C'), StringVal),
-	     signature(ntypes.Array(StringVal, 1, 'C'), StringVal, StringVal),
-	     signature(ntypes.Array(StringVal, 1, 'C'), StringVal, StringVal, IntVal)]
+             signature(ntypes.Array(StringVal, 1, 'C'), StringVal, StringVal),
+             signature(ntypes.Array(StringVal, 1, 'C'), StringVal, StringVal, IntVal)]
 
 
 register_global(string, ntypes.Module(string))
