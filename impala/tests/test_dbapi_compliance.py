@@ -12,48 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import os
 import sys
-import unittest
+if sys.version_info[:2] <= (2, 6):
+    import unittest2 as unittest
+else:
+    import unittest
+
+import pytest
 
 import impala.dbapi
-import _dbapi20_tests
+from impala.tests import _dbapi20_tests
 
 if 'IMPALA_HOST' not in os.environ:
     raise ValueError("Please set IMPALA_HOST env variable")
-if 'HS2_PORT' not in os.environ:
-    print >>sys.stderr, "Using default Impala HS2 port of 21050, or set HS2_PORT env variable"
-if 'BEESWAX_PORT' not in os.environ:
-    print >>sys.stderr, "Using default Impala Beeswax port of 21000, or set BEESWAX_PORT env variable"    
+if 'IMPALA_PORT' not in os.environ:
+    print >>sys.stderr, "Using default Impala HiveServer2 port of 21050, or set IMPALA_PORT env variable"
+if 'IMPALA_PROTOCOL' not in os.environ:
+    print >>sys.stderr, "Using default Impala protocol of 'hiveserver2', or set IMPALA_PROTOCOL env variable"
 host = os.environ['IMPALA_HOST']
-hs2_port = int(os.environ.get('HS2_PORT', 21050))
-beeswax_port = int(os.environ.get('BEESWAX_PORT', 21000))
+port = int(os.environ.get('IMPALA_PORT', 21050))
+protocol = os.environ.get('IMPALA_PROTOCOL', 'hiveserver2')
 
-class ImpylaHiveServer2DBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
+@pytest.mark.dbapi_compliance
+class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
     driver = impala.dbapi
     connect_kw_args = {'host': host,
-                       'port': hs2_port,
-                       'protocol': 'hiveserver2'}
+                       'port': port,
+                       'protocol': protocol}
     table_prefix = 'dbapi20test_'
     ddl1 = 'create table %sbooze (name string)' % table_prefix
     ddl2 = 'create table %sbarflys (name string)' % table_prefix
     
     def test_nextset(self): pass
     def test_setoutputsize(self): pass
-
-
-class ImpylaBeeswax2DBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
-    driver = impala.dbapi
-    connect_kw_args = {'host': host,
-                       'port': beeswax_port,
-                       'protocol': 'beeswax'}
-    table_prefix = 'dbapi20test_'
-    ddl1 = 'create table %sbooze (name string)' % table_prefix
-    ddl2 = 'create table %sbarflys (name string)' % table_prefix
-    
-    def test_nextset(self): pass
-    def test_setoutputsize(self): pass
-
-
-if __name__ == '__main__':
-    unittest.main()

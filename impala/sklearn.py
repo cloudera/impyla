@@ -22,6 +22,27 @@ from sklearn.base import BaseEstimator
 from . import blob
 from . import util
 
+# TO CREATE A NEW ESTIMATOR:
+#
+# 1. Subclass ImpalaEstimator
+#
+# 2. Override _uda_name() to return the name of the registered UDA for this
+# estimator.  The UDA should have a signature like so:
+#
+#   uda(prev_model, )
+#
+# 3. Override _parameter_list() to return a list of expressions that is a comma-separated
+# list of the expected parameter values to add to the end of the UDA call.  No
+# parameters means you should return an empty string ''.
+#
+# 4. Override _decode_coef() to set self.coef_ using the binary data returned
+# from the estimator.
+
+class ImpalaEstimator(BaseEstimator):
+    
+    
+
+
 
 # TO CREATE A NEW ESTIMATOR:
 #

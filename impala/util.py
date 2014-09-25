@@ -30,7 +30,9 @@ def _random_id(prefix='', length=8):
     return prefix + ''.join(random.sample(string.ascii_uppercase, length))
 
 def _get_schema_hack(cursor, table_ref):
+    """Get the schema of TableRef by talking to Impala"""
     # get the schema of the query result via a LIMIT 0 hack
+    # table_ref is a TableRef object
     cursor.execute('SELECT * FROM %s LIMIT 0' % table_ref.to_sql())
     schema = [tup[:2] for tup in cursor.description]
     cursor.fetchall() # resets the state of the cursor and closes operation

@@ -30,7 +30,10 @@ setup(
     author_email='laserson@cloudera.com',
     url='https://github.com/cloudera/impyla',
     packages=find_packages(),
-    package_data={'impala.udf': ['precompiled/*.bc']},
+    package_data={
+        'impala.udf': ['precompiled/*.bc'],
+        'impala.tests': ['data/iris.data']
+    },
     scripts=['bin/register-impala-udfs.py'],
     install_requires=['thrift'],
     keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark pydata'

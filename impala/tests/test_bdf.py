@@ -13,3 +13,26 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+
+import pandas as pd
+
+import pytest
+
+example_tables = pytest.mark.usefixtures('iris_data', 'small_data')
+
+def test_from_sql_query(ic):
+    pass
+
+@example_tables
+def test_from_sql_table(ic):
+    bdf = ic.from_sql_table('test_small')
+    assert bdf.count() == 3
+    df = bdf.collect()
+    assert df.shape[0] == 3
+    assert isinstance(df, pd.DataFrame)
+
+def test_from_hdfs(ic):
+    pass
+
+def test_from_pandas(ic):
+    pass
