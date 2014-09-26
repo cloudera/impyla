@@ -21,6 +21,7 @@ from sqlalchemy.dialects.postgresql.base import PGDialect
 from sqlalchemy.engine.default import DefaultDialect
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
         DECIMAL, Integer, Float, String)
+from sqlalchemy.sql import compiler
 
 registry.register('impala', 'impala.sqlalchemy', 'ImpalaDialect')
 
@@ -53,6 +54,15 @@ _impala_type_to_sqlalchemy_type = {
         'DECIMAL': DECIMAL}
 
 
+class ImpalaIdentifierPreparer(compiler.IdentifierPreparer):
+    """Impala uses backticks as quote characters."""
+
+    def __init__(self, dialect, initial_quote='`',
+                    final_quote=None, escape_quote='`', omit_schema=False):
+        super(ImpalaIdentifierPreparer).__init__(dialect, initial_quote=initial_quote, final_quote=final_quote,
+                                                escape_quote=escape_quote, omit_schema=omit_schema)
+
+
 class ImpalaDialect(DefaultDialect):
     name = 'impala'
     driver = 'impala'
@@ -66,6 +76,7 @@ class ImpalaDialect(DefaultDialect):
     supports_native_enum = False
     supports_default_values = False
     returns_unicode_strings = True
+    preparer = ImpalaIdentifierPreparer
 
     @classmethod
     def dbapi(self):
@@ -128,3 +139,10 @@ class ImpalaDialect(DefaultDialect):
     def do_rollback(self, dbapi_connection):
         # no transactions in impala
         pass
+
+    def create_connect_args(self, url):
+        _, opts = super(ImpalaDialect, self).create_connect_args(url)
+        if 'port' not in opts:
+            opts['port'] = 21050
+        return ([], opts)
+
