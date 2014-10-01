@@ -38,7 +38,7 @@ from . import util
 # 4. Override _decode_coef() to set self.coef_ using the binary data returned
 # from the estimator.
 
-class ImpalaEstimator(BaseEstimator):
+# class ImpalaEstimator(BaseEstimator):
     
     
 
