@@ -16,15 +16,16 @@
 
 from __future__ import absolute_import
 
+import os
+
 import llvm.core as lc
 from numba import sigutils
 from numba.compiler import compile_extra, Flags
 
-from .target import ImpalaTargetContext
-from .typing import impala_typing_context
-from .types import (FunctionContext, BooleanVal, TinyIntVal, SmallIntVal,
-                    IntVal, BigIntVal, FloatVal, DoubleVal, StringVal)
-
+from impala.udf.target import ImpalaTargetContext
+from impala.udf.typing import impala_typing_context
+from impala.udf.types import (BooleanVal, TinyIntVal, SmallIntVal, IntVal,
+        BigIntVal, FloatVal, DoubleVal, StringVal)
 
 
 # functionality to compile Python UDFs into Impala-executable IR
@@ -66,47 +67,50 @@ class UDF(object):
 # functionality to ship code to Impala cluster
 
 # convert *Val name to Impala data type name
-udf2impala_type = {'BooleanVal': 'BOOLEAN',
-                   'TinyIntVal': 'TINYINT',
-                   'SmallIntVal': 'SMALLINT',
-                   'IntVal': 'INT',
-                   'BigIntVal': 'BIGINT',
-                   'FloatVal': 'FLOAT',
-                   'DoubleVal': 'DOUBLE',
-                   'StringVal': 'STRING',
-                   'TimestampVal': 'TIMESTAMP'}
+udf_to_impala_type = {'BooleanVal': 'BOOLEAN',
+                      'TinyIntVal': 'TINYINT',
+                      'SmallIntVal': 'SMALLINT',
+                      'IntVal': 'INT',
+                      'BigIntVal': 'BIGINT',
+                      'FloatVal': 'FLOAT',
+                      'DoubleVal': 'DOUBLE',
+                      'StringVal': 'STRING',
+                      'TimestampVal': 'TIMESTAMP'}
 
 # TODO: in the future, consider taking an "ImpalaContext" if there is some info I
 # want to store.  But this could also all be in the cursor object potentially
 try:
     from pywebhdfs.webhdfs import PyWebHdfsClient
 
-    def ship_udf(cursor, function, hdfs_path, host, webhdfs_port=50070, user=None,
-            udf_name=None, overwrite=False):
+    def ship_udf(ic, function, hdfs_path=None, udf_name=None, database=None,
+            overwrite=False):
         # extract some information from the function
         if udf_name is None:
             udf_name = function.name
         symbol = function.llvm_func.name
         ir = function.llvm_module.to_bitcode()
-        return_type = udf2impala_type[function.signature.return_type.name]
-        arg_types = [udf2impala_type[arg.name] for arg in function.signature.args[1:]]
+        return_type = udf_to_impala_type[function.signature.return_type.name]
+        arg_types = [udf_to_impala_type[arg.name]
+                        for arg in function.signature.args[1:]]
 
         # ship the IR to the cluster
-        hdfs_client = PyWebHdfsClient(host=host, port=webhdfs_port, user_name=user)
+        hdfs_client = PyWebHdfsClient(host=ic._nn_host, port=ic._webhdfs_port,
+                user_name=ic._hdfs_user)
+        if hdfs_path is None:
+            hdfs_path = os.path.join(ic._temp_dir, udf_name + '.ll')
         if not hdfs_path.endswith('.ll'):
             raise ValueError("The HDFS file name must end with .ll")
         hdfs_client.create_file(hdfs_path.lstrip('/'), ir, overwrite=overwrite)
 
         # register the function in Impala
-        impala_name = '%s(%s)' % (udf_name, ', '.join(arg_types))
+        if database is None:
+            database = ic._temp_db
+        impala_name = '%s.%s(%s)' % (database, udf_name, ', '.join(arg_types))
         if overwrite:
-            cursor.execute("SHOW FUNCTIONS")
-            registered_functions = [fn[0].lower() for fn in cursor.fetchall()]
-            if impala_name.lower() in registered_functions:
-                cursor.execute("DROP FUNCTION %s" % impala_name)
+            ic._cursor.execute("DROP FUNCTION IF EXISTS %s" % impala_name)
         register_query = "CREATE FUNCTION %s RETURNS %s LOCATION '%s' SYMBOL='%s'" % (impala_name,
                 return_type, hdfs_path, symbol)
-        cursor.execute(register_query)
+        ic._cursor.execute(register_query)
 
 except ImportError:
     print "Failed to import pywebhdfs; you must ship your Python UDFs manually."
