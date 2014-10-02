@@ -12,35 +12,63 @@ Fully supported:
 * Fully [DB API 2.0 (PEP 249)][pep249]-compliant Python client (similar to
 sqlite or MySQL clients)
 
+* Support for HiveServer2 and Beeswax; support for Kerberos
+
 * Converter to [pandas][pandas] `DataFrame`, allowing easy integration into the
 Python data stack (including [scikit-learn][sklearn] and
 [matplotlib][matplotlib])
 
-Alpha-quality:
+In various phases of maturity:
 
-* Wrapper for [MADlib][madlib]-style prediction, allowing for large-scale,
-distributed machine learning (see [the Impala port of MADlib][madlibport])
+* SQLAlchemy connector; integration with Blaze
+
+* `BigDataFrame` abstraction for performing `pandas`-style analytics on large
+datasets (similar to Spark's RDD abstraction); computation is pushed into the
+Impala engine.
+
+* `scikit-learn`-flavored wrapper for [MADlib][madlib]-style prediction,
+allowing for large-scale, distributed machine learning (see
+[the Impala port of MADlib][madlibport])
 
 * Compiling UDFs written in Python into low-level machine code for execution by
-Impala (see the [`udf`](https://github.com/cloudera/impyla/tree/udf) branch;
-powered by [Numba][numba]/[LLVM][llvm])
+Impala (powered by [Numba][numba]/[LLVM][llvm])
 
 
 ### Dependencies
 
-Required:
+Required for DB API connectivity:
 
 * `python2.6` or `python2.7`
 
 * `thrift>=0.8` (Python package only; no need for code-gen)
 
-Optional:
+Required for UDFs:
 
-* `pandas` for the `.as_pandas()` function to work
+* `numba` (which has a few requirements, like LLVM)
 
-* `boost` for Python UDFs (`udf.h` depends on `boost/cstdint.hpp`)
+* `boost` (because `udf.h` depends on `boost/cstdint.hpp`)
 
-This project is installed with `setuptools>=2`.
+Required for SQLAlchemy integration (and Blaze):
+
+* `sqlalchemy`
+
+Required for `BigDataFrame`:
+
+* `pandas`
+
+Required for utilizing automated shipping/registering of code/UDFs/BDFs/etc:
+
+* `pywebhdfs`
+
+For manipulating results as pandas `DataFrame`s, we recommend installing pandas
+regardless.
+
+Generally, we recommend installing all the libraries above; the UDF libraries
+will be the most difficult, and are not required if you will not use any Python
+UDFs.  Interacting with Impala using the `ImpalaContext` will simplify shipping
+data and will perform cleanup on temporary data/tables.
+
+This project is installed with `setuptools`.
 
 ### Installation
 
