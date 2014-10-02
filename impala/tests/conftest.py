@@ -23,7 +23,7 @@ from pytest import fixture, importorskip, skip
 
 from impala.context import ImpalaContext
 
-# project-wide fixtures
+# these are all environment variable-based; primarily for ImpalaContext
 
 @fixture(scope='session')
 def host():
@@ -53,7 +53,8 @@ def nn_host():
     if 'NAMENODE_HOST' in os.environ:
         return os.environ['NAMENODE_HOST']
     else:
-        skip("NAMENODE_HOST not set; skipping tests that depend on it")
+        sys.stderr.write("NAMENODE_HOST not set; using None")
+        return None
 
 @fixture(scope='session')
 def webhdfs_port():
@@ -73,20 +74,44 @@ def hdfs_user():
         return user
 
 @fixture(scope='session')
-def ic(request, host, port, protocol):
+def temp_hdfs_dir():
+    if 'TEMP_HDFS_DIR' in os.environ:
+        return os.environ['TEMP_HDFS_DIR']
+    else:
+        sys.stderr.write("TEMP_HDFS_DIR not set; using default in /tmp/...")
+        return None
+
+@fixture(scope='session')
+def temp_db():
+    if 'TEMP_DB' in os.environ:
+        return os.environ['TEMP_DB']
+    else:
+        sys.stderr.write("TEMP_DB not set; using default prefixed tmp_impyla...")
+        return None
+
+# main ImpalaContext fixture; pretty much everything else depends on this
+# somehow
+
+@fixture(scope='session')
+def ic(request, temp_hdfs_dir, temp_db, nn_host, webhdfs_port, hdfs_user, host,
+        port, protocol):
     """Provides an ImpalaContext"""
-    ctx = ImpalaContext(host=host, port=port, protocol=protocol)
+    ctx = ImpalaContext(temp_dir=temp_hdfs_dir, temp_db=temp_db, nn_host=nn_host,
+            webhdfs_port=webhdfs_port, hdfs_user=hdfs_user, host=host,
+            port=port, protocol=protocol)
     def fin():
         ctx.close()
     request.addfinalizer(fin)
     return ctx
 
 @fixture(scope='session')
-def hdfs_client(nn_host, webhdfs_port, hdfs_user):
+def hdfs_client(ic):
     pywebhdfs = importorskip('pywebhdfs')
+    if ic._nn_host is None:
+        skip("NAMENODE_HOST not set; skipping...")
     from pywebhdfs.webhdfs import PyWebHdfsClient
-    hdfs_client = PyWebHdfsClient(host=nn_host, port=webhdfs_port,
-            user_name=hdfs_user)
+    hdfs_client = PyWebHdfsClient(host=ic._nn_host, port=ic._webhdfs_port,
+            user_name=ic._hdfs_user)
     return hdfs_client
 
 @fixture(scope='session')

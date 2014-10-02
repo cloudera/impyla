@@ -14,41 +14,8 @@
 
 from __future__ import absolute_import
 
-import os
-import datetime
-from cStringIO import StringIO
-
-import pandas as pd
-
-from impala.bdf import BigDataFrame
-from impala.util import _random_id, _get_schema_hack, _py_to_sql_string
+from impala.util import _random_id
 from impala.dbapi import connect
-from impala._sql_model import (_to_TableName, BaseTableRef, SelectItem,
-        SelectStmt, Literal, InlineView, _create_table)
-
-def _numpy_dtype_to_impala_PrimitiveType(ty):
-    """Convert numpy dtype to Impala type string.
-
-    Used in converting pandas DataFrame to SQL/Impala
-    """
-    # based on impl in pandas.io.sql.PandasSQLTable._sqlalchemy_type()
-    if ty is datetime.date:
-        # TODO: this might be wrong
-        return 'TIMESTAMP'
-    if pd.core.common.is_datetime64_dtype(ty):
-        # TODO: this might be wrong
-        return 'TIMESTAMP'
-    if pd.core.common.is_timedelta64_dtype(ty):
-        return 'BIGINT'
-    if pd.core.common.is_float_dtype(ty):
-        return 'DOUBLE'
-    if pd.core.common.is_integer_dtype(ty):
-        # TODO: BIGINT may be excessive?
-        return 'BIGINT'
-    if pd.core.common.is_bool(ty):
-        return 'BOOLEAN'
-    return 'STRING'
-
 
 class ImpalaContext(object):
 
@@ -56,8 +23,8 @@ class ImpalaContext(object):
             webhdfs_port=50070, hdfs_user=None, *args, **kwargs):
         # args and kwargs get passed directly into impala.dbapi.connect()
         suffix = _random_id(length=8)
-        self._temp_dir = '/tmp/bdf-%s' % suffix if temp_dir is None else temp_dir
-        self._temp_db = 'tmp_bdf_%s' % suffix if temp_db is None else temp_db
+        self._temp_dir = '/tmp/impyla-%s' % suffix if temp_dir is None else temp_dir
+        self._temp_db = 'tmp_impyla_%s' % suffix if temp_db is None else temp_db
         self._conn = connect(*args, **kwargs)
         self._cursor = self._conn.cursor()
         # used for pywebhdfs cleanup of temp dir; not required
@@ -99,83 +66,3 @@ class ImpalaContext(object):
             sys.stderr.write("Could not connect via pywebhdfs. "
                 "You must delete the temporary directory manually: %s" % self._temp_dir)
 
-    def from_sql_query(self, query, alias=None):
-        """Create a BDF from a SQL query executed by Impala"""
-        query_alias = alias if alias else _random_id('inline_', 4)
-        table_ref = InlineView(query, query_alias)
-        schema = _get_schema_hack(self._cursor, table_ref)
-        select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
-        return BigDataFrame(self, SelectStmt(select_list, table_ref))
-
-    def from_sql_table(self, table):
-        """Create a BDF from a table name usable in Impala"""
-        table_name = _to_TableName(table)
-        table_ref = BaseTableRef(table_name)
-        schema = _get_schema_hack(self._cursor, table_ref)
-        select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
-        return BigDataFrame(self, SelectStmt(select_list, table_ref))
-
-    def from_hdfs(self, path, schema, table=None, overwrite=False,
-            file_format='TEXTFILE', partition_schema=None,
-            field_terminator='\\t', line_terminator='\\n'):
-        """Create a BDF backed by an external file in HDFS.
-
-        File must be Impala-compatible
-        """
-        if partition_schema is not None:
-            raise NotImplementedError("Partitions not yet implemented in .from_hdfs()")
-        if table is None:
-            temp_table = _random_id('tmp_table_', 8)
-            table = "%s.%s" % (self._temp_db, temp_table)
-        table_name = _to_TableName(table)
-        if overwrite:
-            self._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
-        create_stmt = _create_table(table_name, schema, path=path,
-                file_format=file_format, field_terminator=field_terminator,
-                line_terminator=line_terminator)
-        self._cursor.execute(create_stmt)
-        return self.from_sql_table(table_name.to_sql())
-
-    def from_pandas(self, df, table=None, path=None, method='in_query',
-            file_format='TEXTFILE', field_terminator='\t', line_terminator='\n',
-            hdfs_host=None, webhdfs_port=50070, hdfs_user=None, overwrite=False):
-        """Create a BDF by shipping an in-memory pandas `DataFrame` into Impala
-        
-        path is the dir, not the filename
-        """
-        # TODO: this is not atomic
-        temp_table = _random_id('tmp_table_', 8)
-        if table is None:
-            table = "%s.%s" % (self._temp_db, temp_table)
-        if path is None:
-            path = os.path.join(self._temp_dir, temp_table)
-        table_name = _to_TableName(table)
-        if overwrite:
-            self._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
-        columns = list(df.columns)
-        types = [_numpy_dtype_to_impala_PrimitiveType(ty) for ty in df.dtypes]
-        schema = zip(columns, types)
-        create_stmt = _create_table(table_name, schema, path=path,
-                file_format=file_format, field_terminator=field_terminator,
-                line_terminator=line_terminator)
-        self._cursor.execute(create_stmt)
-        if method == 'in_query':
-            query = "INSERT INTO %s VALUES " % table_name.to_sql()
-            query += ', '.join(['(%s)' % ', '.join(map(_py_to_sql_string, row)) for row in df.values])
-            self._cursor.execute(query)
-        elif method == 'webhdfs':
-            if file_format != 'TEXTFILE':
-                raise ValueError("only TEXTFILE format supported for webhdfs")
-            if path is None:
-                raise ValueError("must supply a path for EXTERNAL table for webhdfs")
-            from pywebhdfs.webhdfs import PyWebHdfsClient
-            hdfs_client = PyWebHdfsClient(host=hdfs_host, port=webhdfs_port,
-                    user_name=hdfs_user)
-            raw_data = StringIO()
-            df.to_csv(raw_data, sep=field_terminator,
-                    line_terminator=line_terminator, header=False, index=False)
-            hdfs_client.create_file(os.path.join(path, 'data.txt').lstrip('/'), raw_data.getvalue(), overwrite=overwrite)
-            raw_data.close()
-        else:
-            raise ValueError("method must be 'in_query' or 'webhdfs'; got %s" % method)
-        return self.from_sql_table(table_name.to_sql())

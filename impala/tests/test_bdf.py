@@ -20,12 +20,14 @@ import pkgutil
 import pytest
 import pandas as pd
 
+from impala.bdf import from_sql_query, from_sql_table, from_hdfs, from_pandas
+
 small_data = pytest.mark.usefixtures('small_data')
 iris_data = pytest.mark.usefixtures('iris_data')
 
 @small_data
 def test_from_sql_query(ic):
-    bdf = ic.from_sql_query('SELECT a, c AS d FROM small_data')
+    bdf = from_sql_query(ic, 'SELECT a, c AS d FROM small_data')
     assert bdf.count() == 3
     df = bdf.collect()
     assert df.shape == (3, 2)
@@ -34,7 +36,7 @@ def test_from_sql_query(ic):
 
 @small_data
 def test_from_sql_table(ic):
-    bdf = ic.from_sql_table('small_data')
+    bdf = from_sql_table(ic, 'small_data')
     assert bdf.count() == 3
     df = bdf.collect()
     assert isinstance(df, pd.DataFrame)
@@ -47,24 +49,25 @@ def test_from_hdfs(ic, hdfs_client):
     hdfs_client.create_file(file_.lstrip('/'), raw_data)
     schema = [('a', 'DOUBLE'), ('b', 'DOUBLE'), ('c', 'DOUBLE'),
               ('d', 'DOUBLE'), ('e', 'STRING')]
-    bdf = ic.from_hdfs(dir_, schema)
+    bdf = from_hdfs(ic, dir_, schema)
     assert bdf.count() == 150
     df = bdf.collect()
     assert df.shape == (150, 5)
 
 def test_from_pandas_in_query(ic):
     df1 = pd.DataFrame({'a': (1, 2, 5), 'b': ('foo', 'bar', 'pasta')})
-    bdf = ic.from_pandas(df1, method='in_query')
+    bdf = from_pandas(ic, df1, method='in_query')
     df2 = bdf.collect()
     assert tuple(df2.columns) == ('a', 'b')
     assert df2.shape == df1.shape
     assert all(df1 == df2)
 
-def test_from_pandas_webhdfs(ic, nn_host, webhdfs_port, hdfs_user):
+def test_from_pandas_webhdfs(ic):
     df1 = pd.DataFrame({'a': (1, 2, 5), 'b': ('foo', 'bar', 'pasta')})
     path = os.path.join(ic._temp_dir, 'test_pandas_webhdfs_dir')
-    bdf = ic.from_pandas(df1, method='webhdfs', path=path, hdfs_host=nn_host,
-            webhdfs_port=webhdfs_port, hdfs_user=hdfs_user)
+    bdf = from_pandas(ic, df1, method='webhdfs', path=path,
+            hdfs_host=ic._nn_host, webhdfs_port=ic._webhdfs_port,
+            hdfs_user=ic._hdfs_user)
     df2 = bdf.collect()
     assert tuple(df2.columns) == ('a', 'b')
     assert df2.shape == df1.shape

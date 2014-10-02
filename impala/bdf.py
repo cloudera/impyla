@@ -15,28 +15,123 @@
 from __future__ import absolute_import
 
 import os
-import string
-import random
 import datetime
-import warnings
 from copy import copy
 from cStringIO import StringIO
 
 import pandas as pd
 
-from impala.dbapi import connect
 from impala.util import as_pandas, _random_id, _py_to_sql_string, _get_schema_hack
+from impala._sql_model import (_to_TableName, BaseTableRef, SelectItem,
+        SelectStmt, Literal, InlineView, _create_table)
 
-"""
-`ImpalaContext`
-* functions to get BDFs
-"""
+# utilities
 
-# random utilities
+def _numpy_dtype_to_impala_PrimitiveType(ty):
+    """Convert numpy dtype to Impala type string.
 
+    Used in converting pandas DataFrame to SQL/Impala
+    """
+    # based on impl in pandas.io.sql.PandasSQLTable._sqlalchemy_type()
+    if ty is datetime.date:
+        # TODO: this might be wrong
+        return 'TIMESTAMP'
+    if pd.core.common.is_datetime64_dtype(ty):
+        # TODO: this might be wrong
+        return 'TIMESTAMP'
+    if pd.core.common.is_timedelta64_dtype(ty):
+        return 'BIGINT'
+    if pd.core.common.is_float_dtype(ty):
+        return 'DOUBLE'
+    if pd.core.common.is_integer_dtype(ty):
+        # TODO: BIGINT may be excessive?
+        return 'BIGINT'
+    if pd.core.common.is_bool(ty):
+        return 'BOOLEAN'
+    return 'STRING'
 
+# BigDataFrame creation
 
+def from_sql_query(ic, query, alias=None):
+    """Create a BDF from a SQL query executed by Impala"""
+    query_alias = alias if alias else _random_id('inline_', 4)
+    table_ref = InlineView(query, query_alias)
+    schema = _get_schema_hack(ic._cursor, table_ref)
+    select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
+    return BigDataFrame(ic, SelectStmt(select_list, table_ref))
 
+def from_sql_table(ic, table):
+    """Create a BDF from a table name usable in Impala"""
+    table_name = _to_TableName(table)
+    table_ref = BaseTableRef(table_name)
+    schema = _get_schema_hack(ic._cursor, table_ref)
+    select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
+    return BigDataFrame(ic, SelectStmt(select_list, table_ref))
+
+def from_hdfs(ic, path, schema, table=None, overwrite=False,
+        file_format='TEXTFILE', partition_schema=None,
+        field_terminator='\\t', line_terminator='\\n'):
+    """Create a BDF backed by an external file in HDFS.
+
+    File must be Impala-compatible
+    """
+    if partition_schema is not None:
+        raise NotImplementedError("Partitions not yet implemented in .from_hdfs()")
+    if table is None:
+        temp_table = _random_id('tmp_table_', 8)
+        table = "%s.%s" % (ic._temp_db, temp_table)
+    table_name = _to_TableName(table)
+    if overwrite:
+        ic._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
+    create_stmt = _create_table(table_name, schema, path=path,
+            file_format=file_format, field_terminator=field_terminator,
+            line_terminator=line_terminator)
+    ic._cursor.execute(create_stmt)
+    return from_sql_table(ic, table_name.to_sql())
+
+def from_pandas(ic, df, table=None, path=None, method='in_query',
+        file_format='TEXTFILE', field_terminator='\t', line_terminator='\n',
+        hdfs_host=None, webhdfs_port=50070, hdfs_user=None, overwrite=False):
+    """Create a BDF by shipping an in-memory pandas `DataFrame` into Impala
+    
+    path is the dir, not the filename
+    """
+    # TODO: this is not atomic
+    temp_table = _random_id('tmp_table_', 8)
+    if table is None:
+        table = "%s.%s" % (ic._temp_db, temp_table)
+    if path is None:
+        path = os.path.join(ic._temp_dir, temp_table)
+    table_name = _to_TableName(table)
+    if overwrite:
+        ic._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
+    columns = list(df.columns)
+    types = [_numpy_dtype_to_impala_PrimitiveType(ty) for ty in df.dtypes]
+    schema = zip(columns, types)
+    create_stmt = _create_table(table_name, schema, path=path,
+            file_format=file_format, field_terminator=field_terminator,
+            line_terminator=line_terminator)
+    ic._cursor.execute(create_stmt)
+    if method == 'in_query':
+        query = "INSERT INTO %s VALUES " % table_name.to_sql()
+        query += ', '.join(['(%s)' % ', '.join(map(_py_to_sql_string, row)) for row in df.values])
+        ic._cursor.execute(query)
+    elif method == 'webhdfs':
+        if file_format != 'TEXTFILE':
+            raise ValueError("only TEXTFILE format supported for webhdfs")
+        if path is None:
+            raise ValueError("must supply a path for EXTERNAL table for webhdfs")
+        from pywebhdfs.webhdfs import PyWebHdfsClient
+        hdfs_client = PyWebHdfsClient(host=hdfs_host, port=webhdfs_port,
+                user_name=hdfs_user)
+        raw_data = StringIO()
+        df.to_csv(raw_data, sep=field_terminator,
+                line_terminator=line_terminator, header=False, index=False)
+        hdfs_client.create_file(os.path.join(path, 'data.txt').lstrip('/'), raw_data.getvalue(), overwrite=overwrite)
+        raw_data.close()
+    else:
+        raise ValueError("method must be 'in_query' or 'webhdfs'; got %s" % method)
+    return from_sql_table(ic, table_name.to_sql())
 
 
 class BigDataFrame(object):
@@ -162,7 +257,7 @@ class BigDataFrame(object):
                 line_terminator=line_terminator)
         query = create_stmt + self.to_sql()
         self._cursor.execute(query)
-        return self._ic.from_sql_table(table_name.to_sql())
+        return from_sql_table(self._ic, table_name.to_sql())
 
     def save_view(self, name, overwrite=False):
         """Create a named view representing this BDF for later reference"""
@@ -173,7 +268,7 @@ class BigDataFrame(object):
         sql = 'CREATE VIEW %s AS %s' % (table_name.to_sql(),
                 self._query_ast.to_sql())
         self._ic._cursor.execute(sql)
-        return self._ic.from_sql_table(table_name.to_sql())
+        return from_sql_table(self._ic, table_name.to_sql())
 
     def __iter__(self):
         """Return an iterator object to iterate over rows locally"""
