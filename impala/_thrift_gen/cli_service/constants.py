@@ -21,6 +21,10 @@ PRIMITIVE_TYPES = set([
     8,
     9,
     15,
+    16,
+    17,
+    18,
+    19,
 ])
 COMPLEX_TYPES = set([
     10,

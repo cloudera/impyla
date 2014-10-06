@@ -59,7 +59,9 @@ _TTypeId_to_TColumnValue_getters = {
         'FLOAT': operator.attrgetter('doubleVal'),
         'DOUBLE': operator.attrgetter('doubleVal'),
         'STRING': operator.attrgetter('stringVal'),
-        'DECIMAL': operator.attrgetter('stringVal')
+        'DECIMAL': operator.attrgetter('stringVal'),
+        'VARCHAR': operator.attrgetter('stringVal'),
+        'CHAR': operator.attrgetter('stringVal')
 }
 
 def err_if_rpc_not_ok(resp):

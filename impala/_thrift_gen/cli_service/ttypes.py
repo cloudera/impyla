@@ -44,6 +44,10 @@ class TTypeId(object):
   UNION_TYPE = 13
   USER_DEFINED_TYPE = 14
   DECIMAL_TYPE = 15
+  NULL_TYPE = 16
+  DATE_TYPE = 17
+  VARCHAR_TYPE = 18
+  CHAR_TYPE = 19
 
   _VALUES_TO_NAMES = {
     0: "BOOLEAN_TYPE",
@@ -62,6 +66,10 @@ class TTypeId(object):
     13: "UNION_TYPE",
     14: "USER_DEFINED_TYPE",
     15: "DECIMAL_TYPE",
+    16: "NULL_TYPE",
+    17: "DATE_TYPE",
+    18: "VARCHAR_TYPE",
+    19: "CHAR_TYPE",
   }
 
   _NAMES_TO_VALUES = {
@@ -81,6 +89,10 @@ class TTypeId(object):
     "UNION_TYPE": 13,
     "USER_DEFINED_TYPE": 14,
     "DECIMAL_TYPE": 15,
+    "NULL_TYPE": 16,
+    "DATE_TYPE": 17,
+    "VARCHAR_TYPE": 18,
+    "CHAR_TYPE": 19,
   }
 
 class TStatusCode(object):
