@@ -58,21 +58,29 @@ enum TTypeId {
   STRUCT_TYPE,
   UNION_TYPE,
   USER_DEFINED_TYPE,
-  DECIMAL_TYPE
+  DECIMAL_TYPE,
+  NULL_TYPE,
+  DATE_TYPE,
+  VARCHAR_TYPE,
+  CHAR_TYPE
 }
-  
+
 const set<TTypeId> PRIMITIVE_TYPES = [
-  TTypeId.BOOLEAN_TYPE
-  TTypeId.TINYINT_TYPE
-  TTypeId.SMALLINT_TYPE
-  TTypeId.INT_TYPE
-  TTypeId.BIGINT_TYPE
-  TTypeId.FLOAT_TYPE
-  TTypeId.DOUBLE_TYPE
-  TTypeId.STRING_TYPE
-  TTypeId.TIMESTAMP_TYPE
+  TTypeId.BOOLEAN_TYPE,
+  TTypeId.TINYINT_TYPE,
+  TTypeId.SMALLINT_TYPE,
+  TTypeId.INT_TYPE,
+  TTypeId.BIGINT_TYPE,
+  TTypeId.FLOAT_TYPE,
+  TTypeId.DOUBLE_TYPE,
+  TTypeId.STRING_TYPE,
+  TTypeId.TIMESTAMP_TYPE,
   TTypeId.BINARY_TYPE,
-  TTypeId.DECIMAL_TYPE
+  TTypeId.DECIMAL_TYPE,
+  TTypeId.NULL_TYPE
+  TTypeId.DATE_TYPE
+  TTypeId.VARCHAR_TYPE
+  TTypeId.CHAR_TYPE
 ]
 
 const set<TTypeId> COMPLEX_TYPES = [
@@ -209,7 +217,7 @@ struct TColumnDesc {
 
   // The type descriptor for this column
   2: required TTypeDesc typeDesc
-  
+
   // The ordinal position of this column in the schema
   3: required i32 position
 
@@ -444,11 +452,11 @@ struct TOperationHandle {
 // OpenSession()
 //
 // Open a session (connection) on the server against
-// which operations may be executed. 
+// which operations may be executed.
 struct TOpenSessionReq {
   // The version of the HiveServer2 protocol that the client is using.
   1: required TProtocolVersion client_protocol = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1
-  
+
   // Username and password for authentication.
   // Depending on the authentication scheme being used,
   // this information may instead be provided by a lower
@@ -612,13 +620,13 @@ struct TGetTypeInfoReq {
 struct TGetTypeInfoResp {
   1: required TStatus status
   2: optional TOperationHandle operationHandle
-}  
+}
 
 
 // GetCatalogs()
 //
-// Returns the list of catalogs (databases) 
-// Results are ordered by TABLE_CATALOG 
+// Returns the list of catalogs (databases)
+// Results are ordered by TABLE_CATALOG
 //
 // Resultset columns :
 // col1
@@ -639,7 +647,7 @@ struct TGetCatalogsResp {
 
 // GetSchemas()
 //
-// Retrieves the schema names available in this database. 
+// Retrieves the schema names available in this database.
 // The results are ordered by TABLE_CATALOG and TABLE_SCHEM.
 // col1
 // name: TABLE_SCHEM
@@ -728,9 +736,9 @@ struct TGetTablesResp {
 
 // GetTableTypes()
 //
-// Returns the table types available in this database. 
-// The results are ordered by table type. 
-// 
+// Returns the table types available in this database.
+// The results are ordered by table type.
+//
 // col1
 // name: TABLE_TYPE
 // type: STRING
@@ -751,8 +759,8 @@ struct TGetTableTypesResp {
 // Returns a list of columns in the specified tables.
 // The information is returned as a result set which can be fetched
 // using the OperationHandle provided in the response.
-// Results are ordered by TABLE_CAT, TABLE_SCHEM, TABLE_NAME, 
-// and ORDINAL_POSITION. 
+// Results are ordered by TABLE_CAT, TABLE_SCHEM, TABLE_NAME,
+// and ORDINAL_POSITION.
 //
 // Result Set Columns are the same as those for the ODBC CLIColumns
 // function.
@@ -848,7 +856,7 @@ struct TGetFunctionsResp {
   1: required TStatus status
   2: optional TOperationHandle operationHandle
 }
-  
+
 
 // GetOperationStatus()
 //
@@ -943,7 +951,7 @@ struct TFetchResultsReq {
   // The fetch orientation. For V1 this must be either
   // FETCH_NEXT or FETCH_FIRST. Defaults to FETCH_NEXT.
   2: required TFetchOrientation orientation = TFetchOrientation.FETCH_NEXT
-  
+
   // Max number of rows that should be returned in
   // the rowset.
   3: required i64 maxRows
@@ -1002,14 +1010,14 @@ service TCLIService {
   TGetFunctionsResp GetFunctions(1:TGetFunctionsReq req);
 
   TGetOperationStatusResp GetOperationStatus(1:TGetOperationStatusReq req);
-  
+
   TCancelOperationResp CancelOperation(1:TCancelOperationReq req);
 
   TCloseOperationResp CloseOperation(1:TCloseOperationReq req);
 
   TGetResultSetMetadataResp GetResultSetMetadata(1:TGetResultSetMetadataReq req);
-  
+
   TFetchResultsResp FetchResults(1:TFetchResultsReq req);
-  
+
   TGetLogResp GetLog(1:TGetLogReq req);
 }
