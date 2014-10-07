@@ -130,6 +130,27 @@ class Iface(object):
     """
     pass
 
+  def GetDelegationToken(self, req):
+    """
+    Parameters:
+     - req
+    """
+    pass
+
+  def CancelDelegationToken(self, req):
+    """
+    Parameters:
+     - req
+    """
+    pass
+
+  def RenewDelegationToken(self, req):
+    """
+    Parameters:
+     - req
+    """
+    pass
+
   def GetLog(self, req):
     """
     Parameters:
@@ -625,6 +646,96 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "FetchResults failed: unknown result");
 
+  def GetDelegationToken(self, req):
+    """
+    Parameters:
+     - req
+    """
+    self.send_GetDelegationToken(req)
+    return self.recv_GetDelegationToken()
+
+  def send_GetDelegationToken(self, req):
+    self._oprot.writeMessageBegin('GetDelegationToken', TMessageType.CALL, self._seqid)
+    args = GetDelegationToken_args()
+    args.req = req
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_GetDelegationToken(self):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = GetDelegationToken_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "GetDelegationToken failed: unknown result");
+
+  def CancelDelegationToken(self, req):
+    """
+    Parameters:
+     - req
+    """
+    self.send_CancelDelegationToken(req)
+    return self.recv_CancelDelegationToken()
+
+  def send_CancelDelegationToken(self, req):
+    self._oprot.writeMessageBegin('CancelDelegationToken', TMessageType.CALL, self._seqid)
+    args = CancelDelegationToken_args()
+    args.req = req
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_CancelDelegationToken(self):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = CancelDelegationToken_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "CancelDelegationToken failed: unknown result");
+
+  def RenewDelegationToken(self, req):
+    """
+    Parameters:
+     - req
+    """
+    self.send_RenewDelegationToken(req)
+    return self.recv_RenewDelegationToken()
+
+  def send_RenewDelegationToken(self, req):
+    self._oprot.writeMessageBegin('RenewDelegationToken', TMessageType.CALL, self._seqid)
+    args = RenewDelegationToken_args()
+    args.req = req
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_RenewDelegationToken(self):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = RenewDelegationToken_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "RenewDelegationToken failed: unknown result");
+
   def GetLog(self, req):
     """
     Parameters:
@@ -676,6 +787,9 @@ class Processor(Iface, TProcessor):
     self._processMap["CloseOperation"] = Processor.process_CloseOperation
     self._processMap["GetResultSetMetadata"] = Processor.process_GetResultSetMetadata
     self._processMap["FetchResults"] = Processor.process_FetchResults
+    self._processMap["GetDelegationToken"] = Processor.process_GetDelegationToken
+    self._processMap["CancelDelegationToken"] = Processor.process_CancelDelegationToken
+    self._processMap["RenewDelegationToken"] = Processor.process_RenewDelegationToken
     self._processMap["GetLog"] = Processor.process_GetLog
 
   def process(self, iprot, oprot):
@@ -869,6 +983,39 @@ class Processor(Iface, TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
+  def process_GetDelegationToken(self, seqid, iprot, oprot):
+    args = GetDelegationToken_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = GetDelegationToken_result()
+    result.success = self._handler.GetDelegationToken(args.req)
+    oprot.writeMessageBegin("GetDelegationToken", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_CancelDelegationToken(self, seqid, iprot, oprot):
+    args = CancelDelegationToken_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = CancelDelegationToken_result()
+    result.success = self._handler.CancelDelegationToken(args.req)
+    oprot.writeMessageBegin("CancelDelegationToken", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_RenewDelegationToken(self, seqid, iprot, oprot):
+    args = RenewDelegationToken_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = RenewDelegationToken_result()
+    result.success = self._handler.RenewDelegationToken(args.req)
+    oprot.writeMessageBegin("RenewDelegationToken", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
   def process_GetLog(self, seqid, iprot, oprot):
     args = GetLog_args()
     args.read(iprot)
@@ -905,15 +1052,15 @@ class OpenSession_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TOpenSessionReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TOpenSessionReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -965,15 +1112,15 @@ class OpenSession_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TOpenSessionResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TOpenSessionResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1026,15 +1173,15 @@ class CloseSession_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TCloseSessionReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TCloseSessionReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1086,15 +1233,15 @@ class CloseSession_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TCloseSessionResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TCloseSessionResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1147,15 +1294,15 @@ class GetInfo_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetInfoReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetInfoReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1207,15 +1354,15 @@ class GetInfo_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetInfoResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetInfoResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1268,15 +1415,15 @@ class ExecuteStatement_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TExecuteStatementReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TExecuteStatementReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1328,15 +1475,15 @@ class ExecuteStatement_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TExecuteStatementResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TExecuteStatementResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1389,15 +1536,15 @@ class GetTypeInfo_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetTypeInfoReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetTypeInfoReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1449,15 +1596,15 @@ class GetTypeInfo_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetTypeInfoResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetTypeInfoResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1510,15 +1657,15 @@ class GetCatalogs_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetCatalogsReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetCatalogsReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1570,15 +1717,15 @@ class GetCatalogs_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetCatalogsResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetCatalogsResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1631,15 +1778,15 @@ class GetSchemas_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetSchemasReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetSchemasReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1691,15 +1838,15 @@ class GetSchemas_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetSchemasResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetSchemasResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1752,15 +1899,15 @@ class GetTables_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetTablesReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetTablesReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1812,15 +1959,15 @@ class GetTables_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetTablesResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetTablesResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1873,15 +2020,15 @@ class GetTableTypes_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetTableTypesReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetTableTypesReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1933,15 +2080,15 @@ class GetTableTypes_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetTableTypesResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetTableTypesResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -1994,15 +2141,15 @@ class GetColumns_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetColumnsReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetColumnsReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2054,15 +2201,15 @@ class GetColumns_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetColumnsResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetColumnsResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2115,15 +2262,15 @@ class GetFunctions_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetFunctionsReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetFunctionsReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2175,15 +2322,15 @@ class GetFunctions_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetFunctionsResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetFunctionsResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2236,15 +2383,15 @@ class GetOperationStatus_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetOperationStatusReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetOperationStatusReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2296,15 +2443,15 @@ class GetOperationStatus_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetOperationStatusResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetOperationStatusResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2357,15 +2504,15 @@ class CancelOperation_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TCancelOperationReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TCancelOperationReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2417,15 +2564,15 @@ class CancelOperation_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TCancelOperationResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TCancelOperationResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2478,15 +2625,15 @@ class CloseOperation_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TCloseOperationReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TCloseOperationReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2538,15 +2685,15 @@ class CloseOperation_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TCloseOperationResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TCloseOperationResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2599,15 +2746,15 @@ class GetResultSetMetadata_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetResultSetMetadataReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetResultSetMetadataReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2659,15 +2806,15 @@ class GetResultSetMetadata_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetResultSetMetadataResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetResultSetMetadataResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2720,15 +2867,15 @@ class FetchResults_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TFetchResultsReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TFetchResultsReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2780,15 +2927,15 @@ class FetchResults_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TFetchResultsResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TFetchResultsResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2797,6 +2944,369 @@ class FetchResults_result(object):
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('FetchResults_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetDelegationToken_args(object):
+  """
+  Attributes:
+   - req
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'req', (TGetDelegationTokenReq, TGetDelegationTokenReq.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, req=None,):
+    self.req = req
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+	break
+      if fid == 1:
+	if ftype == TType.STRUCT:
+	  self.req = TGetDelegationTokenReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
+      else:
+	iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('GetDelegationToken_args')
+    if self.req is not None:
+      oprot.writeFieldBegin('req', TType.STRUCT, 1)
+      self.req.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetDelegationToken_result(object):
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (TGetDelegationTokenResp, TGetDelegationTokenResp.thrift_spec), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+	break
+      if fid == 0:
+	if ftype == TType.STRUCT:
+	  self.success = TGetDelegationTokenResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
+      else:
+	iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('GetDelegationToken_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CancelDelegationToken_args(object):
+  """
+  Attributes:
+   - req
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'req', (TCancelDelegationTokenReq, TCancelDelegationTokenReq.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, req=None,):
+    self.req = req
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+	break
+      if fid == 1:
+	if ftype == TType.STRUCT:
+	  self.req = TCancelDelegationTokenReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
+      else:
+	iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('CancelDelegationToken_args')
+    if self.req is not None:
+      oprot.writeFieldBegin('req', TType.STRUCT, 1)
+      self.req.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CancelDelegationToken_result(object):
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (TCancelDelegationTokenResp, TCancelDelegationTokenResp.thrift_spec), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+	break
+      if fid == 0:
+	if ftype == TType.STRUCT:
+	  self.success = TCancelDelegationTokenResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
+      else:
+	iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('CancelDelegationToken_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class RenewDelegationToken_args(object):
+  """
+  Attributes:
+   - req
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'req', (TRenewDelegationTokenReq, TRenewDelegationTokenReq.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, req=None,):
+    self.req = req
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+	break
+      if fid == 1:
+	if ftype == TType.STRUCT:
+	  self.req = TRenewDelegationTokenReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
+      else:
+	iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('RenewDelegationToken_args')
+    if self.req is not None:
+      oprot.writeFieldBegin('req', TType.STRUCT, 1)
+      self.req.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class RenewDelegationToken_result(object):
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (TRenewDelegationTokenResp, TRenewDelegationTokenResp.thrift_spec), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+	break
+      if fid == 0:
+	if ftype == TType.STRUCT:
+	  self.success = TRenewDelegationTokenResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
+      else:
+	iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('RenewDelegationToken_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)
@@ -2841,15 +3351,15 @@ class GetLog_args(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.req = TGetLogReq()
-          self.req.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.req = TGetLogReq()
+	  self.req.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 
@@ -2901,15 +3411,15 @@ class GetLog_result(object):
     while True:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
-        break
+	break
       if fid == 0:
-        if ftype == TType.STRUCT:
-          self.success = TGetLogResp()
-          self.success.read(iprot)
-        else:
-          iprot.skip(ftype)
+	if ftype == TType.STRUCT:
+	  self.success = TGetLogResp()
+	  self.success.read(iprot)
+	else:
+	  iprot.skip(ftype)
       else:
-        iprot.skip(ftype)
+	iprot.skip(ftype)
       iprot.readFieldEnd()
     iprot.readStructEnd()
 

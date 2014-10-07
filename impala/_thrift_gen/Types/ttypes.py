@@ -141,18 +141,21 @@ class TExplainLevel(object):
     "VERBOSE": 3,
   }
 
-class TFunctionType(object):
+class TFunctionCategory(object):
   SCALAR = 0
   AGGREGATE = 1
+  ANALYTIC = 2
 
   _VALUES_TO_NAMES = {
     0: "SCALAR",
     1: "AGGREGATE",
+    2: "ANALYTIC",
   }
 
   _NAMES_TO_VALUES = {
     "SCALAR": 0,
     "AGGREGATE": 1,
+    "ANALYTIC": 2,
   }
 
 class TFunctionBinaryType(object):
@@ -834,6 +837,8 @@ class TAggregateFunction(object):
    - serialize_fn_symbol
    - merge_fn_symbol
    - finalize_fn_symbol
+   - get_value_fn_symbol
+   - remove_fn_symbol
    - ignores_distinct
   """
 
@@ -846,15 +851,19 @@ class TAggregateFunction(object):
     (5, TType.STRING, 'merge_fn_symbol', None, None, ), # 5
     (6, TType.STRING, 'finalize_fn_symbol', None, None, ), # 6
     (7, TType.BOOL, 'ignores_distinct', None, None, ), # 7
+    (8, TType.STRING, 'get_value_fn_symbol', None, None, ), # 8
+    (9, TType.STRING, 'remove_fn_symbol', None, None, ), # 9
   )
 
-  def __init__(self, intermediate_type=None, update_fn_symbol=None, init_fn_symbol=None, serialize_fn_symbol=None, merge_fn_symbol=None, finalize_fn_symbol=None, ignores_distinct=None,):
+  def __init__(self, intermediate_type=None, update_fn_symbol=None, init_fn_symbol=None, serialize_fn_symbol=None, merge_fn_symbol=None, finalize_fn_symbol=None, get_value_fn_symbol=None, remove_fn_symbol=None, ignores_distinct=None,):
     self.intermediate_type = intermediate_type
     self.update_fn_symbol = update_fn_symbol
     self.init_fn_symbol = init_fn_symbol
     self.serialize_fn_symbol = serialize_fn_symbol
     self.merge_fn_symbol = merge_fn_symbol
     self.finalize_fn_symbol = finalize_fn_symbol
+    self.get_value_fn_symbol = get_value_fn_symbol
+    self.remove_fn_symbol = remove_fn_symbol
     self.ignores_distinct = ignores_distinct
 
   def read(self, iprot):
@@ -897,6 +906,16 @@ class TAggregateFunction(object):
           self.finalize_fn_symbol = iprot.readString();
         else:
           iprot.skip(ftype)
+      elif fid == 8:
+	if ftype == TType.STRING:
+	  self.get_value_fn_symbol = iprot.readString();
+	else:
+	  iprot.skip(ftype)
+      elif fid == 9:
+	if ftype == TType.STRING:
+	  self.remove_fn_symbol = iprot.readString();
+	else:
+	  iprot.skip(ftype)
       elif fid == 7:
         if ftype == TType.BOOL:
           self.ignores_distinct = iprot.readBool();
@@ -940,6 +959,14 @@ class TAggregateFunction(object):
       oprot.writeFieldBegin('ignores_distinct', TType.BOOL, 7)
       oprot.writeBool(self.ignores_distinct)
       oprot.writeFieldEnd()
+    if self.get_value_fn_symbol is not None:
+      oprot.writeFieldBegin('get_value_fn_symbol', TType.STRING, 8)
+      oprot.writeString(self.get_value_fn_symbol)
+      oprot.writeFieldEnd()
+    if self.remove_fn_symbol is not None:
+      oprot.writeFieldBegin('remove_fn_symbol', TType.STRING, 9)
+      oprot.writeString(self.remove_fn_symbol)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -950,8 +977,6 @@ class TAggregateFunction(object):
       raise TProtocol.TProtocolException(message='Required field update_fn_symbol is unset!')
     if self.init_fn_symbol is None:
       raise TProtocol.TProtocolException(message='Required field init_fn_symbol is unset!')
-    if self.merge_fn_symbol is None:
-      raise TProtocol.TProtocolException(message='Required field merge_fn_symbol is unset!')
     return
 
 

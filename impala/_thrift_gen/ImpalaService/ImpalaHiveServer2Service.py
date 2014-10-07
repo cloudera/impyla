@@ -7,7 +7,7 @@
 #
 
 from thrift.Thrift import TType, TMessageType, TException, TApplicationException
-import impala._thrift_gen.cli_service.TCLIService
+import impala._thrift_gen.TCLIService.TCLIService
 from ttypes import *
 from thrift.Thrift import TProcessor
 from thrift.transport import TTransport
@@ -18,7 +18,7 @@ except:
   fastbinary = None
 
 
-class Iface(impala._thrift_gen.cli_service.TCLIService.Iface):
+class Iface(impala._thrift_gen.TCLIService.TCLIService.Iface):
   def GetExecSummary(self, req):
     """
     Parameters:
@@ -34,9 +34,9 @@ class Iface(impala._thrift_gen.cli_service.TCLIService.Iface):
     pass
 
 
-class Client(impala._thrift_gen.cli_service.TCLIService.Client, Iface):
+class Client(impala._thrift_gen.TCLIService.TCLIService.Client, Iface):
   def __init__(self, iprot, oprot=None):
-    impala._thrift_gen.cli_service.TCLIService.Client.__init__(self, iprot, oprot)
+    impala._thrift_gen.TCLIService.TCLIService.Client.__init__(self, iprot, oprot)
 
   def GetExecSummary(self, req):
     """
@@ -99,9 +99,9 @@ class Client(impala._thrift_gen.cli_service.TCLIService.Client, Iface):
     raise TApplicationException(TApplicationException.MISSING_RESULT, "GetRuntimeProfile failed: unknown result");
 
 
-class Processor(impala._thrift_gen.cli_service.TCLIService.Processor, Iface, TProcessor):
+class Processor(impala._thrift_gen.TCLIService.TCLIService.Processor, Iface, TProcessor):
   def __init__(self, handler):
-    impala._thrift_gen.cli_service.TCLIService.Processor.__init__(self, handler)
+    impala._thrift_gen.TCLIService.TCLIService.Processor.__init__(self, handler)
     self._processMap["GetExecSummary"] = Processor.process_GetExecSummary
     self._processMap["GetRuntimeProfile"] = Processor.process_GetRuntimeProfile
 

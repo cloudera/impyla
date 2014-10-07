@@ -18,6 +18,7 @@ import getpass
 from impala.dbapi.interface import Connection, Cursor, _bind_parameters
 from impala._rpc import hiveserver2 as rpc
 from impala.error import NotSupportedError, OperationalError, ProgrammingError
+from impala._thrift_gen.TCLIService.ttypes import TProtocolVersion
 
 class HiveServer2Connection(Connection):
     # PEP 249
@@ -48,9 +49,10 @@ class HiveServer2Connection(Connection):
         if user is None:
             user = getpass.getuser()
         if session_handle is None:
-            (session_handle, default_config) = rpc.open_session(self.service,
-                    user, configuration)
-        cursor = HiveServer2Cursor(self.service, session_handle, default_config)
+	    (session_handle, default_config, hs2_protocol_version) = \
+		    rpc.open_session(self.service, user, configuration)
+	cursor = HiveServer2Cursor(self.service, session_handle, default_config,
+		hs2_protocol_version)
         if self.default_db is not None:
             cursor.execute('USE %s' % self.default_db)
         return cursor
@@ -64,10 +66,12 @@ class HiveServer2Cursor(Cursor):
     # HiveServer2Cursor objects are associated with a Session
     # they are instantiated with alive session_handles
 
-    def __init__(self, service, session_handle, default_config=None):
+    def __init__(self, service, session_handle, default_config=None,
+	    hs2_protocol_version=TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6):
         self.service = service
         self.session_handle = session_handle
         self.default_config = default_config
+	self.hs2_protocol_version = hs2_protocol_version
 
         self._last_operation_string = None
         self._last_operation_handle = None
@@ -166,9 +170,11 @@ class HiveServer2Cursor(Cursor):
                     self._last_operation_handle)
             if operation_state == 'ERROR_STATE':
                 raise OperationalError("Operation is in ERROR_STATE")
-            if operation_state not in ['INITIALIZED_STATE', 'RUNNING_STATE']:
+	    if operation_state in ['FINISHED_STATE', 'CANCELED_STATE',
+		    'CLOSED_STATE', 'UKNOWN_STATE']:
                 break
-            # I'm in INITIALIZED_STATE or RUNNING_STATE so hang out
+	    # I'm in INITIALIZED_STATE or RUNNING_STATE or PENDING_STATE
+	    # so hang out
             time.sleep(self._get_sleep_interval(loop_start))
 
     def _get_sleep_interval(self, start_time):
@@ -239,8 +245,8 @@ class HiveServer2Cursor(Cursor):
         elif self._last_operation_active:
             # self._buffer is empty here and op is active: try to pull more rows
             rows = rpc.fetch_results(self.service,
-                    self._last_operation_handle, self.description,
-                    self.buffersize)
+		    self._last_operation_handle, self.hs2_protocol_version,
+		    self.description, self.buffersize)
             self._buffer.extend(rows)
             if len(self._buffer) == 0:
                 raise StopIteration

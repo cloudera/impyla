@@ -24,7 +24,7 @@ if [ -z "$IMPYLA_REPO" ]; then
 fi
 
 echo "copying thrift files from the main Impala repo"
-cp $IMPALA_REPO/common/thrift/cli_service.thrift $IMPYLA_REPO/thrift
+cp $IMPALA_REPO/common/thrift/TCLIService.thrift $IMPYLA_REPO/thrift
 cp $IMPALA_REPO/common/thrift/ImpalaService.thrift $IMPYLA_REPO/thrift
 cp $IMPALA_REPO/common/thrift/ExecStats.thrift $IMPYLA_REPO/thrift
 cp $IMPALA_REPO/common/thrift/Status.thrift $IMPYLA_REPO/thrift
