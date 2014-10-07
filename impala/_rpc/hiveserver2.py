@@ -60,6 +60,8 @@ _TTypeId_to_TColumnValue_getters = {
         'STRING': operator.attrgetter('stringVal'),
         'DECIMAL': operator.attrgetter('stringVal'),
         'BINARY': operator.attrgetter('binaryVal'),
+	'VARCHAR': operator.attrgetter('stringVal'),
+	'CHAR': operator.attrgetter('stringVal'),
 }
 
 _pre_columnar_protocols = [
