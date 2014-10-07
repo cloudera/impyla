@@ -11,7 +11,7 @@ import impala._thrift_gen.ExecStats.ttypes
 import impala._thrift_gen.Status.ttypes
 import impala._thrift_gen.Types.ttypes
 import impala._thrift_gen.beeswax.ttypes
-import impala._thrift_gen.cli_service.ttypes
+import impala._thrift_gen.TCLIService.ttypes
 
 
 from thrift.transport import TTransport
@@ -49,7 +49,9 @@ class TImpalaQueryOptions(object):
   DISABLE_OUTERMOST_TOPN = 23
   RM_INITIAL_MEM = 24
   QUERY_TIMEOUT_S = 25
-  MAX_JOIN_MEMORY = 26
+  MAX_BLOCK_MGR_MEMORY = 26
+  APPX_COUNT_DISTINCT = 27
+  DISABLE_UNSAFE_SPILLS = 28
 
   _VALUES_TO_NAMES = {
     0: "ABORT_ON_ERROR",
@@ -78,7 +80,9 @@ class TImpalaQueryOptions(object):
     23: "DISABLE_OUTERMOST_TOPN",
     24: "RM_INITIAL_MEM",
     25: "QUERY_TIMEOUT_S",
-    26: "MAX_JOIN_MEMORY",
+    26: "MAX_BLOCK_MGR_MEMORY",
+    27: "APPX_COUNT_DISTINCT",
+    28: "DISABLE_UNSAFE_SPILLS",
   }
 
   _NAMES_TO_VALUES = {
@@ -108,7 +112,9 @@ class TImpalaQueryOptions(object):
     "DISABLE_OUTERMOST_TOPN": 23,
     "RM_INITIAL_MEM": 24,
     "QUERY_TIMEOUT_S": 25,
-    "MAX_JOIN_MEMORY": 26,
+    "MAX_BLOCK_MGR_MEMORY": 26,
+    "APPX_COUNT_DISTINCT": 27,
+    "DISABLE_UNSAFE_SPILLS": 28,
   }
 
 
@@ -329,8 +335,8 @@ class TGetExecSummaryReq(object):
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'operationHandle', (impala._thrift_gen.cli_service.ttypes.TOperationHandle, impala._thrift_gen.cli_service.ttypes.TOperationHandle.thrift_spec), None, ), # 1
-    (2, TType.STRUCT, 'sessionHandle', (impala._thrift_gen.cli_service.ttypes.TSessionHandle, impala._thrift_gen.cli_service.ttypes.TSessionHandle.thrift_spec), None, ), # 2
+    (1, TType.STRUCT, 'operationHandle', (impala._thrift_gen.TCLIService.ttypes.TOperationHandle, impala._thrift_gen.TCLIService.ttypes.TOperationHandle.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'sessionHandle', (impala._thrift_gen.TCLIService.ttypes.TSessionHandle, impala._thrift_gen.TCLIService.ttypes.TSessionHandle.thrift_spec), None, ), # 2
   )
 
   def __init__(self, operationHandle=None, sessionHandle=None,):
@@ -348,13 +354,13 @@ class TGetExecSummaryReq(object):
         break
       if fid == 1:
         if ftype == TType.STRUCT:
-          self.operationHandle = impala._thrift_gen.cli_service.ttypes.TOperationHandle()
+	  self.operationHandle = impala._thrift_gen.TCLIService.ttypes.TOperationHandle()
           self.operationHandle.read(iprot)
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRUCT:
-          self.sessionHandle = impala._thrift_gen.cli_service.ttypes.TSessionHandle()
+	  self.sessionHandle = impala._thrift_gen.TCLIService.ttypes.TSessionHandle()
           self.sessionHandle.read(iprot)
         else:
           iprot.skip(ftype)
@@ -403,7 +409,7 @@ class TGetExecSummaryResp(object):
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'status', (impala._thrift_gen.cli_service.ttypes.TStatus, impala._thrift_gen.cli_service.ttypes.TStatus.thrift_spec), None, ), # 1
+    (1, TType.STRUCT, 'status', (impala._thrift_gen.TCLIService.ttypes.TStatus, impala._thrift_gen.TCLIService.ttypes.TStatus.thrift_spec), None, ), # 1
     (2, TType.STRUCT, 'summary', (impala._thrift_gen.ExecStats.ttypes.TExecSummary, impala._thrift_gen.ExecStats.ttypes.TExecSummary.thrift_spec), None, ), # 2
   )
 
@@ -422,7 +428,7 @@ class TGetExecSummaryResp(object):
         break
       if fid == 1:
         if ftype == TType.STRUCT:
-          self.status = impala._thrift_gen.cli_service.ttypes.TStatus()
+	  self.status = impala._thrift_gen.TCLIService.ttypes.TStatus()
           self.status.read(iprot)
         else:
           iprot.skip(ftype)
@@ -479,8 +485,8 @@ class TGetRuntimeProfileReq(object):
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'operationHandle', (impala._thrift_gen.cli_service.ttypes.TOperationHandle, impala._thrift_gen.cli_service.ttypes.TOperationHandle.thrift_spec), None, ), # 1
-    (2, TType.STRUCT, 'sessionHandle', (impala._thrift_gen.cli_service.ttypes.TSessionHandle, impala._thrift_gen.cli_service.ttypes.TSessionHandle.thrift_spec), None, ), # 2
+    (1, TType.STRUCT, 'operationHandle', (impala._thrift_gen.TCLIService.ttypes.TOperationHandle, impala._thrift_gen.TCLIService.ttypes.TOperationHandle.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'sessionHandle', (impala._thrift_gen.TCLIService.ttypes.TSessionHandle, impala._thrift_gen.TCLIService.ttypes.TSessionHandle.thrift_spec), None, ), # 2
   )
 
   def __init__(self, operationHandle=None, sessionHandle=None,):
@@ -498,13 +504,13 @@ class TGetRuntimeProfileReq(object):
         break
       if fid == 1:
         if ftype == TType.STRUCT:
-          self.operationHandle = impala._thrift_gen.cli_service.ttypes.TOperationHandle()
+	  self.operationHandle = impala._thrift_gen.TCLIService.ttypes.TOperationHandle()
           self.operationHandle.read(iprot)
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRUCT:
-          self.sessionHandle = impala._thrift_gen.cli_service.ttypes.TSessionHandle()
+	  self.sessionHandle = impala._thrift_gen.TCLIService.ttypes.TSessionHandle()
           self.sessionHandle.read(iprot)
         else:
           iprot.skip(ftype)
@@ -553,7 +559,7 @@ class TGetRuntimeProfileResp(object):
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'status', (impala._thrift_gen.cli_service.ttypes.TStatus, impala._thrift_gen.cli_service.ttypes.TStatus.thrift_spec), None, ), # 1
+    (1, TType.STRUCT, 'status', (impala._thrift_gen.TCLIService.ttypes.TStatus, impala._thrift_gen.TCLIService.ttypes.TStatus.thrift_spec), None, ), # 1
     (2, TType.STRING, 'profile', None, None, ), # 2
   )
 
@@ -572,7 +578,7 @@ class TGetRuntimeProfileResp(object):
         break
       if fid == 1:
         if ftype == TType.STRUCT:
-          self.status = impala._thrift_gen.cli_service.ttypes.TStatus()
+	  self.status = impala._thrift_gen.TCLIService.ttypes.TStatus()
           self.status.read(iprot)
         else:
           iprot.skip(ftype)
