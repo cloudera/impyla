@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import string
 
-from numba import cffi_support
+# from numba import cffi_support
 from numba import boolean, int32, int64
 import pytest
 

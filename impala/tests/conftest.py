@@ -21,8 +21,6 @@ import getpass
 
 from pytest import fixture, importorskip, skip
 
-from impala.context import ImpalaContext
-
 # these are all environment variable-based; primarily for ImpalaContext
 
 @fixture(scope='session')
@@ -96,6 +94,7 @@ def temp_db():
 def ic(request, temp_hdfs_dir, temp_db, nn_host, webhdfs_port, hdfs_user, host,
         port, protocol):
     """Provides an ImpalaContext"""
+    from impala.context import ImpalaContext
     ctx = ImpalaContext(temp_dir=temp_hdfs_dir, temp_db=temp_db, nn_host=nn_host,
             webhdfs_port=webhdfs_port, hdfs_user=hdfs_user, host=host,
             port=port, protocol=protocol)
