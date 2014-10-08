@@ -21,9 +21,9 @@ import string
 from numba import cgutils
 from numba.targets.imputils import implement, Registry
 
-from .types import StringVal, IntVal
-from .impl_utils import _conv_numba_struct_to_clang, StringValStruct
-from .abi import raise_return_type
+from impala.udf.types import StringVal, IntVal
+from impala.udf.impl_utils import _conv_numba_struct_to_clang, StringValStruct
+from impala.udf.abi import raise_return_type
 
 registry = Registry()
 register_function = registry.register

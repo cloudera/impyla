@@ -22,6 +22,14 @@ checking out the repo to develop on it do NOT need to run the codegen.  Codegen
 performed with Thrift 0.9.x.
 
 
+#### UDF maintenance
+
+Copy a fresh copy of the `udf.h` header file
+
+    ```bash
+    cp $IMPALA_REPO/be/src/udf/udf.h $IMPYLA_REPO/impala/udf/precompiled
+    ```
+
 #### Release
 
 1. Generate a summary of all the commits since the last release

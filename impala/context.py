@@ -48,6 +48,14 @@ class ImpalaContext(object):
         temp_tables = [x[0] for x in self._cursor.fetchall()]
         for table in temp_tables:
             self._cursor.execute('DROP TABLE IF EXISTS %s.%s' % (self._temp_db, table))
+        self._cursor.execute('SHOW FUNCTIONS')
+        temp_udfs = [x[1] for x in self._cursor.fetchall()]
+        for udf in temp_udfs:
+            self._cursor.execute('DROP FUNCTION IF EXISTS %s.%s' % (self._temp_db, udf))
+        self._cursor.execute('SHOW AGGREGATE FUNCTIONS')
+        temp_udas = [x[1] for x in self._cursor.fetchall()]
+        for uda in temp_udas:
+            self._cursor.execute('DROP AGGREGATE FUNCTION IF EXISTS %s.%s' % (self._temp_db, uda))
         self._cursor.execute('USE default')
         self._cursor.execute('DROP DATABASE IF EXISTS %s' % self._temp_db)
         # drop the temp dir in HDFS

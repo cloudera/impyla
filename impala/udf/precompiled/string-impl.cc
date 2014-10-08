@@ -1,9 +1,13 @@
-#include "impala-precompiled.h"
 #include <cstring>
 #include <cctype>
 #include <limits>
 
 #define IS_SPACE(c) ((c) == ' ' || (c) == '\t' || (c) == '\n' || (c) == '\v' || (c) == '\f' || (c) == '\r')
+
+#include "udf.h"
+
+using namespace impala_udf;
+
 
 bool EqStringValImpl(const StringVal& s1, const StringVal& s2) {
     if (s1.is_null != s2.is_null)

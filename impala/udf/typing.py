@@ -21,14 +21,13 @@ from numba.typing import Context
 from numba.typing.templates import (AttributeTemplate, ConcreteTemplate,
                                     Registry, signature)
 
-from . import types
-from . import typeconv
-from . import stringdecl
-from .types import (FunctionContext, AnyVal, BooleanVal, BooleanValType,
-                    TinyIntVal, TinyIntValType, SmallIntVal, SmallIntValType,
-                    IntVal, IntValType, BigIntVal, BigIntValType, FloatVal,
-                    FloatValType, DoubleVal, DoubleValType, StringVal,
-                    StringValType)
+from impala.udf import types
+from impala.udf import typeconv
+from impala.udf import stringdecl
+from impala.udf.types import (FunctionContext, AnyVal, BooleanVal,
+        BooleanValType, TinyIntVal, TinyIntValType, SmallIntVal,
+        SmallIntValType, IntVal, IntValType, BigIntVal, BigIntValType, FloatVal,
+        FloatValType, DoubleVal, DoubleValType, StringVal, StringValType)
 
 
 registry = Registry()

@@ -18,12 +18,11 @@ from __future__ import absolute_import
 
 import llvm.core as lc
 
-from .types import (AnyVal, BooleanVal, TinyIntVal, SmallIntVal, IntVal,
-                    BigIntVal, FloatVal, DoubleVal, StringVal)
-from .impl_utils import (BooleanValStruct, TinyIntValStruct, SmallIntValStruct,
-                         IntValStruct, BigIntValStruct, FloatValStruct,
-                         DoubleValStruct, StringValStruct)
-from .impl_utils import _get_is_null, _set_is_null
+from impala.udf.types import (AnyVal, BooleanVal, TinyIntVal, SmallIntVal,
+        IntVal, BigIntVal, FloatVal, DoubleVal, StringVal)
+from impala.udf.impl_utils import (BooleanValStruct, TinyIntValStruct,
+        SmallIntValStruct, IntValStruct, BigIntValStruct, FloatValStruct,
+        DoubleValStruct, StringValStruct, _get_is_null, _set_is_null)
 
 
 class ABIHandling(object):

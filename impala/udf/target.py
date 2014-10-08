@@ -26,17 +26,18 @@ from numba import cgutils, lowering
 from numba.targets.base import BaseContext
 from numba.targets.imputils import Registry, implement, impl_attribute
 
-from . import stringimpl
-from .abi import ABIHandling, raise_return_type
-from .types import (FunctionContext, AnyVal, BooleanVal, BooleanValType,
-                    TinyIntVal, TinyIntValType, SmallIntVal, SmallIntValType,
-                    IntVal, IntValType, BigIntVal, BigIntValType, FloatVal,
-                    FloatValType, DoubleVal, DoubleValType, StringVal,
-                    StringValType)
-from .impl_utils import (AnyValStruct, BooleanValStruct, TinyIntValStruct,
-                         SmallIntValStruct, IntValStruct, BigIntValStruct,
-                         FloatValStruct, DoubleValStruct, StringValStruct)
-from .impl_utils import _get_is_null, _set_is_null, _conv_numba_struct_to_clang
+from impala.udf import stringimpl
+from impala.udf.abi import ABIHandling, raise_return_type
+from impala.udf.types import (FunctionContext,
+        AnyVal, BooleanVal, BooleanValType, TinyIntVal, TinyIntValType,
+        SmallIntVal, SmallIntValType, IntVal, IntValType, BigIntVal,
+        BigIntValType, FloatVal, FloatValType, DoubleVal, DoubleValType,
+        StringVal, StringValType)
+from impala.udf.impl_utils import (AnyValStruct, BooleanValStruct,
+        TinyIntValStruct, SmallIntValStruct, IntValStruct, BigIntValStruct,
+        FloatValStruct, DoubleValStruct, StringValStruct)
+from impala.udf.impl_utils import (precompiled, _get_is_null, _set_is_null,
+        _conv_numba_struct_to_clang)
 
 
 registry = Registry()
@@ -199,6 +200,18 @@ def add_stringval(context, builder, sig, args):
     return raise_return_type(context, builder, StringVal, result)
 
 
+LLVM_TYPE = {
+    AnyVal: precompiled.get_type_named("struct.impala_udf::AnyVal"),
+    BooleanVal: precompiled.get_type_named("struct.impala_udf::BooleanVal"),
+    TinyIntVal: precompiled.get_type_named("struct.impala_udf::TinyIntVal"),
+    SmallIntVal: precompiled.get_type_named("struct.impala_udf::SmallIntVal"),
+    IntVal: precompiled.get_type_named("struct.impala_udf::IntVal"),
+    BigIntVal: precompiled.get_type_named("struct.impala_udf::BigIntVal"),
+    FloatVal: precompiled.get_type_named("struct.impala_udf::FloatVal"),
+    DoubleVal: precompiled.get_type_named("struct.impala_udf::DoubleVal"),
+    StringVal: precompiled.get_type_named("struct.impala_udf::StringVal"),
+}
+
 TYPE_LAYOUT = {
     AnyVal: AnyValStruct,
     BooleanVal: BooleanValStruct,
@@ -226,22 +239,14 @@ class ImpalaTargetContext(BaseContext):
         self.insert_attr_defn(stringimpl.registry.attributes)
 
         self.optimizer = self.build_pass_manager()
-        self._load_precompiled()
 
         # once per context
-        self._fnctximpltype = lc.Type.opaque("FunctionContextImpl")
-        fnctxbody = [lc.Type.pointer(self._fnctximpltype)]
-        self._fnctxtype = lc.Type.struct(fnctxbody,
-                                         name="class.impala_udf::FunctionContext")
+        self._fnctxtype = precompiled.get_type_named("class.impala_udf::FunctionContext")
 
     def _get_precompiled_function(self, name):
-        fns = [fn for fn in self.precompiled_module.functions if name in fn.name]
+        fns = [fn for fn in precompiled.functions if name in fn.name]
         assert len(fns) == 1
         return fns[0]
-
-    def _load_precompiled(self):
-        binary_data = pkgutil.get_data("impala.udf", "precompiled/impala-precompiled.bc")
-        self.precompiled_module = lc.Module.from_bitcode(binary_data)
 
     def cast(self, builder, val, fromty, toty):
         if fromty not in self._impala_types and toty not in self._impala_types:
@@ -360,9 +365,16 @@ class ImpalaTargetContext(BaseContext):
         else:
             return super(ImpalaTargetContext, self).get_constant_struct(builder, ty, val)
 
+    def get_struct_type(self, struct):
+        if hasattr(struct, '_name'):
+            # our custom named structs
+            return precompiled.get_type_named(struct._name)
+        else:
+            return super(ImpalaTargetContext, self).get_struct_type(struct)
+    
     def get_data_type(self, ty):
-        if ty in TYPE_LAYOUT:
-            return self.get_struct_type(TYPE_LAYOUT[ty])
+        if ty in LLVM_TYPE:
+            return LLVM_TYPE[ty]
         elif ty == FunctionContext:
             return lc.Type.pointer(self._fnctxtype)
         else:

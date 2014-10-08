@@ -31,7 +31,7 @@ setup(
     url='https://github.com/cloudera/impyla',
     packages=find_packages(),
     package_data={
-        'impala.udf': ['precompiled/*.bc'],
+        'impala.udf': ['precompiled/impyla.bc'],
         'impala.tests': ['data/iris.data']
     },
     scripts=['bin/register-impala-udfs.py'],

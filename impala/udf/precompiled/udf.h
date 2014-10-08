@@ -63,6 +63,8 @@ class FunctionContext {
     TYPE_TIMESTAMP,
     TYPE_STRING,
     TYPE_FIXED_BUFFER,
+    TYPE_DECIMAL,
+    TYPE_VARCHAR
   };
 
   struct TypeDesc {
@@ -71,6 +73,9 @@ class FunctionContext {
     // Only valid if type == TYPE_DECIMAL
     int precision;
     int scale;
+
+    // Only valid if type == TYPE_FIXED_BUFFER || type == TYPE_VARCHAR
+    int len;
   };
 
   struct UniqueId {
@@ -156,6 +161,18 @@ class FunctionContext {
   // to clean up any function state if necessary.
   void SetFunctionState(FunctionStateScope scope, void* ptr);
   void* GetFunctionState(FunctionStateScope scope) const;
+
+  // Returns the return type information of this function. For UDAs, this is the final
+  // return type of the UDA (e.g., the type returned by the finalize function).
+  const TypeDesc& GetReturnType() const;
+
+  // Returns the intermediate type for UDAs, i.e., the one returned by
+  // update and merge functions. Returns INVALID_TYPE for UDFs.
+  const TypeDesc& GetIntermediateType() const;
+
+  // Returns the number of arguments to this function (not including the FunctionContext*
+  // argument).
+  int GetNumArgs() const;
 
   // Returns the type information for the arg_idx-th argument (0-indexed, not including
   // the FunctionContext* argument). Returns NULL if arg_idx is invalid.
@@ -530,6 +547,57 @@ struct StringVal : public AnyVal {
     return ptr == other.ptr || memcmp(ptr, other.ptr, len) == 0;
   }
   bool operator!=(const StringVal& other) const { return !(*this == other); }
+};
+
+struct DecimalVal : public impala_udf::AnyVal {
+  // Decimal data is stored as an unscaled integer value. For example, the decimal 1.00
+  // (precison 3, scale 2) is stored as 100. The byte size necessary to store the decimal
+  // depends on the precision, which determines which field of the union should be used to
+  // store and manipulate the unscaled value.
+  //
+  //   precision between 0-9:   val4  (4 bytes)
+  //   precision between 10-18: val8  (8 bytes)
+  //   precision between 19-38: val16 (16 bytes)
+  //
+  // While it is always safe to use a larger field than necessary, it may result in worse
+  // performance. For example, a UDF that only uses val16 can handle any precision but may
+  // be slower than one that uses val4 or val8.
+  union {
+    int32_t val4;
+    int64_t val8;
+    __int128_t val16;
+  };
+
+  DecimalVal() : val16(0) {}
+  DecimalVal(int32_t v) : val16(v) {}
+  DecimalVal(int64_t v) : val16(v) {}
+  DecimalVal(__int128_t v) : val16(v) {}
+
+  static DecimalVal null() {
+    DecimalVal result;
+    result.is_null = true;
+    return result;
+  }
+
+  bool operator==(const DecimalVal& other) const {
+    if (is_null != other.is_null) return false;
+    if (is_null) return true;
+    return val16 == other.val16;
+  }
+  bool operator!=(const DecimalVal& other) const { return !(*this == other); }
+
+  DecimalVal& operator=(const DecimalVal& other) {
+    // Depending on the compiler, the default assignment operator may require 16-byte
+    // alignment of 'this' and 'other'. Cast to void* so the compiler doesn't change back
+    // to an assignment.
+    memcpy(reinterpret_cast<void*>(this), reinterpret_cast<const void*>(&other),
+           sizeof(DecimalVal));
+    return *this;
+  }
+
+  DecimalVal(const DecimalVal& other) {
+    *this = other;
+  }
 };
 
 typedef uint8_t* BufferVal;

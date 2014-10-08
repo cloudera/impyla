@@ -13,19 +13,20 @@
 # limitations under the License.
 
 PREFIX=impala/udf/precompiled
-INCLUDE_DIR=$(PREFIX)
-SRC_FILE=$(PREFIX)/impala-precompiled.cc
-OUTPUT_FILE=$(PREFIX)/impala-precompiled.bc
+OUTPUT_FILE=$(PREFIX)/impyla.bc
 
-# if LLVM_CONFIG unset, try the default
-if [ -z $(LLVM_CONFIG) ]; then LLVM_CONFIG=$(which llvm-config); fi;
-ifndef LLVM_CONFIG
-$(error llvm-config not in PATH -- please set LLVM_CONFIG=path/to/llvm-config)
+# if LLVM_CONFIG_PATH unset, try the default
+if [ -z $(LLVM_CONFIG_PATH) ]; then LLVM_CONFIG_PATH=$(which llvm-config); fi;
+ifndef LLVM_CONFIG_PATH
+$(error llvm-config not in PATH -- please set LLVM_CONFIG_PATH=path/to/llvm-config)
 endif
-CLANG=$(shell $(LLVM_CONFIG) --bindir)/clang++
+CLANG=$(shell $(LLVM_CONFIG_PATH) --bindir)/clang++
+LINK=$(shell $(LLVM_CONFIG_PATH) --bindir)/llvm-link
 
 all:
-	$(CLANG) -emit-llvm -O0 -I $(INCLUDE_DIR) -c $(SRC_FILE) -o $(OUTPUT_FILE)
+	$(CLANG) -c -emit-llvm -O0 -o $(PREFIX)/impala-types.bc $(PREFIX)/impala-types.cc
+	$(CLANG) -c -emit-llvm -O0 -o $(PREFIX)/string-impl.bc $(PREFIX)/string-impl.cc
+	$(LINK) -o $(OUTPUT_FILE) $(PREFIX)/*.bc
 
 clean:
-	rm -f $(OUTPUT_FILE)
+	rm -f $(PREFIX)/*.bc

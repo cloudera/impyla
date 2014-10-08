@@ -12,12 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
+import pkgutil
+
 import llvm.core as lc
 from numba import types as ntypes
 from numba import cgutils
 
-from .types import AnyVal
+from impala.udf.types import AnyVal
 
+# load the Impala UDF types from the precompiled module
+precompiled = lc.Module.from_bitcode(
+        pkgutil.get_data("impala.udf", "precompiled/impyla.bc"))
 
 # struct access utils
 
@@ -42,45 +49,54 @@ def _set_is_null(builder, val, is_null):
 # Impala *Val struct impls
 
 class AnyValStruct(cgutils.Structure):
+    _name = "struct.impala_udf::AnyVal"
     _fields = [('is_null', ntypes.boolean)]
 
 
 class BooleanValStruct(cgutils.Structure):
+    _name = "struct.impala_udf::BooleanVal"
     _fields = [('parent',  AnyVal),
                ('val',     ntypes.int8),]
 
 
 class TinyIntValStruct(cgutils.Structure):
+    _name = "struct.impala_udf::TinyIntVal"
     _fields = [('parent',  AnyVal),
                ('val',     ntypes.int8),]
 
 
 class SmallIntValStruct(cgutils.Structure):
+    _name = "struct.impala_udf::SmallIntVal"
     _fields = [('parent',  AnyVal),
                ('val',     ntypes.int16),]
 
 
 class IntValStruct(cgutils.Structure):
+    _name = "struct.impala_udf::IntVal"
     _fields = [('parent',  AnyVal),
                ('val',     ntypes.int32),]
 
 
 class BigIntValStruct(cgutils.Structure):
+    _name = "struct.impala_udf::BigIntVal"
     _fields = [('parent',  AnyVal),
                ('val',     ntypes.int64),]
 
 
 class FloatValStruct(cgutils.Structure):
+    _name = "struct.impala_udf::FloatVal"
     _fields = [('parent',  AnyVal),
                ('val',     ntypes.float32),]
 
 
 class DoubleValStruct(cgutils.Structure):
+    _name = "struct.impala_udf::DoubleVal"
     _fields = [('parent',  AnyVal),
                ('val',     ntypes.float64),]
 
 
 class StringValStruct(cgutils.Structure):
+    _name = "struct.impala_udf::StringVal"
     _fields = [('parent',  AnyVal),
                ('len',     ntypes.int32),
                ('ptr',     ntypes.CPointer(ntypes.uint8))]

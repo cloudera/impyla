@@ -20,8 +20,8 @@ import itertools
 
 from numba import types as ntypes
 
-from .types import (AnyVal, BooleanVal, TinyIntVal, SmallIntVal, IntVal,
-                    BigIntVal, FloatVal, DoubleVal, StringVal)
+from impala.udf.types import (AnyVal, BooleanVal, TinyIntVal, SmallIntVal,
+        IntVal, BigIntVal, FloatVal, DoubleVal, StringVal)
 
 def register_impala_numeric_type_conversions(base):
     impala_integral = (BooleanVal, TinyIntVal, SmallIntVal, IntVal, BigIntVal)

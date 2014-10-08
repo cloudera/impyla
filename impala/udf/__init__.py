@@ -17,6 +17,7 @@
 from __future__ import absolute_import
 
 import os
+import pkgutil
 
 import llvm.core as lc
 from numba import sigutils
@@ -58,10 +59,13 @@ class UDF(object):
         llvm_func = impala_targets.finalize(self._cres.llvm_func, return_type,
                     args)
         self.llvm_func = llvm_func
-        numba_module = llvm_func.module
-        self.llvm_module = lc.Module.new(self.name)
-        self.llvm_module.link_in(numba_module)
-        self.llvm_module.link_in(impala_targets.precompiled_module)
+        # numba_module = llvm_func.module
+        self.llvm_module = llvm_func.module
+        # link in the precompiled module
+        # bc it's destructive, load a fresh version
+        precompiled = lc.Module.from_bitcode(
+                pkgutil.get_data("impala.udf", "precompiled/impyla.bc"))
+        self.llvm_module.link_in(precompiled)
 
 
 # functionality to ship code to Impala cluster
@@ -77,8 +81,6 @@ udf_to_impala_type = {'BooleanVal': 'BOOLEAN',
                       'StringVal': 'STRING',
                       'TimestampVal': 'TIMESTAMP'}
 
-# TODO: in the future, consider taking an "ImpalaContext" if there is some info I
-# want to store.  But this could also all be in the cursor object potentially
 try:
     from pywebhdfs.webhdfs import PyWebHdfsClient
 

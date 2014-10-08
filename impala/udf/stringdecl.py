@@ -22,7 +22,7 @@ from numba import types as ntypes
 from numba.typing.templates import (AttributeTemplate, ConcreteTemplate,
                                     signature, Registry)
 
-from .types import StringVal, IntVal
+from impala.udf.types import StringVal, IntVal
 
 
 registry = Registry()
