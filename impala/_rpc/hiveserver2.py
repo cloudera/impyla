@@ -40,7 +40,7 @@ from impala._thrift_gen.TCLIService.ttypes import (TOpenSessionReq,
         TGetInfoType, TTypeId, TFetchOrientation, TGetResultSetMetadataReq,
         TStatusCode, TGetColumnsReq, TGetSchemasReq, TGetTablesReq,
         TGetFunctionsReq, TGetOperationStatusReq, TOperationState,
-	TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion)
+        TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion)
 from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import TGetRuntimeProfileReq, TGetExecSummaryReq
 from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
 from impala._thrift_gen.ExecStats.ttypes import TExecStats
@@ -60,8 +60,8 @@ _TTypeId_to_TColumnValue_getters = {
         'STRING': operator.attrgetter('stringVal'),
         'DECIMAL': operator.attrgetter('stringVal'),
         'BINARY': operator.attrgetter('binaryVal'),
-	'VARCHAR': operator.attrgetter('stringVal'),
-	'CHAR': operator.attrgetter('stringVal'),
+        'VARCHAR': operator.attrgetter('stringVal'),
+        'CHAR': operator.attrgetter('stringVal'),
 }
 
 _pre_columnar_protocols = [
@@ -74,8 +74,8 @@ _pre_columnar_protocols = [
 
 def err_if_rpc_not_ok(resp):
     if (resp.status.statusCode != TStatusCode.SUCCESS_STATUS and
-	    resp.status.statusCode != TStatusCode.SUCCESS_WITH_INFO_STATUS and
-	    resp.status.statusCode != TStatusCode.STILL_EXECUTING_STATUS):
+            resp.status.statusCode != TStatusCode.SUCCESS_WITH_INFO_STATUS and
+            resp.status.statusCode != TStatusCode.STILL_EXECUTING_STATUS):
         raise HiveServer2Error(resp.status.errorMessage)
 
 # datetime only supports 6 digits of microseconds but Impala supports 9.
@@ -194,8 +194,8 @@ def reconnect(service):
 @retry
 def open_session(service, user, configuration=None):
     req = TOpenSessionReq(
-	    client_protocol=TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6,
-	    username=user, configuration=configuration)
+            client_protocol=TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6,
+            username=user, configuration=configuration)
     resp = service.OpenSession(req)
     err_if_rpc_not_ok(resp)
     return (resp.sessionHandle, resp.configuration, resp.serverProtocolVersion)
@@ -208,9 +208,9 @@ def close_session(service, session_handle):
 
 @retry
 def execute_statement(service, session_handle, statement, configuration=None,
-	async=False):
+        async=False):
     req = TExecuteStatementReq(sessionHandle=session_handle,
-	    statement=statement, confOverlay=configuration, runAsync=async)
+            statement=statement, confOverlay=configuration, runAsync=async)
     resp = service.ExecuteStatement(req)
     err_if_rpc_not_ok(resp)
     return resp.operationHandle
@@ -234,7 +234,7 @@ def get_result_schema(service, operation_handle):
 
 @retry
 def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
-	max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
+        max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
     if not operation_handle.hasResultSet:
         return None
 
@@ -249,47 +249,47 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
     err_if_rpc_not_ok(resp)
 
     if hs2_protocol_version == TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6:
-	tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
-		    for (i, col) in enumerate(resp.results.columns)]
-	num_cols = len(tcols)
-	num_rows = len(tcols[0].values)
-	rows = []
-	for i in xrange(num_rows):
-	    row = []
-	    for j in xrange(num_cols):
-		type_ = schema[j][1]
-		values = tcols[j].values
-		nulls = tcols[j].nulls
-		# i / 8 is the byte, i % 8 is position in the byte
-		# get the int repr and pull out the bit at the corresponding pos
-		is_null = ord(nulls[i / 8]) & (1 << (i % 8))
-		if is_null:
-		    row.append(None)
-		elif type_ == 'TIMESTAMP':
-		    row.append(_parse_timestamp(values[i]))
-		elif type_ == 'DECIMAL':
-		    row.append(Decimal(values[i]))
-		else:
-		    row.append(values[i])
-	    rows.append(tuple(row))
+        tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
+                    for (i, col) in enumerate(resp.results.columns)]
+        num_cols = len(tcols)
+        num_rows = len(tcols[0].values)
+        rows = []
+        for i in xrange(num_rows):
+            row = []
+            for j in xrange(num_cols):
+                type_ = schema[j][1]
+                values = tcols[j].values
+                nulls = tcols[j].nulls
+                # i / 8 is the byte, i % 8 is position in the byte
+                # get the int repr and pull out the bit at the corresponding pos
+                is_null = ord(nulls[i / 8]) & (1 << (i % 8))
+                if is_null:
+                    row.append(None)
+                elif type_ == 'TIMESTAMP':
+                    row.append(_parse_timestamp(values[i]))
+                elif type_ == 'DECIMAL':
+                    row.append(Decimal(values[i]))
+                else:
+                    row.append(values[i])
+            rows.append(tuple(row))
     elif hs2_protocol_version in _pre_columnar_protocols:
-	rows = []
-	for trow in resp.results.rows:
-	    row = []
-	    for (i, col_val) in enumerate(trow.colVals):
-		type_ = schema[i][1]
-		value = _TTypeId_to_TColumnValue_getters[type_](col_val).value
-		if type_ == 'TIMESTAMP':
-		    value = _parse_timestamp(value)
-		elif type_ == 'DECIMAL':
-		    if value: value = Decimal(value)
-		row.append(value)
-	    rows.append(tuple(row))
+        rows = []
+        for trow in resp.results.rows:
+            row = []
+            for (i, col_val) in enumerate(trow.colVals):
+                type_ = schema[i][1]
+                value = _TTypeId_to_TColumnValue_getters[type_](col_val).value
+                if type_ == 'TIMESTAMP':
+                    value = _parse_timestamp(value)
+                elif type_ == 'DECIMAL':
+                    if value: value = Decimal(value)
+                row.append(value)
+            rows.append(tuple(row))
     else:
-	raise HiveServer2Error(
-		"Got HiveServer2 version %s. " %
-			TProtocolVersion._VALUES_TO_NAMES[hs2_protocol_version] +
-		"Expected V1 - V6")
+        raise HiveServer2Error(
+                "Got HiveServer2 version %s. " %
+                        TProtocolVersion._VALUES_TO_NAMES[hs2_protocol_version] +
+                "Expected V1 - V6")
     return rows
 
 @retry
