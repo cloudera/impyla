@@ -280,7 +280,7 @@ class HiveServer2Cursor(Cursor):
 
     def database_exists(self, db_name):
         return rpc.database_exists(self.service, self.session_handle,
-                db_name)
+                self.hs2_protocol_version, db_name)
 
     def get_tables(self, database_name=None):
         if database_name is None:
@@ -295,7 +295,7 @@ class HiveServer2Cursor(Cursor):
         if database_name is None:
             database_name = '.*'
         return rpc.table_exists(self.service, self.session_handle,
-                    table_name, database_name)
+                self.hs2_protocol_version, table_name, database_name)
 
     def get_table_schema(self, table_name, database_name=None):
         if database_name is None:

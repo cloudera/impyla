@@ -19,8 +19,8 @@ import struct
 import numpy as np
 from sklearn.base import BaseEstimator
 
-from . import blob
-from . import util
+from impala.blob import BlobStore
+from impala.util import create_view_from_query, compute_result_schema, drop_view
 
 # TO CREATE A NEW ESTIMATOR:
 #
@@ -30,26 +30,6 @@ from . import util
 # estimator.  The UDA should have a signature like so:
 #
 #   uda(prev_model, )
-#
-# 3. Override _parameter_list() to return a list of expressions that is a comma-separated
-# list of the expected parameter values to add to the end of the UDA call.  No
-# parameters means you should return an empty string ''.
-#
-# 4. Override _decode_coef() to set self.coef_ using the binary data returned
-# from the estimator.
-
-# class ImpalaEstimator(BaseEstimator):
-    
-    
-
-
-
-# TO CREATE A NEW ESTIMATOR:
-#
-# 1. Subclass ImpalaEstimator
-#
-# 2. Override _uda_name() to return the name of the registered UDA for this
-# estimator
 #
 # 3. Override _parameter_list() to return a string that is a comma-separated
 # list of the expected parameter values to add to the end of the UDA call.  No
@@ -63,12 +43,12 @@ class ImpalaEstimator(BaseEstimator):
     def __init__(self):
         pass
     
-    def _iterate_estimator(self, cursor, model_store, prev_key, next_key,
-                          data_query, label_column):
+    def _iterate_estimator(self, ic, model_store, prev_key, next_key,
+                          bdf, label_column):
         if not isinstance(prev_key, basestring):
             raise ValueError("prev_key must be string type")
         if not isinstance(next_key, basestring):
-            raise ValueError("prev_key must be string type")
+            raise ValueError("next_key must be string type")
         if not model_store.has_key(prev_key):
             raise ValueError("prev_key (%s) not found in the model store" % prev_key)
         if model_store.has_key(next_key):
@@ -80,11 +60,10 @@ class ImpalaEstimator(BaseEstimator):
         if len(parameter_list) > 0:
             parameter_list = ', ' + parameter_list
         
-        data_view = util.create_view_from_query(cursor, data_query, safe=True)
-        data_schema = util.compute_result_schema(cursor, "SELECT * FROM %s" % data_view)
-        columns = [tup[0] for tup in data_schema]
+        data_view = create_view_from_query(ic._cursor, bdf._query_ast.to_sql(), safe=True)
+        columns = [tup[0] for tup in bdf.schema]
         if label_column not in columns:
-            raise ValueError("%s is not a column in the provided data_query" % label_column)
+            raise ValueError("%s is not a column in the provided BigDataFrame" % label_column)
         data_columns = [c for c in columns if c != label_column]
         model_value = """
                 %(uda_name)s(%(model)s, %(observation)s, %(label_column)s%(parameter_list)s)
@@ -95,15 +74,15 @@ class ImpalaEstimator(BaseEstimator):
                        'parameter_list': parameter_list}
         derived_from_clause = model_store.distribute_value_to_table(prev_key, data_view)
         model_store.put(next_key, model_value, derived_from_clause)   # actual query execution here
-        util.drop_view(cursor, data_view)
+        drop_view(ic._cursor, data_view)
         self.coef_ = self._decode_coef(model_store[next_key])
     
-    def partial_fit(self, cursor, model_store, data_query, label_column, epoch):
+    def partial_fit(self, ic, model_store, bdf, label_column, epoch):
         prev_epoch = epoch - 1
-        self._iterate_estimator(cursor, model_store, str(prev_epoch),
-                str(epoch), data_query, label_column)
+        self._iterate_estimator(ic, model_store, str(prev_epoch),
+                str(epoch), bdf, label_column)
     
-    def fit(self, cursor, data_query, label_column):
+    def fit(self, ic, bdf, label_column):
         """Fit model.
         
         Parameters
@@ -112,17 +91,17 @@ class ImpalaEstimator(BaseEstimator):
         model_store is BlobStore that contains model data.  The key
         `str(epoch - 1)` must exist.
         
-        data_query is a SQL query string that produces rows that go into the
+        bdf is a BigDataFrame that represents rows that go into the
         regression.  It will be converted into a VIEW, just for this fn call.
         All columns go into the regression except for the `label_column`.
         
         label_column is the string name of the column that contains the labels.
         """
-        model_store = blob.BlobStore(cursor)
-        model_store.send_null('0')
+        model_store = BlobStore(ic)
+        model_store.send('0', None)
         for i in xrange(self.n_iter):
             epoch = i + 1
-            self.partial_fit(cursor, model_store, data_query, label_column, epoch)
+            self.partial_fit(ic, model_store, bdf, label_column, epoch)
 
 
 class LogisticRegression(ImpalaEstimator):

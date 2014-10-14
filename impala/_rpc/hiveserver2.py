@@ -304,13 +304,14 @@ def get_databases(service, session_handle):
     return resp.operationHandle
 
 @retry
-def database_exists(service, session_handle, db_name):
+def database_exists(service, session_handle, hs2_protocol_version, db_name):
     req = TGetSchemasReq(sessionHandle=session_handle, schemaName=db_name)
     resp = service.GetSchemas(req)
     err_if_rpc_not_ok(resp)
     operation_handle = resp.operationHandle
     # this only fetches default max_rows, but there should only be one row ideally
-    results = fetch_results(service=service, operation_handle=operation_handle)
+    results = fetch_results(service=service, operation_handle=operation_handle,
+            hs2_protocol_version=hs2_protocol_version)
     exists = False
     for result in results:
         if result[0] == db_name:
@@ -328,7 +329,8 @@ def get_tables(service, session_handle, database_name='.*'):
     return resp.operationHandle
 
 @retry
-def table_exists(service, session_handle, table_name, database_name='.*'):
+def table_exists(service, session_handle, hs2_protocol_version, table_name,
+        database_name='.*'):
     req = TGetTablesReq(sessionHandle=session_handle,
                         schemaName=database_name,
                         tableName=table_name)
@@ -336,7 +338,8 @@ def table_exists(service, session_handle, table_name, database_name='.*'):
     err_if_rpc_not_ok(resp)
     operation_handle = resp.operationHandle
     # this only fetches default max_rows, but there should only be one row ideally
-    results = fetch_results(service=service, operation_handle=operation_handle)
+    results = fetch_results(service=service, operation_handle=operation_handle,
+            hs2_protocol_version=hs2_protocol_version)
     exists = False
     for result in results:
         if result[2] == table_name:

@@ -29,11 +29,13 @@ except ImportError:
 def _random_id(prefix='', length=8):
     return prefix + ''.join(random.sample(string.ascii_uppercase, length))
 
-def _get_schema_hack(cursor, table_ref):
-    """Get the schema of TableRef by talking to Impala"""
+def _get_table_schema_hack(cursor, table):
+    """Get the schema of table by talking to Impala
+    
+    table must be a string (incl possible db name)
+    """
     # get the schema of the query result via a LIMIT 0 hack
-    # table_ref is a TableRef object
-    cursor.execute('SELECT * FROM %s LIMIT 0' % table_ref.to_sql())
+    cursor.execute('SELECT * FROM %s LIMIT 0' % table)
     schema = [tup[:2] for tup in cursor.description]
     cursor.fetchall() # resets the state of the cursor and closes operation
     return schema
@@ -49,7 +51,7 @@ def _gen_safe_random_table_name(cursor, prefix='tmp'):
     raise ValueError("Failed to generate a safe table name")
 
 def compute_result_schema(cursor, query_string):
-    temp_name = generate_random_table_name(safe=True, cursor=cursor)
+    temp_name = _random_id(prefix="tmp_crs_")
     try:
         cursor.execute("CREATE VIEW %s AS %s" % (temp_name, query_string))
         cursor.execute("SELECT * FROM %s LIMIT 0" % temp_name)
@@ -60,7 +62,7 @@ def compute_result_schema(cursor, query_string):
 
 def create_view_from_query(cursor, query_string, view_name=None, safe=False):
     if view_name is None:
-        view_name = generate_random_table_name(safe=safe, cursor=cursor)
+        view_name = _random_id(prefix="tmp_cv_")
     cursor.execute("CREATE VIEW %s AS %s" % (view_name, query_string))
     return view_name
 

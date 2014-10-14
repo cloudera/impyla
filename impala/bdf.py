@@ -21,7 +21,8 @@ from cStringIO import StringIO
 
 import pandas as pd
 
-from impala.util import as_pandas, _random_id, _py_to_sql_string, _get_schema_hack
+from impala.util import (as_pandas, _random_id, _py_to_sql_string,
+        _get_table_schema_hack)
 from impala._sql_model import (_to_TableName, BaseTableRef, SelectItem,
         SelectStmt, Literal, InlineView, _create_table)
 
@@ -56,7 +57,7 @@ def from_sql_query(ic, query, alias=None):
     """Create a BDF from a SQL query executed by Impala"""
     query_alias = alias if alias else _random_id('inline_', 4)
     table_ref = InlineView(query, query_alias)
-    schema = _get_schema_hack(ic._cursor, table_ref)
+    schema = _get_table_schema_hack(ic._cursor, table_ref.to_sql())
     select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
     return BigDataFrame(ic, SelectStmt(select_list, table_ref))
 
@@ -64,7 +65,7 @@ def from_sql_table(ic, table):
     """Create a BDF from a table name usable in Impala"""
     table_name = _to_TableName(table)
     table_ref = BaseTableRef(table_name)
-    schema = _get_schema_hack(ic._cursor, table_ref)
+    schema = _get_table_schema_hack(ic._cursor, table_ref.to_sql())
     select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
     return BigDataFrame(ic, SelectStmt(select_list, table_ref))
 
@@ -145,7 +146,7 @@ class BigDataFrame(object):
     def schema(self):
         if self._schema is None:
             table_ref = InlineView(self._query_ast.to_sql(), _random_id('inline_', 4))
-            self._schema = _get_schema_hack(self._ic._cursor, table_ref)
+            self._schema = _get_table_schema_hack(self._ic._cursor, table_ref.to_sql())
         return self._schema
 
     @property
