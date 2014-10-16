@@ -172,7 +172,7 @@ class BigDataFrame(object):
         if isinstance(obj, tuple) and len(obj) == 2:
             alias = _random_id('inline_', 4)
             table_ref = InlineView(self._query_ast.to_sql(), alias)
-            (limit_elt, where) = self._query_ast._where(obj[0])
+            (limit_elt, where) = self._query_ast._filter(obj[0])
             select_list = self._query_ast._projection(obj[1])
             return BigDataFrame(self._ic, SelectStmt(select_list, table_ref, where=where, limit=limit_elt))
         elif isinstance(obj, list):

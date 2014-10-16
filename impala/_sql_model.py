@@ -308,11 +308,12 @@ class QueryStmt(SQLNodeMixin):
                     select_list.append(self.select_list[i])
         return select_list
 
-    def _where(self, obj):
-        # obj is one of int, expr, slice
+    def _filter(self, obj):
+        # obj is one of int, expr, slice, string
         # to be converted to a pair of LimitElement and Expr
         # this fn does not currently make use of self, but his here for
         # organizational convenience
+        # string gets wrapped in Literal
         if isinstance(obj, (int, long)):
             return (LimitElement(1, obj), None)
         if isinstance(obj, Expr):
@@ -324,6 +325,8 @@ class QueryStmt(SQLNodeMixin):
                     not isinstance(obj.stop, (int, long))):
                 raise ValueError("slice stop and start must be int/long")
             return (LimitElement(obj.stop - obj.start, obj.start), None)
+        if isinstance(obj, basestring):
+            return (None, Literal(obj))
         raise ValueError("row indexer must be int/long/slice/Expr")
 
 
