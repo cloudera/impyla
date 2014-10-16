@@ -24,7 +24,8 @@ import pandas as pd
 from impala.util import (as_pandas, _random_id, _py_to_sql_string,
         _get_table_schema_hack)
 from impala._sql_model import (_to_TableName, BaseTableRef, JoinTableRef,
-        SelectItem, SelectStmt, Literal, InlineView, TableName, _create_table)
+        SelectItem, SelectStmt, UnionStmt, Literal, InlineView, TableName,
+        Expr, _create_table)
 
 # utilities
 
