@@ -32,7 +32,7 @@ from decimal import Decimal
 
 from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport, TTransportException
-from thrift.protocol.TBinaryProtocol import TBinaryProtocol
+from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated as TBinaryProtocol
 
 from impala.error import HiveServer2Error
 from impala._thrift_gen.TCLIService.ttypes import (TOpenSessionReq,

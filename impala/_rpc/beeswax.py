@@ -20,7 +20,7 @@ from impala._thrift_gen.ExecStats.ttypes import TExecStats
 
 from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport, TTransportException
-from thrift.protocol.TBinaryProtocol import TBinaryProtocol
+from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated as TBinaryProtocol
 from thrift.Thrift import TApplicationException
 
 
