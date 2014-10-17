@@ -16,6 +16,7 @@ from impala.util import _escape
 from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           InternalError, OperationalError, ProgrammingError,
                           IntegrityError, DataError, NotSupportedError)
+from six import reraise
 
 class Connection(object):
     # PEP 249
@@ -40,6 +41,15 @@ class Connection(object):
 
     def reconnect(self):
         raise NotImplementedError
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        if exc_type is not None:
+            reraise(exc_type, exc_val, exc_tb)
+
 
     # optional DB API addition to make the errors attributes of Connection
     Error = Error
@@ -134,6 +144,14 @@ class Cursor(object):
 
     def build_summary_table(self, summary, idx, is_fragment_root, indent_level, output):
         raise NotImplementedError
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        if exc_type is not None:
+            reraise(exc_type, exc_val, exc_tb)
 
 def _bind_parameters(operation, parameters):
     # inspired by MySQL Python Connector (conversion.py)
