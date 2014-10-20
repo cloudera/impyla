@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six import reraise
+
 from impala.util import _escape
 from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           InternalError, OperationalError, ProgrammingError,
                           IntegrityError, DataError, NotSupportedError)
-from six import reraise
 
 class Connection(object):
     # PEP 249

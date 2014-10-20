@@ -14,6 +14,8 @@
 
 from __future__ import absolute_import
 
+from six import reraise
+
 from impala.util import _random_id
 from impala.dbapi import connect
 
@@ -40,6 +42,8 @@ class ImpalaContext(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
+        if exc_type is not None:
+            reraise(exc_type, exc_value, traceback)
 
     def close(self):
         # drop the temp database
