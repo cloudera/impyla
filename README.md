@@ -87,6 +87,30 @@ make # optional: only for Numba-compiled UDFs; requires LLVM/clang
 python setup.py install
 ```
 
+#### Running the tests
+
+impyla uses the [pytest][pytest] toolchain, and depends on the following environment
+variables:
+
+```bash
+export IMPALA_HOST=your.impalad.com
+# beeswax might work here too
+export IMPALA_PORT=21050
+export IMPALA_PROTOCOL=hiveserver2
+# needed to push data to the cluster
+export NAMENODE_HOST=bottou01-10g.pa.cloudera.com
+export WEBHDFS_PORT=50070
+```
+
+To run the maximal set of tests, run
+
+```bash
+py.test --dbapi-compliance path/to/impyla/impala/tests
+```
+
+Leave out the `--dbapi-compliance` option to skip tests for DB API compliance.
+Add a `--udf` option to only run local UDF compilation tests.
+
 
 ### Quickstart
 
@@ -132,3 +156,4 @@ df = as_pandas(cur)
 [madlibport]: https://github.com/bitfort/madlibport
 [numba]: http://numba.pydata.org/
 [llvm]: http://llvm.org/
+[pytest]: http://pytest.org/latest/
