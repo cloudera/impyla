@@ -137,10 +137,24 @@ def StringVal_ptr(context, builder, typ, value):
 
 @register_function
 @implement('is', AnyVal, ntypes.none)
-def is_none_impl(context, builder, sig, args):
+def anyval_is_none_impl(context, builder, sig, args):
     [x, y] = args
     val = AnyValStruct(context, builder, value=x)
-    return val.is_null
+    return builder.trunc(val.is_null, lc.Type.int(1))
+
+def starval_is_none_impl(context, builder, sig, args):
+    [x, y] = args
+    x = builder.extract_value(x, 0)
+    val = AnyValStruct(context, builder, value=x)
+    return builder.trunc(val.is_null, lc.Type.int(1))
+
+register_function(implement('is', BooleanVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', TinyIntVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', SmallIntVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', IntVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', BigIntVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', FloatVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', DoubleVal, ntypes.none)(starval_is_none_impl))
 
 @register_function
 @implement(ntypes.len_type, StringVal)
