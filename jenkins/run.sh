@@ -25,19 +25,19 @@ if [ "$NIGHTLY_STATUS" != "SUCCESS" ]; then
 fi
 
 # Set up necessary vars
-IMPALA_HOST=$HOST_SHORT_NAME-2.ent.cloudera.com
+export IMPALA_HOST=$HOST_SHORT_NAME-2.ent.cloudera.com
 if [ "$IMPALA_PROTOCOL" == "hiveserver2" ]; then
-    IMPALA_PORT=21050
+    export IMPALA_PORT=21050
 elif [ "$IMPALA_PROTOCOL" == "beeswax" ]; then
-    IMPALA_PORT=21000
+    export IMPALA_PORT=21000
 else
     echo "IMPALA_PROTOCOL must be set to 'hiveserver2' or 'beeswax'; got $IMPALA_PROTOCOL"
     echo "aborting impyla Jenkins job with FAIL"
     exit 1
 fi
-NAMENODE_HOST=$HOST_SHORT_NAME-1.ent.cloudera.com
-WEBHDFS_PORT=20101
-LLVM_CONFIG_PATH=/opt/toolchain/llvm-3.3/bin/llvm-config
+export NAMENODE_HOST=$HOST_SHORT_NAME-1.ent.cloudera.com
+export WEBHDFS_PORT=20101
+export LLVM_CONFIG_PATH=/opt/toolchain/llvm-3.3/bin/llvm-config
 VENV_NAME=impyla-it-pyenv-$HOST_SHORT_NAME-$PYMODULE_VERSIONS-$IMPALA_PROTOCOL-$BUILD_NUMBER
 
 # Install all the necessary prerequisites
@@ -63,10 +63,10 @@ else
 fi
 
 # Build impyla
-cd $WORKSPACE ; make ; python setup.py install
+cd $WORKSPACE && make clean && make && python setup.py install
 
 # Run testing suite
-cd /tmp; py.test --dbapi-compliance $WORKSPACE/impala/tests
+cd /tmp && py.test --dbapi-compliance $WORKSPACE/impala/tests
 
 # cleanup
 deactivate && rm -rf /tmp/$VENV_NAME
