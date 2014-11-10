@@ -38,11 +38,12 @@ fi
 NAMENODE_HOST=$HOST_SHORT_NAME-1.ent.cloudera.com
 WEBHDFS_PORT=20101
 LLVM_CONFIG_PATH=/opt/toolchain/llvm-3.3/bin/llvm-config
+VENV_NAME=impyla-it-pyenv-$HOST_SHORT_NAME-$PYMODULE_VERSIONS-$IMPALA_PROTOCOL-$BUILD_NUMBER
 
 # Install all the necessary prerequisites
 cd /tmp
-virtualenv impyla-it-pyenv-$BUILD_NUMBER
-source impyla-it-pyenv-$BUILD_NUMBER/bin/activate
+virtualenv $VENV_NAME
+source $VENV_NAME/bin/activate
 pip install pytest
 pip install thrift
 pip install unittest2
@@ -68,4 +69,4 @@ cd $WORKSPACE ; make ; python setup.py install
 cd /tmp; py.test --dbapi-compliance $WORKSPACE/impala/tests
 
 # cleanup
-deactivate && rm -rf /tmp/impyla-it-pyenv-$BUILD_NUMBER
+deactivate && rm -rf /tmp/$VENV_NAME
