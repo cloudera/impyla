@@ -1,12 +1,43 @@
+#! /usr/bin/env bash
+# Copyright 2014 Cloudera Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# See README.md for necessary environment variables for this script
+
 # First check if the nightly cluster build succeeded
-cd /tmp
-curl -s -O -L http://stedolan.github.io/jq/download/linux64/jq
-chmod 755 jq
-NIGHTLY_STATUS=$(curl -s -L "http://golden.jenkins.sf.cloudera.com/view/CM/view/CM-Trunk/job/CM-Refresh-Nightly-Cluster/lastBuild/api/json" \ | /tmp/jq -r '.result')
+NIGHTLY_STATUS=$(curl -s -L "http://golden.jenkins.sf.cloudera.com/job/$NIGHTLY_JOB_NAME/lastBuild/api/json" \
+    | $WORKSPACE/jenkins/parse_build_result.py)
 if [ "$NIGHTLY_STATUS" != "SUCCESS" ]; then
-    echo "CM-Refresh-Nightly-Cluster job failed; aborting impyla with FAIL"
+    echo "$NIGHTLY_JOB_NAME Jenkins job failed"
+    echo "aborting impyla Jenkins job with FAIL"
     exit 1
 fi
+
+# Set up necessary vars
+IMPALA_HOST=$HOST_SHORT_NAME-2.ent.cloudera.com
+if [ "$IMPALA_PROTOCOL" == "hiveserver2" ]; then
+    IMPALA_PORT=21050
+elif [ "$IMPALA_PROTOCOL" == "beeswax" ]; then
+    IMPALA_PORT=21000
+else
+    echo "IMPALA_PROTOCOL must be set to 'hiveserver2' or 'beeswax'; got $IMPALA_PROTOCOL"
+    echo "aborting impyla Jenkins job with FAIL"
+    exit 1
+fi
+NAMENODE_HOST=$HOST_SHORT_NAME-1.ent.cloudera.com
+WEBHDFS_PORT=20101
+LLVM_CONFIG_PATH=/opt/toolchain/llvm-3.3/bin/llvm-config
 
 # Install all the necessary prerequisites
 cd /tmp
@@ -18,13 +49,23 @@ pip install unittest2
 pip install numpy
 pip install pandas
 pip install pywebhdfs
-# pull latest llvmpy and numba to catch errors as early as possible
-pip install git+https://github.com/llvmpy/llvmpy.git@master
-pip install git+https://github.com/numba/numba.git@master
+if [ "$PYMODULE_VERSIONS" == "master" ]; then
+    pip install git+https://github.com/llvmpy/llvmpy.git@master
+    pip install git+https://github.com/numba/numba.git@master
+elif [ "$PYMODULE_VERSIONS" == "release" ]; then
+    pip install llvmpy
+    pip install numba
+else
+    echo "PYMODULE_VERSIONS must be 'master' or 'release'; got $PYMODULE_VERSIONS"
+    echo "aborting impyla Jenkins job with FAIL"
+    exit 1
+fi
 
 # Build impyla
 cd $WORKSPACE ; make ; python setup.py install
 
 # Run testing suite
 cd /tmp; py.test --dbapi-compliance $WORKSPACE/impala/tests
-deactivate
+
+# cleanup
+deactivate && rm -rf /tmp/impyla-it-pyenv-$BUILD_NUMBER
