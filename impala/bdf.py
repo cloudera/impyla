@@ -18,6 +18,8 @@ import os
 import datetime
 from copy import copy
 from cStringIO import StringIO
+import csv
+
 
 import pandas as pd
 
@@ -25,7 +27,7 @@ from impala.util import (as_pandas, _random_id, _py_to_sql_string,
         _get_table_schema_hack)
 from impala._sql_model import (_to_TableName, BaseTableRef, JoinTableRef,
         SelectItem, SelectStmt, UnionStmt, Literal, InlineView, TableName,
-        Expr, _create_table)
+        Expr, _create_table, _create_table_as_select, LimitElement)
 
 # utilities
 
@@ -72,7 +74,7 @@ def from_sql_table(ic, table):
 
 def from_hdfs(ic, path, schema, table=None, overwrite=False,
         file_format='TEXTFILE', partition_schema=None,
-        field_terminator='\\t', line_terminator='\\n'):
+        field_terminator='\t', line_terminator='\n', escape_char='\\'):
     """Create a BDF backed by an external file in HDFS.
 
     File must be Impala-compatible
@@ -87,12 +89,13 @@ def from_hdfs(ic, path, schema, table=None, overwrite=False,
         ic._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
     create_stmt = _create_table(table_name, schema, path=path,
             file_format=file_format, field_terminator=field_terminator,
-            line_terminator=line_terminator)
+            line_terminator=line_terminator, escape_char=escape_char)
     ic._cursor.execute(create_stmt)
     return from_sql_table(ic, table_name.to_sql())
 
 def from_pandas(ic, df, table=None, path=None, method='in_query',
         file_format='TEXTFILE', field_terminator='\t', line_terminator='\n',
+        escape_char='\\',
         hdfs_host=None, webhdfs_port=50070, hdfs_user=None, overwrite=False):
     """Create a BDF by shipping an in-memory pandas `DataFrame` into Impala
     
@@ -112,7 +115,7 @@ def from_pandas(ic, df, table=None, path=None, method='in_query',
     schema = zip(columns, types)
     create_stmt = _create_table(table_name, schema, path=path,
             file_format=file_format, field_terminator=field_terminator,
-            line_terminator=line_terminator)
+            line_terminator=line_terminator, escape_char=escape_char)
     ic._cursor.execute(create_stmt)
     if method == 'in_query':
         query = "INSERT INTO %s VALUES " % table_name.to_sql()
@@ -128,7 +131,7 @@ def from_pandas(ic, df, table=None, path=None, method='in_query',
                 user_name=hdfs_user)
         raw_data = StringIO()
         df.to_csv(raw_data, sep=field_terminator,
-                line_terminator=line_terminator, header=False, index=False)
+                line_terminator=line_terminator, quoting=csv.QUOTE_NONE, escapechar=escape_char, header=False, index=False)
         hdfs_client.create_file(os.path.join(path, 'data.txt').lstrip('/'), raw_data.getvalue(), overwrite=overwrite)
         raw_data.close()
     else:
@@ -241,7 +244,7 @@ class BigDataFrame(object):
             unique_values[col] = self._cursor.fetchall()
 
     def store(self, path=None, table=None, file_format='TEXTFILE',
-            field_terminator='\\t', line_terminator='\\n', overwrite=False):
+            field_terminator='\t', line_terminator='\n', escape_char='\\', overwrite=False):
         """Materialize the results and stores them in HFDS
 
         Implemented through a `CREATE TABLE AS SELECT`.
@@ -256,7 +259,7 @@ class BigDataFrame(object):
             self._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
         create_stmt = _create_table_as_select(table_name, path=path,
                 file_format=file_format, field_terminator=field_terminator,
-                line_terminator=line_terminator)
+                line_terminator=line_terminator, escape_char=escape_char)
         query = create_stmt + self.to_sql()
         self._cursor.execute(query)
         return from_sql_table(self._ic, table_name.to_sql())
@@ -343,6 +346,6 @@ class GroupBy(object):
             elif isinstance(elt, basestring):
                 select_list.append(SelectItem(expr=Literal(elt)))
             elif isinstance(elt, Expr):
-                select_list.append(SelectItem(expr=expr))
+                select_list.append(SelectItem(expr=elt))
         ast._select_list = select_list
         return BigDataFrame(self._ic, ast)

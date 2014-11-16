@@ -379,8 +379,8 @@ class UnionStmt(QueryStmt):
 # DDL statement helpers (they are not currently modeled)
 
 def _create_table(table_name, table_schema, path=None,
-        file_format='TEXTFILE', partition_schema=None, field_terminator='\\t',
-        line_terminator='\\n'):
+        file_format='TEXTFILE', partition_schema=None, field_terminator='\t',
+        line_terminator='\n', escape_char='\\'):
     external = path is not None
     if external:
         query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
@@ -394,9 +394,9 @@ def _create_table(table_name, table_schema, path=None,
     if file_format == 'PARQUET':
         query += " STORED AS PARQUET"
     elif file_format == 'TEXTFILE':
-        query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY '%s' "
-                   "LINES TERMINATED BY '%s' STORED AS TEXTFILE") %
-                   (field_terminator, line_terminator))
+        query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY {field!r} ESCAPED BY {esc!r} "
+                   "LINES TERMINATED BY {line!r} STORED AS TEXTFILE").format(
+                   field=field_terminator, esc=escape_char, line=line_terminator))
     else:
         raise ValueError("Invalid file format")
     if external:
@@ -404,7 +404,7 @@ def _create_table(table_name, table_schema, path=None,
     return query
 
 def _create_table_as_select(table_name, path=None, file_format='TEXTFILE',
-        field_terminator='\\t', line_terminator='\\n'):
+        field_terminator='\t', line_terminator='\n', escape_char='\\'):
     external = path is not None
     if external:
         query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
@@ -413,9 +413,9 @@ def _create_table_as_select(table_name, path=None, file_format='TEXTFILE',
     if file_format == 'PARQUET':
         query += " STORED AS PARQUET"
     elif file_format == 'TEXTFILE':
-        query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY '%s' "
-                   "LINES TERMINATED BY '%s' STORED AS TEXTFILE") %
-                   (field_terminator, line_terminator))
+        query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY {field!r} ESCAPED BY {esc!r} "
+                   "LINES TERMINATED BY {line!r} STORED AS TEXTFILE").format(
+                   field=field_terminator, esc=escape_char, line=line_terminator))
     if external:
         query += " LOCATION '%s'" % path
     query += " AS "
