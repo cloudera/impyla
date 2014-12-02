@@ -108,8 +108,9 @@ class BeeswaxCursor(Cursor):
     def buffersize(self):
         # this is for internal use.  it provides an alternate default value for
         # the size of the buffer, so that calling .next() will read multiple
-        # rows into a buffer if arraysize hasn't been set.  (otherwise, we'd get
-        # an unbuffered impl because the PEP 249 default value of arraysize is 1)
+        # rows into a buffer if arraysize hasn't been set.  (otherwise, we'd
+        # get an unbuffered impl because the PEP 249 default value of arraysize
+        # is 1)
         return self._buffersize if self._buffersize else 1024
 
     @property
@@ -157,8 +158,8 @@ class BeeswaxCursor(Cursor):
         self._last_operation_active = True
         self._wait_to_finish()  # make execute synchronous
         if self.has_result_set:
-            schema = rpc.get_results_metadata(self.service,
-                    self._last_operation_handle)
+            schema = rpc.get_results_metadata(
+                self.service, self._last_operation_handle)
             self._description = [tuple([tup.name, tup.type.upper()] +
                                  [None, None, None, None, None])
                                  for tup in schema]

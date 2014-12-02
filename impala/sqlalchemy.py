@@ -108,7 +108,7 @@ class ImpalaDialect(DefaultDialect):
     returns_unicode_strings = True
 
     @classmethod
-    def dbapi(self):
+    def dbapi(cls):
         import impala.dbapi
         return impala.dbapi
 

@@ -26,8 +26,10 @@ class ImpalaContext(object):
                  webhdfs_port=50070, hdfs_user=None, *args, **kwargs):
         # args and kwargs get passed directly into impala.dbapi.connect()
         suffix = _random_id(length=8)
-        self._temp_dir = '/tmp/impyla-%s' % suffix if temp_dir is None else temp_dir
-        self._temp_db = 'tmp_impyla_%s' % suffix if temp_db is None else temp_db
+        self._temp_dir = '/tmp/impyla-%s' % (
+            suffix if temp_dir is None else temp_dir)
+        self._temp_db = 'tmp_impyla_%s' % (
+            suffix if temp_db is None else temp_db)
         self._conn = connect(*args, **kwargs)
         self._cursor = self._conn.cursor()
         # used for pywebhdfs cleanup of temp dir; not required

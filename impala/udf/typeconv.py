@@ -87,7 +87,8 @@ def register_impala_numeric_type_conversions(base):
 
 
 def register_impala_other_type_conversions(base):
-    # base.tm.set_unsafe_convert(ntypes.CPointer(ntypes.uint8), ntypes.Dummy('void*'))
+    # base.tm.set_unsafe_convert(
+    #     ntypes.CPointer(ntypes.uint8), ntypes.Dummy('void*'))
     base.tm.set_safe_convert(ntypes.string, StringVal)
     base.tm.set_unsafe_convert(StringVal, AnyVal)
     base.tm.set_safe_convert(ntypes.none, StringVal)

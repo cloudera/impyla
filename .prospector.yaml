@@ -1,0 +1,12 @@
+ignore:
+    - ^build
+    - ^impala/_thrift_gen
+    - ^examples
+    - _dbapi20_tests.py
+    - thrift_sasl.py
+    - ez_setup.py
+    - scratch.py
+    - ^udf-scratch
+
+pyroma:
+    run: true

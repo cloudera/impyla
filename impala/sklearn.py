@@ -20,8 +20,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 
 from impala.blob import BlobStore
-from impala.util import (create_view_from_query, compute_result_schema,
-                         drop_view)
+from impala.util import (create_view_from_query, drop_view)
 
 # TO CREATE A NEW ESTIMATOR:
 #
@@ -79,7 +78,7 @@ class ImpalaEstimator(BaseEstimator):
             """ % {'uda_name': uda_name,
                    'model': '%s.value' % model_store.name,
                    'observation': 'toarray(%s)' % ', '.join(
-                        ['%s.%s' % (data_view, col) for col in data_columns]),
+                       ['%s.%s' % (data_view, col) for col in data_columns]),
                    'label_column': label_column,
                    'parameter_list': parameter_list}
         derived_from_clause = model_store.distribute_value_to_table(prev_key,

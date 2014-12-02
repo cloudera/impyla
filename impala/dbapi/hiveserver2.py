@@ -70,7 +70,7 @@ class HiveServer2Cursor(Cursor):
 
     def __init__(self, service, session_handle, default_config=None,
                  hs2_protocol_version=(
-                    TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6)):
+                     TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6)):
         self.service = service
         self.session_handle = session_handle
         self.default_config = default_config
@@ -158,8 +158,8 @@ class HiveServer2Cursor(Cursor):
         self._last_operation_active = True
         self._wait_to_finish()  # make execute synchronous
         if self.has_result_set:
-            schema = rpc.get_result_schema(self.service,
-                    self._last_operation_handle)
+            schema = rpc.get_result_schema(
+                self.service, self._last_operation_handle)
             self._description = [tup + (None, None, None, None, None)
                                  for tup in schema]
 

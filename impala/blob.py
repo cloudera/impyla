@@ -31,7 +31,7 @@ would be to store model parameters as binary data for UDFs.
 
 from __future__ import absolute_import
 
-from impala.util import (_random_id, _py_to_sql_string, _get_table_schema_hack,
+from impala.util import (_py_to_sql_string, _get_table_schema_hack,
                          _gen_safe_random_table_name)
 
 
