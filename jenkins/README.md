@@ -1,3 +1,5 @@
+## Testing against a nightly on Cloudera internal Jenkins
+
 To configure a Jenkins job to test impyla, you must inject the following
 environment variables.  These variables make some assumption related to
 Cloudera's internal CM/CDH testing.
@@ -33,3 +35,16 @@ Here are possible values for the variables:
 * `hiveserver2`
 
 * `beeswax`
+
+
+## Testing against bottou using Cloudera internal Jenkins
+
+Set the following vars
+
+```bash
+# example config
+PYMODULE_VERSIONS=master
+IMPALA_PROTOCOL=hiveserver2
+```
+
+Possible values are as above.
