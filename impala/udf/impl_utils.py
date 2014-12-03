@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,22 +24,26 @@ from impala.udf.types import AnyVal
 
 # load the Impala UDF types from the precompiled module
 precompiled = lc.Module.from_bitcode(
-        pkgutil.get_data("impala.udf", "precompiled/impyla.bc"))
+    pkgutil.get_data("impala.udf", "precompiled/impyla.bc"))
 
 # struct access utils
 
 # these are necessary because cgutils.Structure assumes no nested types;
 # the gep needs a (0, 0, 0) offset
 
+
 def _get_is_null_pointer(builder, val):
     ptr = builder.gep(val._getpointer(),
-                      [lc.Constant.int(lc.Type.int(32), 0)] * 3, # gep(0, 0, 0)
+                      # gep(0, 0, 0)
+                      [lc.Constant.int(lc.Type.int(32), 0)] * 3,
                       inbounds=True)
     return ptr
+
 
 def _get_is_null(builder, val):
     byte = builder.load(_get_is_null_pointer(builder, val))
     return builder.trunc(byte, lc.Type.int(1))
+
 
 def _set_is_null(builder, val, is_null):
     byte = builder.zext(is_null, lc.Type.int(8))
@@ -55,51 +59,51 @@ class AnyValStruct(cgutils.Structure):
 
 class BooleanValStruct(cgutils.Structure):
     _name = "struct.impala_udf::BooleanVal"
-    _fields = [('parent',  AnyVal),
-               ('val',     ntypes.int8),]
+    _fields = [('parent', AnyVal),
+               ('val', ntypes.int8), ]
 
 
 class TinyIntValStruct(cgutils.Structure):
     _name = "struct.impala_udf::TinyIntVal"
-    _fields = [('parent',  AnyVal),
-               ('val',     ntypes.int8),]
+    _fields = [('parent', AnyVal),
+               ('val', ntypes.int8), ]
 
 
 class SmallIntValStruct(cgutils.Structure):
     _name = "struct.impala_udf::SmallIntVal"
-    _fields = [('parent',  AnyVal),
-               ('val',     ntypes.int16),]
+    _fields = [('parent', AnyVal),
+               ('val', ntypes.int16), ]
 
 
 class IntValStruct(cgutils.Structure):
     _name = "struct.impala_udf::IntVal"
-    _fields = [('parent',  AnyVal),
-               ('val',     ntypes.int32),]
+    _fields = [('parent', AnyVal),
+               ('val', ntypes.int32), ]
 
 
 class BigIntValStruct(cgutils.Structure):
     _name = "struct.impala_udf::BigIntVal"
-    _fields = [('parent',  AnyVal),
-               ('val',     ntypes.int64),]
+    _fields = [('parent', AnyVal),
+               ('val', ntypes.int64), ]
 
 
 class FloatValStruct(cgutils.Structure):
     _name = "struct.impala_udf::FloatVal"
-    _fields = [('parent',  AnyVal),
-               ('val',     ntypes.float32),]
+    _fields = [('parent', AnyVal),
+               ('val', ntypes.float32), ]
 
 
 class DoubleValStruct(cgutils.Structure):
     _name = "struct.impala_udf::DoubleVal"
-    _fields = [('parent',  AnyVal),
-               ('val',     ntypes.float64),]
+    _fields = [('parent', AnyVal),
+               ('val', ntypes.float64), ]
 
 
 class StringValStruct(cgutils.Structure):
     _name = "struct.impala_udf::StringVal"
-    _fields = [('parent',  AnyVal),
-               ('len',     ntypes.int32),
-               ('ptr',     ntypes.CPointer(ntypes.uint8))]
+    _fields = [('parent', AnyVal),
+               ('len', ntypes.int32),
+               ('ptr', ntypes.CPointer(ntypes.uint8))]
 
 
 # misc impl utilies

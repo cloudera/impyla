@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # utilities
+
 
 def _to_TableName(table):
     """Convert string table name ([foo.]bar) into a TableName object."""
@@ -35,6 +36,7 @@ def _to_TableName(table):
 # Mixin for SQL objects
 
 class SQLNodeMixin(object):
+
     def to_sql(self):
         raise NotImplementedError
 
@@ -45,11 +47,13 @@ class SQLNodeMixin(object):
 # Expr hierarchy
 
 class Expr(SQLNodeMixin):
+
     def __init__(self):
         raise NotImplementedError
 
 
 class Literal(Expr):
+
     def __init__(self, expr):
         self._expr = expr
 
@@ -59,9 +63,11 @@ class Literal(Expr):
 
 class BinaryExpr(Expr):
     _operators = ['=', '==', '!=', '>', '>=', '<', '<=', 'and', 'or']
+
     def __init__(self, op, expr1, expr2):
         if op not in BinaryExpr._operators:
-            raise ValueError("op %s not one of %s" % (op, str(BinaryExpr._operators)))
+            raise ValueError("op %s not one of %s" %
+                             (op, str(BinaryExpr._operators)))
         self._op = op
         if not isinstance(expr1, Expr):
             raise ValueError("expr1 %s is not of type Expr" % str(expr1))
@@ -71,14 +77,16 @@ class BinaryExpr(Expr):
         self._expr2 = expr2
 
     def to_sql(self):
-        return "((%s) %s (%s))" % (self._expr1.to_sql(), self._op, self._expr2.to_sql())
+        return "((%s) %s (%s))" % (
+            self._expr1.to_sql(), self._op, self._expr2.to_sql())
 
 
 # TableRef hierarchy
 
 class TableRef(SQLNodeMixin):
+
     def __init__(self, alias):
-        self._alias = alias # string
+        self._alias = alias  # string
 
     @property
     def name(self):
@@ -89,9 +97,10 @@ class TableRef(SQLNodeMixin):
 
 
 class BaseTableRef(TableRef):
+
     def __init__(self, name, alias=None):
         super(BaseTableRef, self).__init__(alias)
-        self._name = name # TableName
+        self._name = name  # TableName
 
     @property
     def name(self):
@@ -102,12 +111,13 @@ class BaseTableRef(TableRef):
 
     def to_sql(self):
         if self._alias:
-            return "%s AS %s" (self._name.to_sql(), self._alias)
+            return "%s AS %s"(self._name.to_sql(), self._alias)
         else:
             return self._name.to_sql()
 
 
 class InlineView(TableRef):
+
     def __init__(self, query, alias):
         super(InlineView, self).__init__(alias)
         self._query = query
@@ -121,12 +131,13 @@ class InlineView(TableRef):
 
 
 class JoinTableRef(TableRef):
+
     def __init__(self, left, right, on, op='inner', hint=None, alias=None):
         super(JoinTableRef, self).__init__(alias)
-        self._left = left # TableRef
-        self._right = right # TableRef
-        self._op = op # string, inner, left outer, cross, etc.
-        self._hint = hint # string, shuffle or broadcast
+        self._left = left  # TableRef
+        self._right = right  # TableRef
+        self._op = op  # string, inner, left outer, cross, etc.
+        self._hint = hint  # string, shuffle or broadcast
         # on is None, string, Expr, list[string]
         if on is None:
             # for CROSS join
@@ -141,7 +152,8 @@ class JoinTableRef(TableRef):
             self._on = BinaryExpr('=', le, re)
         elif isinstance(on, (list, tuple)):
             if not all([isinstance(x, basestring) for x in on]):
-                raise ValueError("if on is a list/tuple, must only contain strings")
+                raise ValueError(
+                    "if on is a list/tuple, must only contain strings")
             exprs = []
             for s in on:
                 le = Literal('%s.%s' % (left.name, s))
@@ -157,7 +169,7 @@ class JoinTableRef(TableRef):
     def to_sql(self):
         hint = '' if not self._hint else '[%s]' % self._hint
         sql = '%s %s JOIN %s %s' % (self._left.to_sql(), self._op,
-                hint, self._right.to_sql())
+                                    hint, self._right.to_sql())
         if self._on is not None:
             sql += ' ON %s' % self._on.to_sql()
         return sql
@@ -166,10 +178,11 @@ class JoinTableRef(TableRef):
 # other SQL elements
 
 class OrderByElement(SQLNodeMixin):
+
     def __init__(self, expr, is_asc=None, nulls_first=None):
-        self._expr = expr # Expr
-        self._is_asc = is_asc # Bool
-        self._nulls_first = nulls_first # Bool
+        self._expr = expr  # Expr
+        self._is_asc = is_asc  # Bool
+        self._nulls_first = nulls_first  # Bool
 
     def to_sql(self):
         sql = self._expr.to_sql()
@@ -184,9 +197,10 @@ class OrderByElement(SQLNodeMixin):
 
 
 class LimitElement(SQLNodeMixin):
+
     def __init__(self, limit_expr=None, offset_expr=None):
-        self._limit_expr = limit_expr # Expr
-        self._offset_expr = offset_expr # Expr
+        self._limit_expr = limit_expr  # Expr
+        self._offset_expr = offset_expr  # Expr
 
     def to_sql(self):
         sql = ''
@@ -198,6 +212,7 @@ class LimitElement(SQLNodeMixin):
 
 
 class TableName(SQLNodeMixin):
+
     def __init__(self, table_name, db_name=None):
         self._table_name = table_name
         self._db_name = db_name
@@ -211,11 +226,12 @@ class TableName(SQLNodeMixin):
 
 
 class SelectItem(SQLNodeMixin):
+
     def __init__(self, alias=None, expr=None, table_name=None):
         # TODO: check preconditions
-        self._alias = alias # string
-        self._expr = expr # Expr
-        self._table_name = table_name # TableName
+        self._alias = alias  # string
+        self._expr = expr  # Expr
+        self._table_name = table_name  # TableName
         self._is_star = True if self._expr is None else False
 
     @property
@@ -331,15 +347,16 @@ class QueryStmt(SQLNodeMixin):
 
 
 class SelectStmt(QueryStmt):
+
     def __init__(self, select_list, from_, where=None, order_by=None,
                  group_by=None, having=None, limit=None):
-        self._select_list = tuple(select_list) # Iter[SelectItem]
-        self._from = from_ # TableRef
-        self._where = where # Expr
-        self._order_by = order_by # Tuple[OrderByElement]
-        self._group_by = group_by # Tuple[Expr]
-        self._having = having # Expr
-        self._limit = limit # LimitElement
+        self._select_list = tuple(select_list)  # Iter[SelectItem]
+        self._from = from_  # TableRef
+        self._where = where  # Expr
+        self._order_by = order_by  # Tuple[OrderByElement]
+        self._group_by = group_by  # Tuple[Expr]
+        self._having = having  # Expr
+        self._limit = limit  # LimitElement
 
         # do I need these?
         # self._has_groupby = False
@@ -354,19 +371,22 @@ class SelectStmt(QueryStmt):
         if self._where:
             sql += ' WHERE ' + self._where.to_sql()
         if self._group_by:
-            sql += ' GROUP BY ' + ', '.join([g.to_sql() for g in self._group_by])
+            sql += ' GROUP BY ' + \
+                   ', '.join([g.to_sql() for g in self._group_by])
         if self._having:
             sql += ' HAVING ' + self._having.to_sql()
         if self._order_by:
-            sql += ' ORDER BY ' + ', '.join([o.to_sql() for o in self._order_by])
+            sql += ' ORDER BY ' + \
+                   ', '.join([o.to_sql() for o in self._order_by])
         if self._limit:
             sql += self._limit.to_sql()
         return sql
 
 
 class UnionStmt(QueryStmt):
+
     def __init__(self, queries):
-        self._union_list = tuple(queries) # Tuple[QueryStmt]
+        self._union_list = tuple(queries)  # Tuple[QueryStmt]
 
     def select_list(self):
         # somewhere down the tree, there must be a SelectStmt
@@ -379,32 +399,41 @@ class UnionStmt(QueryStmt):
 # DDL statement helpers (they are not currently modeled)
 
 def _create_table(table_name, table_schema, path=None,
-        file_format='TEXTFILE', partition_schema=None, field_terminator='\t',
-        line_terminator='\n', escape_char='\\'):
+                  file_format='TEXTFILE', partition_schema=None,
+                  field_terminator='\t',
+                  line_terminator='\n', escape_char='\\'):
     external = path is not None
     if external:
         query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
     else:
         query = "CREATE TABLE %s" % table_name.to_sql()
-    schema_string = ', '.join(['%s %s' % (col, ty) for (col, ty) in table_schema])
+    schema_string = ', '.join(['%s %s' % (col, ty)
+                               for (col, ty) in table_schema])
     query += " (%s)" % schema_string
     if partition_schema:
-        schema_string = ', '.join(['%s %s' % (col, ty) for (col, ty) in partition_schema])
+        schema_string = ', '.join(
+            ['%s %s' % (col, ty) for (col, ty) in partition_schema])
         query += " PARTITIONED BY (%s)" % schema_string
     if file_format == 'PARQUET':
         query += " STORED AS PARQUET"
     elif file_format == 'TEXTFILE':
-        query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY {field!r} ESCAPED BY {esc!r} "
-                   "LINES TERMINATED BY {line!r} STORED AS TEXTFILE").format(
-                   field=field_terminator, esc=escape_char, line=line_terminator))
+        query += ((
+            " ROW FORMAT DELIMITED FIELDS TERMINATED BY {field!r} "
+            "ESCAPED BY {esc!r} "
+            "LINES TERMINATED BY {line!r} STORED AS "
+            "TEXTFILE").format(field=field_terminator,
+                               esc=escape_char,
+                               line=line_terminator))
     else:
         raise ValueError("Invalid file format")
     if external:
         query += " LOCATION '%s'" % path
     return query
 
+
 def _create_table_as_select(table_name, path=None, file_format='TEXTFILE',
-        field_terminator='\t', line_terminator='\n', escape_char='\\'):
+                            field_terminator='\t', line_terminator='\n',
+                            escape_char='\\'):
     external = path is not None
     if external:
         query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
@@ -413,9 +442,13 @@ def _create_table_as_select(table_name, path=None, file_format='TEXTFILE',
     if file_format == 'PARQUET':
         query += " STORED AS PARQUET"
     elif file_format == 'TEXTFILE':
-        query += ((" ROW FORMAT DELIMITED FIELDS TERMINATED BY {field!r} ESCAPED BY {esc!r} "
-                   "LINES TERMINATED BY {line!r} STORED AS TEXTFILE").format(
-                   field=field_terminator, esc=escape_char, line=line_terminator))
+        query += ((
+            " ROW FORMAT DELIMITED FIELDS TERMINATED BY {field!r} "
+            "ESCAPED BY {esc!r} "
+            "LINES TERMINATED BY {line!r} STORED AS "
+            "TEXTFILE").format(field=field_terminator,
+                               esc=escape_char,
+                               line=line_terminator))
     if external:
         query += " LOCATION '%s'" % path
     query += " AS "

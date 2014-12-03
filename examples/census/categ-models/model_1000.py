@@ -1,4 +1,9 @@
-def predict_income(impala_function_context, age, workclass, final_weight, education, education_num, marital_status, occupation, relationship, race, sex, hours_per_week, native_country, income):
+
+
+def predict_income(impala_function_context, age, workclass, final_weight,
+                   education, education_num,
+                   marital_status, occupation, relationship, race, sex,
+                   hours_per_week, native_country, income):
     """ Predictor for income from model/53603152ffa04466f9000e6b
 
         https://archive.ics.uci.edu/ml/machine-learning-databases/adult/
@@ -37,12 +42,14 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 if (education_num <= 15):
                                                     return -7811984082516642400
                                         if (age <= 74):
-                                            if (workclass == -4284295320506787287):
+                                            if (workclass == -
+                                                    4284295320506787287):
                                                 if (hours_per_week > 47):
                                                     return -7811984082516642400
                                                 if (hours_per_week <= 47):
                                                     return -671483940756762216
-                                            if (workclass != -4284295320506787287):
+                                            if (workclass != -
+                                                    4284295320506787287):
                                                 return -671483940756762216
                             if (education_num <= 14):
                                 if (hours_per_week > 36):
@@ -59,9 +66,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (final_weight is None):
                                                 return -671483940756762216
                                             if (final_weight > 142784):
-                                                if (workclass == -1136074064918994416):
+                                                if (workclass == -
+                                                        1136074064918994416):
                                                     return -7811984082516642400
-                                                if (workclass != -1136074064918994416):
+                                                if (workclass != -
+                                                        1136074064918994416):
                                                     return -7811984082516642400
                                             if (final_weight <= 142784):
                                                 if (final_weight > 92181):
@@ -76,31 +85,41 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (hours_per_week > 49):
                                         if (occupation is None):
                                             return -671483940756762216
-                                        if (occupation == -8005258492814722552):
+                                        if (occupation == -
+                                                8005258492814722552):
                                             return -7811984082516642400
-                                        if (occupation != -8005258492814722552):
+                                        if (occupation != -
+                                                8005258492814722552):
                                             if (workclass is None):
                                                 return -671483940756762216
-                                            if (workclass == 8585012838816931822):
+                                            if (workclass ==
+                                                    8585012838816931822):
                                                 if (race is None):
                                                     return -671483940756762216
-                                                if (race == 3632794867504857096):
+                                                if (race ==
+                                                        3632794867504857096):
                                                     return -7811984082516642400
-                                                if (race != 3632794867504857096):
+                                                if (race !=
+                                                        3632794867504857096):
                                                     return -671483940756762216
-                                            if (workclass != 8585012838816931822):
+                                            if (workclass !=
+                                                    8585012838816931822):
                                                 return -671483940756762216
                                     if (hours_per_week <= 49):
                                         if (relationship is None):
                                             return -671483940756762216
-                                        if (relationship == 5722155880036500383):
+                                        if (relationship ==
+                                                5722155880036500383):
                                             return -7811984082516642400
-                                        if (relationship != 5722155880036500383):
+                                        if (relationship !=
+                                                5722155880036500383):
                                             if (occupation is None):
                                                 return -671483940756762216
-                                            if (occupation == 2812191937831880778):
+                                            if (occupation ==
+                                                    2812191937831880778):
                                                 return -7811984082516642400
-                                            if (occupation != 2812191937831880778):
+                                            if (occupation !=
+                                                    2812191937831880778):
                                                 if (age > 57):
                                                     return -7811984082516642400
                                                 if (age <= 57):
@@ -117,9 +136,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week > 57):
                                                 if (occupation is None):
                                                     return -7811984082516642400
-                                                if (occupation == -6990906632015037778):
+                                                if (occupation == -
+                                                        6990906632015037778):
                                                     return -671483940756762216
-                                                if (occupation != -6990906632015037778):
+                                                if (occupation != -
+                                                        6990906632015037778):
                                                     return -7811984082516642400
                                             if (hours_per_week <= 57):
                                                 if (hours_per_week > 39):
@@ -147,9 +168,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (final_weight <= 323185):
                                                 if (race is None):
                                                     return -671483940756762216
-                                                if (race == -681598405395175136):
+                                                if (race == -
+                                                        681598405395175136):
                                                     return -7811984082516642400
-                                                if (race != -681598405395175136):
+                                                if (race != -
+                                                        681598405395175136):
                                                     return -671483940756762216
                             if (age <= 38):
                                 if (occupation is None):
@@ -158,7 +181,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     return -7811984082516642400
                                 if (occupation != 3088227676756162338):
                                     if (hours_per_week > 42):
-                                        if (occupation == -6990906632015037778):
+                                        if (occupation == -
+                                                6990906632015037778):
                                             if (final_weight is None):
                                                 return -671483940756762216
                                             if (final_weight > 285656):
@@ -168,20 +192,25 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                     return -7811984082516642400
                                             if (final_weight <= 285656):
                                                 return -671483940756762216
-                                        if (occupation != -6990906632015037778):
+                                        if (occupation != -
+                                                6990906632015037778):
                                             if (sex is None):
                                                 return -671483940756762216
                                             if (sex == 6306819796163687131):
-                                                if (occupation == -8227066636055033186):
+                                                if (occupation == -
+                                                        8227066636055033186):
                                                     return -7811984082516642400
-                                                if (occupation != -8227066636055033186):
+                                                if (occupation != -
+                                                        8227066636055033186):
                                                     return -671483940756762216
                                             if (sex != 6306819796163687131):
                                                 return -671483940756762216
                                     if (hours_per_week <= 42):
-                                        if (occupation == -8005258492814722552):
+                                        if (occupation == -
+                                                8005258492814722552):
                                             return -7811984082516642400
-                                        if (occupation != -8005258492814722552):
+                                        if (occupation != -
+                                                8005258492814722552):
                                             if (hours_per_week > 39):
                                                 if (final_weight is None):
                                                     return -671483940756762216
@@ -250,9 +279,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (race != 3939476748445039507):
                                         if (relationship is None):
                                             return -671483940756762216
-                                        if (relationship == 8744150760759310329):
+                                        if (relationship ==
+                                                8744150760759310329):
                                             return -7811984082516642400
-                                        if (relationship != 8744150760759310329):
+                                        if (relationship !=
+                                                8744150760759310329):
                                             if (hours_per_week > 41):
                                                 if (age > 84):
                                                     return -7811984082516642400
@@ -281,9 +312,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (final_weight > 121061):
                                         if (final_weight > 232277):
                                             if (age > 36):
-                                                if (occupation == 8618684898378336489):
+                                                if (occupation ==
+                                                        8618684898378336489):
                                                     return -7811984082516642400
-                                                if (occupation != 8618684898378336489):
+                                                if (occupation !=
+                                                        8618684898378336489):
                                                     return -671483940756762216
                                             if (age <= 36):
                                                 if (hours_per_week > 39):
@@ -291,33 +324,43 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 if (hours_per_week <= 39):
                                                     return -671483940756762216
                                         if (final_weight <= 232277):
-                                            if (occupation == 2812191937831880778):
+                                            if (occupation ==
+                                                    2812191937831880778):
                                                 if (hours_per_week > 42):
                                                     return -671483940756762216
                                                 if (hours_per_week <= 42):
                                                     return -7811984082516642400
-                                            if (occupation != 2812191937831880778):
+                                            if (occupation !=
+                                                    2812191937831880778):
                                                 if (workclass is None):
                                                     return -671483940756762216
-                                                if (workclass == -857656620414700721):
+                                                if (workclass == -
+                                                        857656620414700721):
                                                     return -671483940756762216
-                                                if (workclass != -857656620414700721):
+                                                if (workclass != -
+                                                        857656620414700721):
                                                     return -671483940756762216
                                     if (final_weight <= 121061):
-                                        if (occupation == -8227066636055033186):
+                                        if (occupation == -
+                                                8227066636055033186):
                                             return -7811984082516642400
-                                        if (occupation != -8227066636055033186):
+                                        if (occupation != -
+                                                8227066636055033186):
                                             if (hours_per_week > 53):
-                                                if (occupation == -5484833051640498835):
+                                                if (occupation == -
+                                                        5484833051640498835):
                                                     return -7811984082516642400
-                                                if (occupation != -5484833051640498835):
+                                                if (occupation != -
+                                                        5484833051640498835):
                                                     return -671483940756762216
                                             if (hours_per_week <= 53):
                                                 if (workclass is None):
                                                     return -671483940756762216
-                                                if (workclass == -1136074064918994416):
+                                                if (workclass == -
+                                                        1136074064918994416):
                                                     return -7811984082516642400
-                                                if (workclass != -1136074064918994416):
+                                                if (workclass != -
+                                                        1136074064918994416):
                                                     return -671483940756762216
                 if (age <= 28):
                     if (age > 24):
@@ -336,9 +379,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (final_weight > 59538):
                                             if (workclass is None):
                                                 return -7811984082516642400
-                                            if (workclass == -7197995106135439896):
+                                            if (workclass == -
+                                                    7197995106135439896):
                                                 return -671483940756762216
-                                            if (workclass != -7197995106135439896):
+                                            if (workclass != -
+                                                    7197995106135439896):
                                                 if (final_weight > 165889):
                                                     return -7811984082516642400
                                                 if (final_weight <= 165889):
@@ -371,31 +416,37 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (age <= 27):
                                             return -671483940756762216
                                     if (final_weight <= 260996):
-                                        if (occupation == -6990906632015037778):
+                                        if (occupation == -
+                                                6990906632015037778):
                                             if (age > 27):
                                                 return -671483940756762216
                                             if (age <= 27):
                                                 return -7811984082516642400
-                                        if (occupation != -6990906632015037778):
+                                        if (occupation != -
+                                                6990906632015037778):
                                             return -7811984082516642400
                                 if (final_weight <= 159383):
                                     if (final_weight > 100631):
                                         if (age > 27):
                                             return -671483940756762216
                                         if (age <= 27):
-                                            if (occupation == -5484833051640498835):
+                                            if (occupation == -
+                                                    5484833051640498835):
                                                 return -671483940756762216
-                                            if (occupation != -5484833051640498835):
+                                            if (occupation != -
+                                                    5484833051640498835):
                                                 return -7811984082516642400
                                     if (final_weight <= 100631):
-                                        if (occupation == -6990906632015037778):
+                                        if (occupation == -
+                                                6990906632015037778):
                                             if (race is None):
                                                 return -7811984082516642400
                                             if (race == -1569537633132385766):
                                                 return -671483940756762216
                                             if (race != -1569537633132385766):
                                                 return -7811984082516642400
-                                        if (occupation != -6990906632015037778):
+                                        if (occupation != -
+                                                6990906632015037778):
                                             return -7811984082516642400
                     if (age <= 24):
                         if (final_weight is None):
@@ -430,9 +481,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (age <= 66):
                                                 if (occupation is None):
                                                     return -7811984082516642400
-                                                if (occupation == -5484833051640498835):
+                                                if (occupation == -
+                                                        5484833051640498835):
                                                     return -7811984082516642400
-                                                if (occupation != -5484833051640498835):
+                                                if (occupation != -
+                                                        5484833051640498835):
                                                     return -7811984082516642400
                                         if (final_weight <= 38129):
                                             return -671483940756762216
@@ -484,12 +537,14 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (workclass != -7197995106135439896):
                                             if (relationship is None):
                                                 return -671483940756762216
-                                            if (relationship == -408487193273916322):
+                                            if (relationship == -
+                                                    408487193273916322):
                                                 if (education_num > 13):
                                                     return -671483940756762216
                                                 if (education_num <= 13):
                                                     return -671483940756762216
-                                            if (relationship != -408487193273916322):
+                                            if (relationship != -
+                                                    408487193273916322):
                                                 return -7811984082516642400
                             if (hours_per_week <= 12):
                                 if (hours_per_week > 2):
@@ -615,14 +670,18 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (sex != 6306819796163687131):
                                                 return -671483940756762216
                                         if (workclass != -4284295320506787287):
-                                            if (workclass == -1136074064918994416):
+                                            if (workclass == -
+                                                    1136074064918994416):
                                                 if (education is None):
                                                     return -7811984082516642400
-                                                if (education == 6401768215868355915):
+                                                if (education ==
+                                                        6401768215868355915):
                                                     return -7811984082516642400
-                                                if (education != 6401768215868355915):
+                                                if (education !=
+                                                        6401768215868355915):
                                                     return -671483940756762216
-                                            if (workclass != -1136074064918994416):
+                                            if (workclass != -
+                                                    1136074064918994416):
                                                 if (hours_per_week > 48):
                                                     return -671483940756762216
                                                 if (hours_per_week <= 48):
@@ -634,9 +693,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (final_weight > 133264):
                                                 if (workclass is None):
                                                     return -671483940756762216
-                                                if (workclass == -1136074064918994416):
+                                                if (workclass == -
+                                                        1136074064918994416):
                                                     return -7811984082516642400
-                                                if (workclass != -1136074064918994416):
+                                                if (workclass != -
+                                                        1136074064918994416):
                                                     return -671483940756762216
                                             if (final_weight <= 133264):
                                                 if (final_weight > 45882):
@@ -644,19 +705,23 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 if (final_weight <= 45882):
                                                     return -7811984082516642400
                                         if (occupation != 1581590029918088140):
-                                            if (occupation == 4779842868628447834):
+                                            if (occupation ==
+                                                    4779842868628447834):
                                                 if (final_weight is None):
                                                     return -671483940756762216
                                                 if (final_weight > 132978):
                                                     return -671483940756762216
                                                 if (final_weight <= 132978):
                                                     return -671483940756762216
-                                            if (occupation != 4779842868628447834):
+                                            if (occupation !=
+                                                    4779842868628447834):
                                                 if (workclass is None):
                                                     return -7811984082516642400
-                                                if (workclass == -7197995106135439896):
+                                                if (workclass == -
+                                                        7197995106135439896):
                                                     return -671483940756762216
-                                                if (workclass != -7197995106135439896):
+                                                if (workclass != -
+                                                        7197995106135439896):
                                                     return -7811984082516642400
                         if (education_num <= 9):
                             if (occupation is None):
@@ -691,12 +756,14 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         return -671483940756762216
                                     if (final_weight > 189527):
                                         if (age > 55):
-                                            if (workclass == 8585012838816931822):
+                                            if (workclass ==
+                                                    8585012838816931822):
                                                 if (hours_per_week > 45):
                                                     return -7811984082516642400
                                                 if (hours_per_week <= 45):
                                                     return -671483940756762216
-                                            if (workclass != 8585012838816931822):
+                                            if (workclass !=
+                                                    8585012838816931822):
                                                 return -7811984082516642400
                                         if (age <= 55):
                                             if (hours_per_week > 47):
@@ -811,14 +878,18 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (workclass != -857656620414700721):
                                             if (occupation is None):
                                                 return -671483940756762216
-                                            if (occupation == 5332362397248960598):
+                                            if (occupation ==
+                                                    5332362397248960598):
                                                 return -671483940756762216
-                                            if (occupation != 5332362397248960598):
+                                            if (occupation !=
+                                                    5332362397248960598):
                                                 if (race is None):
                                                     return -671483940756762216
-                                                if (race == -1569537633132385766):
+                                                if (race == -
+                                                        1569537633132385766):
                                                     return -671483940756762216
-                                                if (race != -1569537633132385766):
+                                                if (race != -
+                                                        1569537633132385766):
                                                     return -7811984082516642400
                                     if (education_num <= 9):
                                         if (age > 57):
@@ -854,9 +925,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 if (education_num <= 9):
                                                     return -7811984082516642400
                                             if (age <= 59):
-                                                if (occupation == -6951104699562914960):
+                                                if (occupation == -
+                                                        6951104699562914960):
                                                     return -671483940756762216
-                                                if (occupation != -6951104699562914960):
+                                                if (occupation != -
+                                                        6951104699562914960):
                                                     return -7811984082516642400
                                         if (age <= 41):
                                             return -7811984082516642400
@@ -965,14 +1038,18 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week > 61):
                                                 return -7811984082516642400
                                             if (hours_per_week <= 61):
-                                                if (occupation == 5332362397248960598):
+                                                if (occupation ==
+                                                        5332362397248960598):
                                                     return -671483940756762216
-                                                if (occupation != 5332362397248960598):
+                                                if (occupation !=
+                                                        5332362397248960598):
                                                     return -7811984082516642400
                                     if (age <= 31):
-                                        if (occupation == -6951104699562914960):
+                                        if (occupation == -
+                                                6951104699562914960):
                                             return -7811984082516642400
-                                        if (occupation != -6951104699562914960):
+                                        if (occupation != -
+                                                6951104699562914960):
                                             if (final_weight is None):
                                                 return -7811984082516642400
                                             if (final_weight > 131760):
@@ -1012,21 +1089,27 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             return -7811984082516642400
                                         if (workclass == 8161495398349361779):
                                             if (age > 30):
-                                                if (occupation == 4779842868628447834):
+                                                if (occupation ==
+                                                        4779842868628447834):
                                                     return -7811984082516642400
-                                                if (occupation != 4779842868628447834):
+                                                if (occupation !=
+                                                        4779842868628447834):
                                                     return -671483940756762216
                                             if (age <= 30):
                                                 return -671483940756762216
                                         if (workclass != 8161495398349361779):
                                             if (relationship is None):
                                                 return -7811984082516642400
-                                            if (relationship == -6190047399745113596):
+                                            if (relationship == -
+                                                    6190047399745113596):
                                                 return -7811984082516642400
-                                            if (relationship != -6190047399745113596):
-                                                if (occupation == -6951104699562914960):
+                                            if (relationship != -
+                                                    6190047399745113596):
+                                                if (occupation == -
+                                                        6951104699562914960):
                                                     return -7811984082516642400
-                                                if (occupation != -6951104699562914960):
+                                                if (occupation != -
+                                                        6951104699562914960):
                                                     return -7811984082516642400
                     if (age <= 24):
                         if (hours_per_week is None):
@@ -1071,14 +1154,18 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (final_weight <= 339707):
                                             if (education is None):
                                                 return -7811984082516642400
-                                            if (education == -1620783280160849416):
+                                            if (education == -
+                                                    1620783280160849416):
                                                 if (race is None):
                                                     return -7811984082516642400
-                                                if (race == -1569537633132385766):
+                                                if (race == -
+                                                        1569537633132385766):
                                                     return -7811984082516642400
-                                                if (race != -1569537633132385766):
+                                                if (race != -
+                                                        1569537633132385766):
                                                     return -7811984082516642400
-                                            if (education != -1620783280160849416):
+                                            if (education != -
+                                                    1620783280160849416):
                                                 return -7811984082516642400
                                     if (sex != 6306819796163687131):
                                         return -7811984082516642400
@@ -1129,20 +1216,26 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (age > 62):
                                             if (workclass is None):
                                                 return -7811984082516642400
-                                            if (workclass == -857656620414700721):
+                                            if (workclass == -
+                                                    857656620414700721):
                                                 return -671483940756762216
-                                            if (workclass != -857656620414700721):
-                                                if (occupation == -5484833051640498835):
+                                            if (workclass != -
+                                                    857656620414700721):
+                                                if (occupation == -
+                                                        5484833051640498835):
                                                     return -7811984082516642400
-                                                if (occupation != -5484833051640498835):
+                                                if (occupation != -
+                                                        5484833051640498835):
                                                     return -7811984082516642400
                                         if (age <= 62):
                                             return -7811984082516642400
                                     if (final_weight <= 162184):
                                         if (final_weight > 151824):
-                                            if (occupation == -8227066636055033186):
+                                            if (occupation == -
+                                                    8227066636055033186):
                                                 return -7811984082516642400
-                                            if (occupation != -8227066636055033186):
+                                            if (occupation != -
+                                                    8227066636055033186):
                                                 return -671483940756762216
                                         if (final_weight <= 151824):
                                             if (final_weight > 118909):
@@ -1171,7 +1264,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (workclass == -857656620414700721):
                                         return -7811984082516642400
                                     if (workclass != -857656620414700721):
-                                        if (occupation == -6990906632015037778):
+                                        if (occupation == -
+                                                6990906632015037778):
                                             if (hours_per_week > 55):
                                                 return -7811984082516642400
                                             if (hours_per_week <= 55):
@@ -1181,7 +1275,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                     return -7811984082516642400
                                                 if (final_weight <= 340151):
                                                     return -671483940756762216
-                                        if (occupation != -6990906632015037778):
+                                        if (occupation != -
+                                                6990906632015037778):
                                             if (race is None):
                                                 return -7811984082516642400
                                             if (race == 3939476748445039507):
@@ -1250,15 +1345,21 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (workclass == -7197995106135439896):
                                         if (occupation is None):
                                             return -671483940756762216
-                                        if (occupation == -8005258492814722552):
+                                        if (occupation == -
+                                                8005258492814722552):
                                             return -671483940756762216
-                                        if (occupation != -8005258492814722552):
-                                            if (occupation == -5484833051640498835):
+                                        if (occupation != -
+                                                8005258492814722552):
+                                            if (occupation == -
+                                                    5484833051640498835):
                                                 return -671483940756762216
-                                            if (occupation != -5484833051640498835):
-                                                if (occupation == -8227066636055033186):
+                                            if (occupation != -
+                                                    5484833051640498835):
+                                                if (occupation == -
+                                                        8227066636055033186):
                                                     return -671483940756762216
-                                                if (occupation != -8227066636055033186):
+                                                if (occupation != -
+                                                        8227066636055033186):
                                                     return -7811984082516642400
                                     if (workclass != -7197995106135439896):
                                         if (age > 40):
@@ -1277,14 +1378,18 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (age <= 40):
                                             if (education is None):
                                                 return -671483940756762216
-                                            if (education == -3305009427453673313):
+                                            if (education == -
+                                                    3305009427453673313):
                                                 return -671483940756762216
-                                            if (education != -3305009427453673313):
+                                            if (education != -
+                                                    3305009427453673313):
                                                 if (occupation is None):
                                                     return -7811984082516642400
-                                                if (occupation == -8005258492814722552):
+                                                if (occupation == -
+                                                        8005258492814722552):
                                                     return -7811984082516642400
-                                                if (occupation != -8005258492814722552):
+                                                if (occupation != -
+                                                        8005258492814722552):
                                                     return -671483940756762216
                     if (hours_per_week <= 22):
                         return -7811984082516642400
@@ -1343,14 +1448,18 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (age > 29):
                                                 if (education is None):
                                                     return -7811984082516642400
-                                                if (education == -3305009427453673313):
+                                                if (education == -
+                                                        3305009427453673313):
                                                     return -7811984082516642400
-                                                if (education != -3305009427453673313):
+                                                if (education != -
+                                                        3305009427453673313):
                                                     return -7811984082516642400
                                             if (age <= 29):
-                                                if (occupation == 8618684898378336489):
+                                                if (occupation ==
+                                                        8618684898378336489):
                                                     return -7811984082516642400
-                                                if (occupation != 8618684898378336489):
+                                                if (occupation !=
+                                                        8618684898378336489):
                                                     return -671483940756762216
                                         if (age <= 28):
                                             return -7811984082516642400
@@ -1377,9 +1486,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week <= 30):
                                                 return -7811984082516642400
                                         if (age <= 27):
-                                            if (occupation == 2812191937831880778):
+                                            if (occupation ==
+                                                    2812191937831880778):
                                                 return -671483940756762216
-                                            if (occupation != 2812191937831880778):
+                                            if (occupation !=
+                                                    2812191937831880778):
                                                 return -7811984082516642400
                                     if (final_weight <= 149463):
                                         return -7811984082516642400
@@ -1418,7 +1529,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (race == -681598405395175136):
                                         return -7811984082516642400
                                     if (race != -681598405395175136):
-                                        if (marital_status == -2843050270188924016):
+                                        if (marital_status == -
+                                                2843050270188924016):
                                             if (age > 48):
                                                 return -671483940756762216
                                             if (age <= 48):
@@ -1426,7 +1538,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                     return -7811984082516642400
                                                 if (age <= 46):
                                                     return -671483940756762216
-                                        if (marital_status != -2843050270188924016):
+                                        if (marital_status != -
+                                                2843050270188924016):
                                             return -671483940756762216
                             if (final_weight <= 160393):
                                 if (hours_per_week > 47):
@@ -1434,9 +1547,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (workclass is None):
                                             return -671483940756762216
                                         if (workclass == 8585012838816931822):
-                                            if (marital_status == 7568786824864426784):
+                                            if (marital_status ==
+                                                    7568786824864426784):
                                                 return -7811984082516642400
-                                            if (marital_status != 7568786824864426784):
+                                            if (marital_status !=
+                                                    7568786824864426784):
                                                 return -671483940756762216
                                         if (workclass != 8585012838816931822):
                                             if (hours_per_week > 62):
@@ -1483,9 +1598,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                         if (education_num > 14):
                             if (age > 32):
                                 if (age > 52):
-                                    if (marital_status == -5485661916787442206):
+                                    if (marital_status == -
+                                            5485661916787442206):
                                         return -671483940756762216
-                                    if (marital_status != -5485661916787442206):
+                                    if (marital_status != -
+                                            5485661916787442206):
                                         if (workclass is None):
                                             return -7811984082516642400
                                         if (workclass == 8585012838816931822):
@@ -1494,9 +1611,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week > 55):
                                                 return -7811984082516642400
                                             if (hours_per_week <= 55):
-                                                if (marital_status == -2843050270188924016):
+                                                if (marital_status == -
+                                                        2843050270188924016):
                                                     return -671483940756762216
-                                                if (marital_status != -2843050270188924016):
+                                                if (marital_status != -
+                                                        2843050270188924016):
                                                     return -7811984082516642400
                                 if (age <= 52):
                                     if (hours_per_week > 52):
@@ -1507,7 +1626,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (hours_per_week <= 52):
                                         if (relationship is None):
                                             return -671483940756762216
-                                        if (relationship == 5722155880036500383):
+                                        if (relationship ==
+                                                5722155880036500383):
                                             if (final_weight is None):
                                                 return -671483940756762216
                                             if (final_weight > 215668):
@@ -1515,17 +1635,21 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (final_weight <= 215668):
                                                 if (workclass is None):
                                                     return -671483940756762216
-                                                if (workclass == -4284295320506787287):
+                                                if (workclass == -
+                                                        4284295320506787287):
                                                     return -7811984082516642400
-                                                if (workclass != -4284295320506787287):
+                                                if (workclass != -
+                                                        4284295320506787287):
                                                     return -671483940756762216
-                                        if (relationship != 5722155880036500383):
+                                        if (relationship !=
+                                                5722155880036500383):
                                             return -671483940756762216
                             if (age <= 32):
                                 if (age > 29):
                                     return -7811984082516642400
                                 if (age <= 29):
-                                    if (marital_status == -2843050270188924016):
+                                    if (marital_status == -
+                                            2843050270188924016):
                                         if (final_weight is None):
                                             return -7811984082516642400
                                         if (final_weight > 92062):
@@ -1537,7 +1661,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 return -671483940756762216
                                             if (sex != 6306819796163687131):
                                                 return -7811984082516642400
-                                    if (marital_status != -2843050270188924016):
+                                    if (marital_status != -
+                                            2843050270188924016):
                                         return -671483940756762216
                         if (education_num <= 14):
                             if (sex is None):
@@ -1547,19 +1672,25 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (occupation == -5484833051640498835):
                                         if (relationship is None):
                                             return -7811984082516642400
-                                        if (relationship == -6190047399745113596):
+                                        if (relationship == -
+                                                6190047399745113596):
                                             return -7811984082516642400
-                                        if (relationship != -6190047399745113596):
+                                        if (relationship != -
+                                                6190047399745113596):
                                             if (workclass is None):
                                                 return -671483940756762216
-                                            if (workclass == -1136074064918994416):
+                                            if (workclass == -
+                                                    1136074064918994416):
                                                 return -7811984082516642400
-                                            if (workclass != -1136074064918994416):
+                                            if (workclass != -
+                                                    1136074064918994416):
                                                 if (race is None):
                                                     return -671483940756762216
-                                                if (race == -1569537633132385766):
+                                                if (race == -
+                                                        1569537633132385766):
                                                     return -671483940756762216
-                                                if (race != -1569537633132385766):
+                                                if (race != -
+                                                        1569537633132385766):
                                                     return -671483940756762216
                                     if (occupation != -5484833051640498835):
                                         if (race is None):
@@ -1567,12 +1698,16 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (race == 3632794867504857096):
                                             return -671483940756762216
                                         if (race != 3632794867504857096):
-                                            if (occupation == 5332362397248960598):
-                                                if (marital_status == -2843050270188924016):
+                                            if (occupation ==
+                                                    5332362397248960598):
+                                                if (marital_status == -
+                                                        2843050270188924016):
                                                     return -671483940756762216
-                                                if (marital_status != -2843050270188924016):
+                                                if (marital_status != -
+                                                        2843050270188924016):
                                                     return -7811984082516642400
-                                            if (occupation != 5332362397248960598):
+                                            if (occupation !=
+                                                    5332362397248960598):
                                                 if (hours_per_week > 87):
                                                     return -7811984082516642400
                                                 if (hours_per_week <= 87):
@@ -1584,12 +1719,16 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         return -7811984082516642400
                                     if (workclass != -4284295320506787287):
                                         if (age > 32):
-                                            if (workclass == -7197995106135439896):
+                                            if (workclass == -
+                                                    7197995106135439896):
                                                 return -7811984082516642400
-                                            if (workclass != -7197995106135439896):
-                                                if (marital_status == 7568786824864426784):
+                                            if (workclass != -
+                                                    7197995106135439896):
+                                                if (marital_status ==
+                                                        7568786824864426784):
                                                     return -7811984082516642400
-                                                if (marital_status != 7568786824864426784):
+                                                if (marital_status !=
+                                                        7568786824864426784):
                                                     return -671483940756762216
                                         if (age <= 32):
                                             if (race is None):
@@ -1597,18 +1736,22 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (race == -5895194357237003500):
                                                 return -671483940756762216
                                             if (race != -5895194357237003500):
-                                                if (workclass == 8585012838816931822):
+                                                if (workclass ==
+                                                        8585012838816931822):
                                                     return -7811984082516642400
-                                                if (workclass != 8585012838816931822):
+                                                if (workclass !=
+                                                        8585012838816931822):
                                                     return -7811984082516642400
                             if (sex != 6306819796163687131):
                                 if (final_weight is None):
                                     return -7811984082516642400
                                 if (final_weight > 151124):
                                     if (final_weight > 158605):
-                                        if (marital_status == -1035125786006291861):
+                                        if (marital_status == -
+                                                1035125786006291861):
                                             return -671483940756762216
-                                        if (marital_status != -1035125786006291861):
+                                        if (marital_status != -
+                                                1035125786006291861):
                                             if (race is None):
                                                 return -7811984082516642400
                                             if (race == 3632794867504857096):
@@ -1631,7 +1774,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (workclass != 8161495398349361779):
                                         if (relationship is None):
                                             return -7811984082516642400
-                                        if (relationship == 5722155880036500383):
+                                        if (relationship ==
+                                                5722155880036500383):
                                             if (hours_per_week > 61):
                                                 if (hours_per_week > 67):
                                                     return -7811984082516642400
@@ -1642,7 +1786,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                     return -7811984082516642400
                                                 if (final_weight <= 107801):
                                                     return -7811984082516642400
-                                        if (relationship != 5722155880036500383):
+                                        if (relationship !=
+                                                5722155880036500383):
                                             return -7811984082516642400
                 if (hours_per_week <= 43):
                     if (education_num > 14):
@@ -1661,14 +1806,18 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (education_num <= 15):
                                             if (workclass is None):
                                                 return -671483940756762216
-                                            if (workclass == -4284295320506787287):
+                                            if (workclass == -
+                                                    4284295320506787287):
                                                 return -7811984082516642400
-                                            if (workclass != -4284295320506787287):
+                                            if (workclass != -
+                                                    4284295320506787287):
                                                 return -671483940756762216
                                 if (hours_per_week <= 21):
-                                    if (marital_status == -5485661916787442206):
+                                    if (marital_status == -
+                                            5485661916787442206):
                                         return -671483940756762216
-                                    if (marital_status != -5485661916787442206):
+                                    if (marital_status != -
+                                            5485661916787442206):
                                         return -7811984082516642400
                             if (sex != 6306819796163687131):
                                 if (marital_status == -2843050270188924016):
@@ -1683,9 +1832,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week > 37):
                                                 if (occupation is None):
                                                     return -7811984082516642400
-                                                if (occupation == 1581590029918088140):
+                                                if (occupation ==
+                                                        1581590029918088140):
                                                     return -7811984082516642400
-                                                if (occupation != 1581590029918088140):
+                                                if (occupation !=
+                                                        1581590029918088140):
                                                     return -7811984082516642400
                                             if (hours_per_week <= 37):
                                                 return -671483940756762216
@@ -1718,7 +1869,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (workclass == 8161495398349361779):
                                         return -7811984082516642400
                                     if (workclass != 8161495398349361779):
-                                        if (marital_status == -2843050270188924016):
+                                        if (marital_status == -
+                                                2843050270188924016):
                                             if (age > 54):
                                                 return -7811984082516642400
                                             if (age <= 54):
@@ -1726,7 +1878,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                     return -671483940756762216
                                                 if (education_num <= 13):
                                                     return -7811984082516642400
-                                        if (marital_status != -2843050270188924016):
+                                        if (marital_status != -
+                                                2843050270188924016):
                                             if (age > 59):
                                                 if (age > 64):
                                                     return -7811984082516642400
@@ -1744,9 +1897,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (sex == 6306819796163687131):
                                             if (occupation is None):
                                                 return -7811984082516642400
-                                            if (occupation == 1581590029918088140):
+                                            if (occupation ==
+                                                    1581590029918088140):
                                                 return -671483940756762216
-                                            if (occupation != 1581590029918088140):
+                                            if (occupation !=
+                                                    1581590029918088140):
                                                 return -7811984082516642400
                                         if (sex != 6306819796163687131):
                                             return -7811984082516642400
@@ -1798,9 +1953,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (age > 40):
                                                 return -671483940756762216
                                             if (age <= 40):
-                                                if (marital_status == -5485661916787442206):
+                                                if (marital_status == -
+                                                        5485661916787442206):
                                                     return -671483940756762216
-                                                if (marital_status != -5485661916787442206):
+                                                if (marital_status != -
+                                                        5485661916787442206):
                                                     return -7811984082516642400
                                         if (sex != 6306819796163687131):
                                             return -7811984082516642400
@@ -1809,16 +1966,20 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             return -7811984082516642400
                                         if (final_weight > 101112):
                                             if (age > 34):
-                                                if (marital_status == -2843050270188924016):
+                                                if (marital_status == -
+                                                        2843050270188924016):
                                                     return -7811984082516642400
-                                                if (marital_status != -2843050270188924016):
+                                                if (marital_status != -
+                                                        2843050270188924016):
                                                     return -7811984082516642400
                                             if (age <= 34):
                                                 if (occupation is None):
                                                     return -7811984082516642400
-                                                if (occupation == 5332362397248960598):
+                                                if (occupation ==
+                                                        5332362397248960598):
                                                     return -7811984082516642400
-                                                if (occupation != 5332362397248960598):
+                                                if (occupation !=
+                                                        5332362397248960598):
                                                     return -7811984082516642400
                                         if (final_weight <= 101112):
                                             if (age > 28):
@@ -1826,9 +1987,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (age <= 28):
                                                 if (sex is None):
                                                     return -7811984082516642400
-                                                if (sex == 6306819796163687131):
+                                                if (sex ==
+                                                        6306819796163687131):
                                                     return -7811984082516642400
-                                                if (sex != 6306819796163687131):
+                                                if (sex !=
+                                                        6306819796163687131):
                                                     return -7811984082516642400
                             if (hours_per_week <= 34):
                                 if (final_weight is None):
@@ -1887,15 +2050,21 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 if (final_weight <= 36821):
                                                     return -671483940756762216
                                         if (occupation != 1581590029918088140):
-                                            if (relationship == -7729121122090457494):
-                                                if (race == -1569537633132385766):
+                                            if (relationship == -
+                                                    7729121122090457494):
+                                                if (race == -
+                                                        1569537633132385766):
                                                     return -7811984082516642400
-                                                if (race != -1569537633132385766):
+                                                if (race != -
+                                                        1569537633132385766):
                                                     return -7811984082516642400
-                                            if (relationship != -7729121122090457494):
-                                                if (occupation == -6990906632015037778):
+                                            if (relationship != -
+                                                    7729121122090457494):
+                                                if (occupation == -
+                                                        6990906632015037778):
                                                     return -7811984082516642400
-                                                if (occupation != -6990906632015037778):
+                                                if (occupation != -
+                                                        6990906632015037778):
                                                     return -7811984082516642400
                                     if (workclass != 8585012838816931822):
                                         return -7811984082516642400
@@ -1924,17 +2093,21 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (workclass is None):
                                             return -7811984082516642400
                                         if (workclass == -7197995106135439896):
-                                            if (marital_status == -5485661916787442206):
+                                            if (marital_status == -
+                                                    5485661916787442206):
                                                 return -671483940756762216
-                                            if (marital_status != -5485661916787442206):
+                                            if (marital_status != -
+                                                    5485661916787442206):
                                                 return -7811984082516642400
                                         if (workclass != -7197995106135439896):
                                             if (hours_per_week > 61):
                                                 return -671483940756762216
                                             if (hours_per_week <= 61):
-                                                if (occupation == 4779842868628447834):
+                                                if (occupation ==
+                                                        4779842868628447834):
                                                     return -671483940756762216
-                                                if (occupation != 4779842868628447834):
+                                                if (occupation !=
+                                                        4779842868628447834):
                                                     return -7811984082516642400
                         if (age <= 53):
                             if (relationship is None):
@@ -1965,9 +2138,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (workclass is None):
                                             return -7811984082516642400
                                         if (workclass == 8161495398349361779):
-                                            if (marital_status == -2843050270188924016):
+                                            if (marital_status == -
+                                                    2843050270188924016):
                                                 return -671483940756762216
-                                            if (marital_status != -2843050270188924016):
+                                            if (marital_status != -
+                                                    2843050270188924016):
                                                 return -7811984082516642400
                                         if (workclass != 8161495398349361779):
                                             return -7811984082516642400
@@ -1985,9 +2160,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (age <= 52):
                                             if (occupation is None):
                                                 return -7811984082516642400
-                                            if (occupation == 8618684898378336489):
+                                            if (occupation ==
+                                                    8618684898378336489):
                                                 return -7811984082516642400
-                                            if (occupation != 8618684898378336489):
+                                            if (occupation !=
+                                                    8618684898378336489):
                                                 if (age > 35):
                                                     return -7811984082516642400
                                                 if (age <= 35):
@@ -2015,15 +2192,19 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (final_weight > 63827):
                                             if (occupation is None):
                                                 return -7811984082516642400
-                                            if (occupation == 5332362397248960598):
+                                            if (occupation ==
+                                                    5332362397248960598):
                                                 if (final_weight > 187713):
                                                     return -7811984082516642400
                                                 if (final_weight <= 187713):
                                                     return -671483940756762216
-                                            if (occupation != 5332362397248960598):
-                                                if (relationship == -7487827120114232249):
+                                            if (occupation !=
+                                                    5332362397248960598):
+                                                if (relationship == -
+                                                        7487827120114232249):
                                                     return -671483940756762216
-                                                if (relationship != -7487827120114232249):
+                                                if (relationship != -
+                                                        7487827120114232249):
                                                     return -7811984082516642400
                                         if (final_weight <= 63827):
                                             return -7811984082516642400
@@ -2084,20 +2265,24 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                 return -7811984082516642400
                             if (relationship == 5722155880036500383):
                                 if (occupation == 5332362397248960598):
-                                    if (marital_status == -1035125786006291861):
+                                    if (marital_status == -
+                                            1035125786006291861):
                                         if (education is None):
                                             return -7811984082516642400
                                         if (education == 4595982442865070163):
                                             return -7811984082516642400
                                         if (education != 4595982442865070163):
                                             return -671483940756762216
-                                    if (marital_status != -1035125786006291861):
+                                    if (marital_status != -
+                                            1035125786006291861):
                                         if (sex is None):
                                             return -7811984082516642400
                                         if (sex == 6306819796163687131):
-                                            if (marital_status == -2843050270188924016):
+                                            if (marital_status == -
+                                                    2843050270188924016):
                                                 return -7811984082516642400
-                                            if (marital_status != -2843050270188924016):
+                                            if (marital_status != -
+                                                    2843050270188924016):
                                                 if (final_weight is None):
                                                     return -7811984082516642400
                                                 if (final_weight > 126659):
@@ -2121,12 +2306,14 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (workclass is None):
                                         return -7811984082516642400
                                     if (workclass == -7197995106135439896):
-                                        if (marital_status == -5485661916787442206):
+                                        if (marital_status == -
+                                                5485661916787442206):
                                             if (education_num > 8):
                                                 return -671483940756762216
                                             if (education_num <= 8):
                                                 return -7811984082516642400
-                                        if (marital_status != -5485661916787442206):
+                                        if (marital_status != -
+                                                5485661916787442206):
                                             if (final_weight is None):
                                                 return -7811984082516642400
                                             if (final_weight > 101318):
@@ -2134,7 +2321,8 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (final_weight <= 101318):
                                                 return -671483940756762216
                                     if (workclass != -7197995106135439896):
-                                        if (occupation == -3959269231467008119):
+                                        if (occupation == -
+                                                3959269231467008119):
                                             if (age > 47):
                                                 return -7811984082516642400
                                             if (age <= 47):
@@ -2142,18 +2330,25 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                     return -7811984082516642400
                                                 if (education_num <= 10):
                                                     return -671483940756762216
-                                        if (occupation != -3959269231467008119):
-                                            if (occupation == 2812191937831880778):
+                                        if (occupation != -
+                                                3959269231467008119):
+                                            if (occupation ==
+                                                    2812191937831880778):
                                                 if (education is None):
                                                     return -7811984082516642400
-                                                if (education == -1620783280160849416):
+                                                if (education == -
+                                                        1620783280160849416):
                                                     return -7811984082516642400
-                                                if (education != -1620783280160849416):
+                                                if (education != -
+                                                        1620783280160849416):
                                                     return -7811984082516642400
-                                            if (occupation != 2812191937831880778):
-                                                if (occupation == -5484833051640498835):
+                                            if (occupation !=
+                                                    2812191937831880778):
+                                                if (occupation == -
+                                                        5484833051640498835):
                                                     return -7811984082516642400
-                                                if (occupation != -5484833051640498835):
+                                                if (occupation != -
+                                                        5484833051640498835):
                                                     return -7811984082516642400
                             if (relationship != 5722155880036500383):
                                 if (occupation == 1581590029918088140):
@@ -2186,22 +2381,30 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (education_num <= 11):
                                             return -671483940756762216
                                     if (relationship != -7487827120114232249):
-                                        if (marital_status == 7568786824864426784):
+                                        if (marital_status ==
+                                                7568786824864426784):
                                             return -7811984082516642400
-                                        if (marital_status != 7568786824864426784):
+                                        if (marital_status !=
+                                                7568786824864426784):
                                             if (education is None):
                                                 return -7811984082516642400
-                                            if (education == 6401768215868355915):
+                                            if (education ==
+                                                    6401768215868355915):
                                                 if (workclass is None):
                                                     return -7811984082516642400
-                                                if (workclass == 8161495398349361779):
+                                                if (workclass ==
+                                                        8161495398349361779):
                                                     return -7811984082516642400
-                                                if (workclass != 8161495398349361779):
+                                                if (workclass !=
+                                                        8161495398349361779):
                                                     return -7811984082516642400
-                                            if (education != 6401768215868355915):
-                                                if (occupation == 5332362397248960598):
+                                            if (education !=
+                                                    6401768215868355915):
+                                                if (occupation ==
+                                                        5332362397248960598):
                                                     return -7811984082516642400
-                                                if (occupation != 5332362397248960598):
+                                                if (occupation !=
+                                                        5332362397248960598):
                                                     return -7811984082516642400
             if (age <= 31):
                 if (age > 21):
@@ -2217,12 +2420,14 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                 if (occupation is None):
                                     return -7811984082516642400
                                 if (occupation == -6990906632015037778):
-                                    if (marital_status == -2843050270188924016):
+                                    if (marital_status == -
+                                            2843050270188924016):
                                         if (hours_per_week > 62):
                                             return -671483940756762216
                                         if (hours_per_week <= 62):
                                             return -7811984082516642400
-                                    if (marital_status != -2843050270188924016):
+                                    if (marital_status != -
+                                            2843050270188924016):
                                         if (final_weight is None):
                                             return -671483940756762216
                                         if (final_weight > 111019):
@@ -2254,9 +2459,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (race == 3632794867504857096):
                                                 if (sex is None):
                                                     return -7811984082516642400
-                                                if (sex == 6306819796163687131):
+                                                if (sex ==
+                                                        6306819796163687131):
                                                     return -671483940756762216
-                                                if (sex != 6306819796163687131):
+                                                if (sex !=
+                                                        6306819796163687131):
                                                     return -7811984082516642400
                                             if (race != 3632794867504857096):
                                                 return -7811984082516642400
@@ -2314,23 +2521,29 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (final_weight > 199791):
                                             return -7811984082516642400
                                         if (final_weight <= 199791):
-                                            if (relationship == -6190047399745113596):
+                                            if (relationship == -
+                                                    6190047399745113596):
                                                 return -671483940756762216
-                                            if (relationship != -6190047399745113596):
+                                            if (relationship != -
+                                                    6190047399745113596):
                                                 if (final_weight > 95966):
                                                     return -7811984082516642400
                                                 if (final_weight <= 95966):
                                                     return -7811984082516642400
                                     if (occupation != -3959269231467008119):
-                                        if (relationship == -6190047399745113596):
+                                        if (relationship == -
+                                                6190047399745113596):
                                             if (age > 29):
-                                                if (occupation == -8005258492814722552):
+                                                if (occupation == -
+                                                        8005258492814722552):
                                                     return -7811984082516642400
-                                                if (occupation != -8005258492814722552):
+                                                if (occupation != -
+                                                        8005258492814722552):
                                                     return -7811984082516642400
                                             if (age <= 29):
                                                 return -7811984082516642400
-                                        if (relationship != -6190047399745113596):
+                                        if (relationship != -
+                                                6190047399745113596):
                                             if (age > 30):
                                                 return -7811984082516642400
                                             if (age <= 30):
@@ -2348,22 +2561,29 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (final_weight > 334106):
                                         if (occupation is None):
                                             return -7811984082516642400
-                                        if (occupation == -8005258492814722552):
-                                            if (marital_status == -2843050270188924016):
+                                        if (occupation == -
+                                                8005258492814722552):
+                                            if (marital_status == -
+                                                    2843050270188924016):
                                                 if (relationship is None):
                                                     return -7811984082516642400
-                                                if (relationship == 5722155880036500383):
+                                                if (relationship ==
+                                                        5722155880036500383):
                                                     return -7811984082516642400
-                                                if (relationship != 5722155880036500383):
+                                                if (relationship !=
+                                                        5722155880036500383):
                                                     return -671483940756762216
-                                            if (marital_status != -2843050270188924016):
+                                            if (marital_status != -
+                                                    2843050270188924016):
                                                 return -7811984082516642400
-                                        if (occupation != -8005258492814722552):
+                                        if (occupation != -
+                                                8005258492814722552):
                                             return -7811984082516642400
                                     if (final_weight <= 334106):
                                         return -7811984082516642400
                                 if (final_weight <= 94030):
-                                    if (marital_status == -8271725530730535226):
+                                    if (marital_status == -
+                                            8271725530730535226):
                                         if (race is None):
                                             return -7811984082516642400
                                         if (race == -681598405395175136):
@@ -2371,11 +2591,14 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (race != -681598405395175136):
                                             if (occupation is None):
                                                 return -7811984082516642400
-                                            if (occupation == 8618684898378336489):
+                                            if (occupation ==
+                                                    8618684898378336489):
                                                 return -671483940756762216
-                                            if (occupation != 8618684898378336489):
+                                            if (occupation !=
+                                                    8618684898378336489):
                                                 return -7811984082516642400
-                                    if (marital_status != -8271725530730535226):
+                                    if (marital_status != -
+                                            8271725530730535226):
                                         return -7811984082516642400
                             if (age <= 27):
                                 return -7811984082516642400

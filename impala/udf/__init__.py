@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,7 +26,7 @@ from numba.compiler import compile_extra, Flags
 from impala.udf.target import ImpalaTargetContext
 from impala.udf.typing import impala_typing_context
 from impala.udf.types import (BooleanVal, TinyIntVal, SmallIntVal, IntVal,
-        BigIntVal, FloatVal, DoubleVal, StringVal)
+                              BigIntVal, FloatVal, DoubleVal, StringVal)
 
 
 # functionality to compile Python UDFs into Impala-executable IR
@@ -35,10 +35,12 @@ def udf(signature):
     def wrapper(pyfunc):
         udfobj = UDF(pyfunc, signature)
         return udfobj
+
     return wrapper
 
 
 class UDF(object):
+
     def __init__(self, pyfunc, signature):
         self.py_func = pyfunc
         self.signature = signature
@@ -53,18 +55,18 @@ class UDF(object):
         flags = Flags()
         flags.set('no_compile')
         self._cres = compile_extra(typingctx=impala_typing,
-                   targetctx=impala_targets, func=pyfunc,
-                   args=args, return_type=return_type,
-                   flags=flags, locals={})
+                                   targetctx=impala_targets, func=pyfunc,
+                                   args=args, return_type=return_type,
+                                   flags=flags, locals={})
         llvm_func = impala_targets.finalize(self._cres.llvm_func, return_type,
-                    args)
+                                            args)
         self.llvm_func = llvm_func
         # numba_module = llvm_func.module
         self.llvm_module = llvm_func.module
         # link in the precompiled module
         # bc it's destructive, load a fresh version
         precompiled = lc.Module.from_bitcode(
-                pkgutil.get_data("impala.udf", "precompiled/impyla.bc"))
+            pkgutil.get_data("impala.udf", "precompiled/impyla.bc"))
         self.llvm_module.link_in(precompiled)
 
 
@@ -85,7 +87,7 @@ try:
     from pywebhdfs.webhdfs import PyWebHdfsClient
 
     def ship_udf(ic, function, hdfs_path=None, udf_name=None, database=None,
-            overwrite=False):
+                 overwrite=False):
         # extract some information from the function
         if udf_name is None:
             udf_name = function.name
@@ -93,11 +95,11 @@ try:
         ir = function.llvm_module.to_bitcode()
         return_type = udf_to_impala_type[function.signature.return_type.name]
         arg_types = [udf_to_impala_type[arg.name]
-                        for arg in function.signature.args[1:]]
+                     for arg in function.signature.args[1:]]
 
         # ship the IR to the cluster
         hdfs_client = PyWebHdfsClient(host=ic._nn_host, port=ic._webhdfs_port,
-                user_name=ic._hdfs_user)
+                                      user_name=ic._hdfs_user)
         if hdfs_path is None:
             hdfs_path = os.path.join(ic._temp_dir, udf_name + '.ll')
         if not hdfs_path.endswith('.ll'):
@@ -110,9 +112,12 @@ try:
         impala_name = '%s.%s(%s)' % (database, udf_name, ', '.join(arg_types))
         if overwrite:
             ic._cursor.execute("DROP FUNCTION IF EXISTS %s" % impala_name)
-        register_query = "CREATE FUNCTION %s RETURNS %s LOCATION '%s' SYMBOL='%s'" % (impala_name,
-                return_type, hdfs_path, symbol)
+        register_query = "CREATE FUNCTION %s RETURNS %s LOCATION '%s' " \
+                         "SYMBOL='%s'" % (
+                             impala_name,
+                             return_type, hdfs_path, symbol)
         ic._cursor.execute(register_query)
 
 except ImportError:
-    print "Failed to import pywebhdfs; you must ship your Python UDFs manually."
+    print "Failed to import pywebhdfs; you must ship your Python UDFs " \
+          "manually."

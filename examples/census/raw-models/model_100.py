@@ -9,7 +9,8 @@ def predict_income(data={}):
         if (not 'education_num' in data or data['education_num'] is None):
             return u'<=50K'
         if (data['education_num'] > 12):
-            if (not 'hours_per_week' in data or data['hours_per_week'] is None):
+            if (not 'hours_per_week' in data or data[
+                    'hours_per_week'] is None):
                 return u'>50K'
             if (data['hours_per_week'] > 31):
                 if (not 'age' in data or data['age'] is None):
@@ -21,7 +22,8 @@ def predict_income(data={}):
                         if (data['age'] <= 58):
                             return u'>50K'
                     if (data['education_num'] <= 13):
-                        if (not 'occupation' in data or data['occupation'] is None):
+                        if (not 'occupation' in data or data[
+                                'occupation'] is None):
                             return u'>50K'
                         if (data['occupation'] == 'Exec-managerial'):
                             return u'>50K'
@@ -29,14 +31,16 @@ def predict_income(data={}):
                             return u'>50K'
                 if (data['age'] <= 28):
                     if (data['age'] > 24):
-                        if (not 'occupation' in data or data['occupation'] is None):
+                        if (not 'occupation' in data or data[
+                                'occupation'] is None):
                             return u'<=50K'
                         if (data['occupation'] == 'Tech-support'):
                             return u'>50K'
                         if (data['occupation'] != 'Tech-support'):
                             return u'<=50K'
                     if (data['age'] <= 24):
-                        if (not 'final_weight' in data or data['final_weight'] is None):
+                        if (not 'final_weight' in data or data[
+                                'final_weight'] is None):
                             return u'<=50K'
                         if (data['final_weight'] > 492053):
                             return u'>50K'
@@ -56,7 +60,8 @@ def predict_income(data={}):
                     if (data['age'] <= 29):
                         return u'<=50K'
                 if (data['sex'] != 'Male'):
-                    if (not 'final_weight' in data or data['final_weight'] is None):
+                    if (not 'final_weight' in data or data[
+                            'final_weight'] is None):
                         return u'>50K'
                     if (data['final_weight'] > 264521):
                         if (data['hours_per_week'] > 7):
@@ -75,7 +80,8 @@ def predict_income(data={}):
                 if (not 'age' in data or data['age'] is None):
                     return u'<=50K'
                 if (data['age'] > 35):
-                    if (not 'hours_per_week' in data or data['hours_per_week'] is None):
+                    if (not 'hours_per_week' in data or data[
+                            'hours_per_week'] is None):
                         return u'<=50K'
                     if (data['hours_per_week'] > 33):
                         if (data['education_num'] > 9):
@@ -83,7 +89,8 @@ def predict_income(data={}):
                         if (data['education_num'] <= 9):
                             return u'<=50K'
                     if (data['hours_per_week'] <= 33):
-                        if (not 'workclass' in data or data['workclass'] is None):
+                        if (not 'workclass' in data or data[
+                                'workclass'] is None):
                             return u'<=50K'
                         if (data['workclass'] == 'Self-emp-inc'):
                             return u'>50K'
@@ -91,14 +98,16 @@ def predict_income(data={}):
                             return u'<=50K'
                 if (data['age'] <= 35):
                     if (data['age'] > 24):
-                        if (not 'occupation' in data or data['occupation'] is None):
+                        if (not 'occupation' in data or data[
+                                'occupation'] is None):
                             return u'<=50K'
                         if (data['occupation'] == 'Exec-managerial'):
                             return u'<=50K'
                         if (data['occupation'] != 'Exec-managerial'):
                             return u'<=50K'
                     if (data['age'] <= 24):
-                        if (not 'hours_per_week' in data or data['hours_per_week'] is None):
+                        if (not 'hours_per_week' in data or data[
+                                'hours_per_week'] is None):
                             return u'<=50K'
                         if (data['hours_per_week'] > 45):
                             return u'<=50K'
@@ -108,7 +117,8 @@ def predict_income(data={}):
                 if (not 'age' in data or data['age'] is None):
                     return u'<=50K'
                 if (data['age'] > 36):
-                    if (not 'hours_per_week' in data or data['hours_per_week'] is None):
+                    if (not 'hours_per_week' in data or data[
+                            'hours_per_week'] is None):
                         return u'<=50K'
                     if (data['hours_per_week'] > 22):
                         if (data['education_num'] > 5):
@@ -126,7 +136,8 @@ def predict_income(data={}):
                         if (data['age'] <= 35):
                             return u'<=50K'
                     if (data['workclass'] != 'Private'):
-                        if (not 'occupation' in data or data['occupation'] is None):
+                        if (not 'occupation' in data or data[
+                                'occupation'] is None):
                             return u'<=50K'
                         if (data['occupation'] == 'Machine-op-inspct'):
                             return u'>50K'
@@ -139,10 +150,12 @@ def predict_income(data={}):
             if (not 'age' in data or data['age'] is None):
                 return u'<=50K'
             if (data['age'] > 27):
-                if (not 'hours_per_week' in data or data['hours_per_week'] is None):
+                if (not 'hours_per_week' in data or data[
+                        'hours_per_week'] is None):
                     return u'<=50K'
                 if (data['hours_per_week'] > 43):
-                    if (not 'occupation' in data or data['occupation'] is None):
+                    if (not 'occupation' in data or data[
+                            'occupation'] is None):
                         return u'<=50K'
                     if (data['occupation'] == 'Exec-managerial'):
                         if (data['age'] > 41):
@@ -166,10 +179,12 @@ def predict_income(data={}):
                         if (data['age'] <= 45):
                             return u'<=50K'
             if (data['age'] <= 27):
-                if (not 'hours_per_week' in data or data['hours_per_week'] is None):
+                if (not 'hours_per_week' in data or data[
+                        'hours_per_week'] is None):
                     return u'<=50K'
                 if (data['hours_per_week'] > 38):
-                    if (not 'relationship' in data or data['relationship'] is None):
+                    if (not 'relationship' in data or data[
+                            'relationship'] is None):
                         return u'<=50K'
                     if (data['relationship'] == 'Wife'):
                         return u'>50K'
@@ -184,7 +199,8 @@ def predict_income(data={}):
             if (not 'age' in data or data['age'] is None):
                 return u'<=50K'
             if (data['age'] > 31):
-                if (not 'hours_per_week' in data or data['hours_per_week'] is None):
+                if (not 'hours_per_week' in data or data[
+                        'hours_per_week'] is None):
                     return u'<=50K'
                 if (data['hours_per_week'] > 41):
                     if (data['education_num'] > 5):
@@ -195,10 +211,12 @@ def predict_income(data={}):
                     if (data['education_num'] <= 5):
                         return u'<=50K'
                 if (data['hours_per_week'] <= 41):
-                    if (not 'occupation' in data or data['occupation'] is None):
+                    if (not 'occupation' in data or data[
+                            'occupation'] is None):
                         return u'<=50K'
                     if (data['occupation'] == 'Other-service'):
-                        if (not 'relationship' in data or data['relationship'] is None):
+                        if (not 'relationship' in data or data[
+                                'relationship'] is None):
                             return u'<=50K'
                         if (data['relationship'] == 'Wife'):
                             return u'<=50K'
@@ -211,10 +229,12 @@ def predict_income(data={}):
                             return u'<=50K'
             if (data['age'] <= 31):
                 if (data['age'] > 21):
-                    if (not 'hours_per_week' in data or data['hours_per_week'] is None):
+                    if (not 'hours_per_week' in data or data[
+                            'hours_per_week'] is None):
                         return u'<=50K'
                     if (data['hours_per_week'] > 41):
-                        if (not 'workclass' in data or data['workclass'] is None):
+                        if (not 'workclass' in data or data[
+                                'workclass'] is None):
                             return u'<=50K'
                         if (data['workclass'] == 'Private'):
                             return u'<=50K'
@@ -229,7 +249,8 @@ def predict_income(data={}):
                     if (not 'education' in data or data['education'] is None):
                         return u'<=50K'
                     if (data['education'] == '7th-8th'):
-                        if (not 'occupation' in data or data['occupation'] is None):
+                        if (not 'occupation' in data or data[
+                                'occupation'] is None):
                             return u'<=50K'
                         if (data['occupation'] == 'Other-service'):
                             return u'<=50K'
