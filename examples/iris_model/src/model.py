@@ -1,5 +1,3 @@
-
-
 def predict_pecies(sepal_width=None,
                    petal_length=None,
                    petal_width=None):
@@ -39,4 +37,4 @@ def predict_pecies(sepal_width=None,
                 if (sepal_width > 3.1):
                     return u'Iris-versicolor'
     if (petal_width <= 0.8):
-        return u'Iris-setosa'
+	return u'Iris-setosa'
