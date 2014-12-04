@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,13 +24,11 @@ from numba.typing.templates import (AttributeTemplate, ConcreteTemplate,
 from impala.udf import types
 from impala.udf import typeconv
 from impala.udf import stringdecl
-from impala.udf.types import (FunctionContext, AnyVal, BooleanVal,
-                              BooleanValType, TinyIntVal, TinyIntValType,
-                              SmallIntVal,
-                              SmallIntValType, IntVal, IntValType, BigIntVal,
-                              BigIntValType, FloatVal,
-                              FloatValType, DoubleVal, DoubleValType,
-                              StringVal, StringValType)
+from impala.udf.types import (
+    FunctionContext, AnyVal, BooleanVal, BooleanValType, TinyIntVal,
+    TinyIntValType, SmallIntVal, SmallIntValType, IntVal, IntValType,
+    BigIntVal, BigIntValType, FloatVal, FloatValType, DoubleVal, DoubleValType,
+    StringVal, StringValType)
 
 
 registry = Registry()
@@ -56,8 +54,7 @@ IntValCtor = _ctor_factory(IntVal, IntValType, ntypes.int32)
 BigIntValCtor = _ctor_factory(BigIntVal, BigIntValType, ntypes.int64)
 FloatValCtor = _ctor_factory(FloatVal, FloatValType, ntypes.float32)
 DoubleValCtor = _ctor_factory(DoubleVal, DoubleValType, ntypes.float64)
-StringValCtor = _ctor_factory(
-    StringVal, StringValType, ntypes.CPointer(ntypes.char))
+StringValCtor = _ctor_factory(StringVal, StringValType, ntypes.CPointer(ntypes.char))
 
 
 # *Val attributes
@@ -114,8 +111,9 @@ class LenStringVal(ConcreteTemplate):
 @register_function
 class CmpOpEqPtr(ConcreteTemplate):
     key = '=='
-    cases = [signature(ntypes.boolean, ntypes.CPointer(
-        ntypes.uint8), ntypes.CPointer(ntypes.uint8))]
+    cases = [signature(ntypes.boolean,
+             ntypes.CPointer(ntypes.uint8),
+             ntypes.CPointer(ntypes.uint8))]
 
 
 @register_function

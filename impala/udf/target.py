@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,21 +28,17 @@ from numba.targets.imputils import Registry, implement, impl_attribute
 
 from impala.udf import stringimpl
 from impala.udf.abi import ABIHandling, raise_return_type
-from impala.udf.types import (FunctionContext,
-                              AnyVal, BooleanVal, BooleanValType, TinyIntVal,
-                              TinyIntValType,
-                              SmallIntVal, SmallIntValType, IntVal, IntValType,
-                              BigIntVal,
-                              BigIntValType, FloatVal, FloatValType, DoubleVal,
-                              DoubleValType,
-                              StringVal, StringValType)
-from impala.udf.impl_utils import (AnyValStruct, BooleanValStruct,
-                                   TinyIntValStruct, SmallIntValStruct,
-                                   IntValStruct, BigIntValStruct,
-                                   FloatValStruct, DoubleValStruct,
-                                   StringValStruct)
-from impala.udf.impl_utils import (precompiled, _get_is_null, _set_is_null,
-                                   _conv_numba_struct_to_clang)
+from impala.udf.types import (
+    FunctionContext, AnyVal, BooleanVal, BooleanValType, TinyIntVal,
+    TinyIntValType, SmallIntVal, SmallIntValType, IntVal, IntValType,
+    BigIntVal, BigIntValType, FloatVal, FloatValType, DoubleVal, DoubleValType,
+    StringVal, StringValType)
+from impala.udf.impl_utils import (
+    AnyValStruct, BooleanValStruct, TinyIntValStruct, SmallIntValStruct,
+    IntValStruct, BigIntValStruct, FloatValStruct, DoubleValStruct,
+    StringValStruct)
+from impala.udf.impl_utils import (
+    precompiled, _get_is_null, _set_is_null, _conv_numba_struct_to_clang)
 
 
 registry = Registry()
@@ -66,8 +62,7 @@ def _ctor_factory(Struct, Type, *input_args):
 
 BooleanVal_ctor = _ctor_factory(BooleanValStruct, BooleanValType, ntypes.int8)
 TinyIntVal_ctor = _ctor_factory(TinyIntValStruct, TinyIntValType, ntypes.int8)
-SmallIntVal_ctor = _ctor_factory(
-    SmallIntValStruct, SmallIntValType, ntypes.int16)
+SmallIntVal_ctor = _ctor_factory(SmallIntValStruct, SmallIntValType, ntypes.int16)
 IntVal_ctor = _ctor_factory(IntValStruct, IntValType, ntypes.int32)
 BigIntVal_ctor = _ctor_factory(BigIntValStruct, BigIntValType, ntypes.int64)
 FloatVal_ctor = _ctor_factory(FloatValStruct, FloatValType, ntypes.float32)
@@ -81,9 +76,8 @@ def StringVal_ctor(context, builder, sig, args):
     [x] = args
     iv = StringValStruct(context, builder)
     _set_is_null(builder, iv, cgutils.false_bit)
-    fndesc = lowering.ExternalFunctionDescriptor('strlen', ntypes.uintp,
-                                                 [ntypes.CPointer(
-                                                     ntypes.char)])
+    fndesc = lowering.ExternalFunctionDescriptor(
+        'strlen', ntypes.uintp, [ntypes.CPointer(ntypes.char)])
     func = context.declare_external_function(
         cgutils.get_module(builder), fndesc)
     strlen_x = context.call_external_function(
@@ -127,8 +121,7 @@ StringVal_is_null = _is_null_attr_factory(StringValStruct, StringVal)
 # *Val.val
 BooleanVal_val = _val_attr_factory(BooleanValStruct, BooleanVal, ntypes.int8)
 TinyIntVal_val = _val_attr_factory(TinyIntValStruct, TinyIntVal, ntypes.int8)
-SmallIntVal_val = _val_attr_factory(
-    SmallIntValStruct, SmallIntVal, ntypes.int16)
+SmallIntVal_val = _val_attr_factory(SmallIntValStruct, SmallIntVal, ntypes.int16)
 IntVal_val = _val_attr_factory(IntValStruct, IntVal, ntypes.int32)
 BigIntVal_val = _val_attr_factory(BigIntValStruct, BigIntVal, ntypes.int64)
 FloatVal_val = _val_attr_factory(FloatValStruct, FloatVal, ntypes.float32)
@@ -167,19 +160,13 @@ def starval_is_none_impl(context, builder, sig, args):
     val = AnyValStruct(context, builder, value=x)
     return builder.trunc(val.is_null, lc.Type.int(1))
 
-
-register_function(
-    implement('is', BooleanVal, ntypes.none)(starval_is_none_impl))
-register_function(
-    implement('is', TinyIntVal, ntypes.none)(starval_is_none_impl))
-register_function(
-    implement('is', SmallIntVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', BooleanVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', TinyIntVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', SmallIntVal, ntypes.none)(starval_is_none_impl))
 register_function(implement('is', IntVal, ntypes.none)(starval_is_none_impl))
-register_function(
-    implement('is', BigIntVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', BigIntVal, ntypes.none)(starval_is_none_impl))
 register_function(implement('is', FloatVal, ntypes.none)(starval_is_none_impl))
-register_function(
-    implement('is', DoubleVal, ntypes.none)(starval_is_none_impl))
+register_function(implement('is', DoubleVal, ntypes.none)(starval_is_none_impl))
 
 
 @register_function
@@ -317,10 +304,9 @@ class ImpalaTargetContext(BaseContext):
             # this is equiv to _set_is_null, but changes the GEP bc of AnyVal's
             # structure
             byte = builder.zext(is_null, lc.Type.int(8))
-            builder.store(byte, builder.gep(iv2._getpointer(),
-                                            [lc.Constant.int(lc.Type.int(32),
-                                                             0)] * 2,
-                                            inbounds=True))
+            builder.store(byte, builder.gep(
+                iv2._getpointer(),
+                [lc.Constant.int(lc.Type.int(32), 0)] * 2, inbounds=True))
             return iv2._getvalue()
 
         if fromty == BooleanVal:
@@ -453,8 +439,8 @@ class ImpalaTargetContext(BaseContext):
     def build_pass_manager(self):
         opt = 0  # let Impala optimize
         # opt = 3 # optimize ourselves
-        pms = lp.build_pass_managers(tm=self.tm, opt=opt, loop_vectorize=True,
-                                     fpm=False)
+        pms = lp.build_pass_managers(
+            tm=self.tm, opt=opt, loop_vectorize=True, fpm=False)
         return pms.pm
 
     def finalize(self, func, restype, argtypes):

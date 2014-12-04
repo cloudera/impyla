@@ -892,9 +892,9 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                 return '<=50K'
                             if (relationship == 'Not-in-family'):
                                 if (occupation == 'Adm-clerical'):
-				    if (marital_status == 'Married-spouse-absent'):
+                                    if (marital_status == 'Married-spouse-absent'):
                                         return '<=50K'
-				    if (marital_status != 'Married-spouse-absent'):
+                                    if (marital_status != 'Married-spouse-absent'):
                                         return '<=50K'
                                 if (occupation != 'Adm-clerical'):
                                     if (workclass is None):

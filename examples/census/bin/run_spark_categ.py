@@ -1,7 +1,7 @@
 import sys
+from time import time
 
 sys.path.append('/home/laserson/categ-models')
-from time import time
 
 from model_0 import predict_income as predict_income_0
 from model_100 import predict_income as predict_income_100

@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,10 +26,8 @@ class ImpalaContext(object):
                  webhdfs_port=50070, hdfs_user=None, *args, **kwargs):
         # args and kwargs get passed directly into impala.dbapi.connect()
         suffix = _random_id(length=8)
-        self._temp_dir = '/tmp/impyla-%s' % suffix if temp_dir is None else \
-            temp_dir
-        self._temp_db = 'tmp_impyla_%s' % suffix if temp_db is None else \
-            temp_db
+        self._temp_dir = '/tmp/impyla-%s' % suffix if temp_dir is None else temp_dir
+        self._temp_db = 'tmp_impyla_%s' % suffix if temp_db is None else temp_db
         self._conn = connect(*args, **kwargs)
         self._cursor = self._conn.cursor()
         # used for pywebhdfs cleanup of temp dir; not required
@@ -73,21 +71,18 @@ class ImpalaContext(object):
         try:
             from requests.exceptions import ConnectionError
             from pywebhdfs.webhdfs import PyWebHdfsClient
-
-            hdfs_client = PyWebHdfsClient(host=self._nn_host,
-                                          port=self._webhdfs_port,
-                                          user_name=self._hdfs_user)
-            hdfs_client.delete_file_dir(
-                self._temp_dir.lstrip('/'), recursive=True)
+            hdfs_client = PyWebHdfsClient(
+                host=self._nn_host, port=self._webhdfs_port,
+                user_name=self._hdfs_user)
+            hdfs_client.delete_file_dir(self._temp_dir.lstrip('/'),
+                                        recursive=True)
         except ImportError:
             import sys
-
             sys.stderr.write("Could not import requests or pywebhdfs. "
                              "You must delete the temporary directory "
                              "manually: %s" % self._temp_dir)
         except ConnectionError:
             import sys
-
             sys.stderr.write("Could not connect via pywebhdfs. "
                              "You must delete the temporary directory "
                              "manually: %s" % self._temp_dir)

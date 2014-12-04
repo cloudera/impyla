@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,11 +30,11 @@ from impala.tests import _dbapi20_tests
 if 'IMPALA_HOST' not in os.environ:
     raise ValueError("Please set IMPALA_HOST env variable")
 if 'IMPALA_PORT' not in os.environ:
-    print >> sys.stderr, "Using default Impala HiveServer2 port of 21050, " \
-                         "or set IMPALA_PORT env variable"
+    print >>sys.stderr, ("Using default Impala HiveServer2 port of 21050, or "
+                         "set IMPALA_PORT env variable")
 if 'IMPALA_PROTOCOL' not in os.environ:
-    print >> sys.stderr, "Using default Impala protocol of 'hiveserver2', " \
-                         "or set IMPALA_PROTOCOL env variable"
+    print >>sys.stderr, ("Using default Impala protocol of 'hiveserver2', or "
+                         "set IMPALA_PROTOCOL env variable")
 host = os.environ['IMPALA_HOST']
 port = int(os.environ.get('IMPALA_PORT', 21050))
 protocol = os.environ.get('IMPALA_PROTOCOL', 'hiveserver2')

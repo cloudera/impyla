@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,13 +20,12 @@ from impala._thrift_gen.ExecStats.ttypes import TExecStats
 
 from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport, TTransportException
-from thrift.protocol.TBinaryProtocol import \
-    TBinaryProtocolAccelerated as TBinaryProtocol
+from thrift.protocol.TBinaryProtocol import (
+    TBinaryProtocolAccelerated as TBinaryProtocol)
 from thrift.Thrift import TApplicationException
 
 
 class RpcStatus:
-
     """Convenience enum to describe Rpc return statuses"""
     OK = 0
     ERROR = 1
@@ -37,13 +36,11 @@ def __options_to_string_list(set_query_options):
 
 
 def build_default_query_options_dict(service):
-    # The default query options are retrieved from a hs2_client call,
-    # and are dependent
-    # on the impalad to which a connection has been established. They need
-    # to be
-    # refreshed each time a connection is made. This is particularly helpful
-    # when
-    # there is a version mismatch between the shell and the impalad.
+    # The default query options are retrieved from a hs2_client call, and are
+    # dependent on the impalad to which a connection has been established. They
+    # need to be refreshed each time a connection is made. This is particularly
+    # helpful when there is a version mismatch between the shell and the
+    # impalad.
     try:
         get_default_query_options = service.get_default_configuration(False)
     except:
@@ -54,34 +51,27 @@ def build_default_query_options_dict(service):
         raise RPCError("Unable to retrieve default query options")
     return options
 
-
 def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     """Direct translation of Coordinator::PrintExecSummary() to recursively
-    build a list
-    of rows of summary statistics, one per exec node
+    build a list of rows of summary statistics, one per exec node
 
     summary: the TExecSummary object that contains all the summary data
 
     idx: the index of the node to print
 
-    is_fragment_root: true if the node to print is the root of a fragment (
-    and therefore
-    feeds into an exchange)
+    is_fragment_root: true if the node to print is the root of a fragment (and
+    therefore feeds into an exchange)
 
     indent_level: the number of spaces to print before writing the node's
-    label, to give
-    the appearance of a tree. The 0th child of a node has the same
-    indent_level as its
-    parent. All other children have an indent_level of one greater than
-    their parent.
+    label, to give the appearance of a tree. The 0th child of a node has the
+    same indent_level as its parent. All other children have an indent_level of
+    one greater than their parent.
 
     output: the list of rows into which to append the rows produced for this
-    node and its
-    children.
+    node and its children.
 
-    Returns the index of the next exec node in summary.exec_nodes that
-    should be
-    processed, used internally to this method only.
+    Returns the index of the next exec node in summary.exec_nodes that should
+    be processed, used internally to this method only.
     """
     attrs = ["latency_ns", "cpu_time_ns", "cardinality", "memory_used"]
 
@@ -105,12 +95,9 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
         avg_time = 0
 
     # If the node is a broadcast-receiving exchange node, the cardinality of
-    # rows produced
-    # is the max over all instances (which should all have received the same
-    # number of
-    # rows). Otherwise, the cardinality is the sum over all instances which
-    # process
-    # disjoint partitions.
+    # rows produced is the max over all instances (which should all have
+    # received the same number of rows). Otherwise, the cardinality is the sum
+    # over all instances which process disjoint partitions.
     if node.is_broadcast and is_fragment_root:
         cardinality = max_stats.cardinality
     else:
@@ -157,9 +144,8 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     output.append(row)
     try:
         sender_idx = summary.exch_to_sender_map[idx]
-        # This is an exchange node, so the sender is a fragment root,
-        # and should be printed
-        # next.
+        # This is an exchange node, so the sender is a fragment root, and
+        # should be printed next.
         build_summary_table(summary, sender_idx, True, indent_level, output)
     except (KeyError, TypeError):
         # Fall through if idx not in map, or if exch_to_sender_map itself is
@@ -169,23 +155,21 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     idx += 1
     if node.num_children > 0:
         first_child_output = []
-        idx = \
-            build_summary_table(
-                summary, idx, False, indent_level, first_child_output)
+        idx = build_summary_table(summary, idx, False, indent_level,
+                                  first_child_output)
         for child_idx in xrange(1, node.num_children):
-            # All other children are indented (we only have 0, 1 or 2
-            # children for every exec
-            # node at the moment)
-            idx = build_summary_table(
-                summary, idx, False, indent_level + 1, output)
+            # All other children are indented (we only have 0, 1 or 2 children
+            # for every exec node at the moment)
+            idx = build_summary_table(summary, idx, False, indent_level + 1,
+                                      output)
         output += first_child_output
     return idx
 
 
 def _get_socket(host, port, use_ssl, ca_cert):
+    # based on the Impala shell impl
     if use_ssl:
         from thrift.transport.TSSLSocket import TSSLSocket
-
         if ca_cert is None:
             return TSSLSocket(host, port, validate=False)
         else:
@@ -196,8 +180,7 @@ def _get_socket(host, port, use_ssl, ca_cert):
 
 def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
                       use_ldap=False, ldap_user=None, ldap_password=None,
-                      use_kerberos=False,
-                      kerberos_service_name='impala'):
+                      use_kerberos=False, kerberos_service_name='impala'):
     sock = _get_socket(host, port, use_ssl, ca_cert)
     sock.setTimeout(timeout * 1000.)
     transport = _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
@@ -207,11 +190,7 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
     service = ImpalaService.Client(protocol)
     return service
     # We get a TApplicationException if the transport is valid, but the RPC
-    # does not
-    # exist.
-
-
-# _get_socket and _get_transport based on the Impala shell impl
+    # does not exist.
 
 
 def ping(service):
@@ -220,8 +199,8 @@ def ping(service):
 
 
 def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
-                   use_kerberos,
-                   kerberos_service_name):
+                   use_kerberos, kerberos_service_name):
+    # based on the Impala shell impl
     if not use_ldap and not use_kerberos:
         return TBufferedTransport(sock)
     try:
@@ -256,11 +235,9 @@ def reconnect(service):
     service._iprot.trans.open()
 
 
-# TODO: Pass is actual set_query_options
-
-
 def create_beeswax_query(query_str, user, set_query_options):
     """Create a beeswax query object from a query string"""
+    # TODO: Pass is actual set_query_options
     query = BeeswaxService.Query()
     query.hadoop_user = user
     query.query = query_str
@@ -278,14 +255,14 @@ def execute_statement(service, query):
 
 def fetch_internal(service, last_query_handle, buffer_size):
     """Fetch all the results.
-    This function serves a generator to create an iterable of the results.
-    Result rows are passed to the shell."""
 
+    This function serves a generator to create an iterable of the results.
+    Result rows are passed to the shell.
+    """
     result_rows = []
     while True:
         rpc_result = __do_rpc(
-            lambda: service.fetch(last_query_handle, False,
-                                  buffer_size))
+            lambda: service.fetch(last_query_handle, False, buffer_size))
 
         result, status = rpc_result
 
@@ -359,17 +336,16 @@ def get_summary(service, last_query_handle):
 def __do_rpc(rpc):
     """Executes the provided callable."""
     # if not self.connected:
-    # raise DisconnectedError("Not connected (use CONNECT to establish a
-    # connection)")
-    # return None, RpcStatus.ERROR
+    #     raise DisconnectedError(
+    #         "Not connected (use CONNECT to establish a connection)")
+    #     return None, RpcStatus.ERROR
     try:
         ret = rpc()
         status = RpcStatus.OK
         # TODO: In the future more advanced error detection/handling can be
-        # done based on
-        # the TStatus return value. For now, just print any error(s) that
-        # were encountered
-        # and validate the result of the operation was a success.
+        # done based on the TStatus return value. For now, just print any
+        # error(s) that were encountered and validate the result of the
+        # operation was a success.
         if ret is not None and isinstance(ret, TStatus):
             if ret.status_code != TStatusCode.OK:
                 print(ret.error_msgs)

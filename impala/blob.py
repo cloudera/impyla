@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -73,8 +73,9 @@ class BlobStore(object):
         if not isinstance(key, basestring):
             raise ValueError("key must be a string")
         # TODO: I should make sure to escape single quotes here
-        self._ic._cursor.execute("SELECT value FROM %s WHERE key=%s" % (
-            self._name, _py_to_sql_string(key)))
+        self._ic._cursor.execute(
+            "SELECT value FROM %s WHERE key=%s" % (
+                self._name, _py_to_sql_string(key)))
         results = self._ic._cursor.fetchall()
         if len(results) == 0:
             raise KeyError("%s not found." % key)
@@ -88,8 +89,9 @@ class BlobStore(object):
 
     def has_key(self, key):
         # TODO: I should make sure to escape single quotes here
-        self._ic._cursor.execute("SELECT COUNT(*) FROM %s WHERE key=%s" % (
-            self._name, _py_to_sql_string(key)))
+        self._ic._cursor.execute(
+            "SELECT COUNT(*) FROM %s WHERE key=%s" % (
+                self._name, _py_to_sql_string(key)))
         count = self._ic._cursor.fetchall()[0][0]
         if count == 0:
             return False
@@ -112,11 +114,10 @@ class BlobStore(object):
         # TODO: I should make sure to escape single quotes here
         decoded_value = decode_fn(value)
         self._ic._cursor.execute("""
-                INSERT INTO %s
-                VALUES (%s, %s)
-                """ % (
-            self._name, _py_to_sql_string(key),
-            _py_to_sql_string(decoded_value)))
+            INSERT INTO %s
+            VALUES (%s, %s)
+            """ % (self._name, _py_to_sql_string(key),
+                   _py_to_sql_string(decoded_value)))
 
     def put(self, key, expr, from_, safe=False):
         if not isinstance(key, basestring):
@@ -127,10 +128,10 @@ class BlobStore(object):
 
         # TODO: I should make sure to escape single quotes here
         self._ic._cursor.execute("""
-                INSERT INTO %s
-                SELECT %s, %s
-                FROM %s
-                """ % (self._name, _py_to_sql_string(key), expr, from_))
+            INSERT INTO %s
+            SELECT %s, %s
+            FROM %s
+            """ % (self._name, _py_to_sql_string(key), expr, from_))
 
     def distribute_value_to_table(self, key, table_name):
         """Distributed value assoc with key to all rows in table_name.
@@ -142,10 +143,10 @@ class BlobStore(object):
             raise ValueError("key must be string")
 
         from_with_side_data = """
-                %(table_name)s CROSS JOIN %(blob_store)s
-                WHERE %(blob_store)s.key = %(key)s
-                """ % {'table_name': table_name,
-                       'blob_store': self.name,
-                       'key': _py_to_sql_string(key)}
+            %(table_name)s CROSS JOIN %(blob_store)s
+            WHERE %(blob_store)s.key = %(key)s
+            """ % {'table_name': table_name,
+                   'blob_store': self.name,
+                   'key': _py_to_sql_string(key)}
 
         return from_with_side_data

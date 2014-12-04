@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,22 +32,19 @@ paramstyle = 'pyformat'
 
 
 def connect(host='localhost', port=21050, protocol='hiveserver2',
-            database=None,
-            timeout=45, use_ssl=False, ca_cert=None, use_ldap=False,
-            ldap_user=None, ldap_password=None, use_kerberos=False,
-            kerberos_service_name='impala'):
+            database=None, timeout=45, use_ssl=False, ca_cert=None,
+            use_ldap=False, ldap_user=None, ldap_password=None,
+            use_kerberos=False, kerberos_service_name='impala'):
     # PEP 249
     if protocol.lower() == 'beeswax':
-        service = connect_to_beeswax(host, port, timeout, use_ssl, ca_cert,
-                                     use_ldap, ldap_user, ldap_password,
-                                     use_kerberos,
-                                     kerberos_service_name)
+        service = connect_to_beeswax(
+            host, port, timeout, use_ssl, ca_cert, use_ldap, ldap_user,
+            ldap_password, use_kerberos, kerberos_service_name)
         return BeeswaxConnection(service, default_db=database)
     elif protocol.lower() == 'hiveserver2':
-        service = connect_to_hiveserver2(host, port, timeout, use_ssl, ca_cert,
-                                         use_ldap, ldap_user, ldap_password,
-                                         use_kerberos,
-                                         kerberos_service_name)
+        service = connect_to_hiveserver2(
+            host, port, timeout, use_ssl, ca_cert, use_ldap, ldap_user,
+            ldap_password, use_kerberos, kerberos_service_name)
         return HiveServer2Connection(service, default_db=database)
     else:
         raise NotSupportedError(

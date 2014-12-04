@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -108,10 +108,8 @@ class BeeswaxCursor(Cursor):
     def buffersize(self):
         # this is for internal use.  it provides an alternate default value for
         # the size of the buffer, so that calling .next() will read multiple
-        # rows into a buffer if arraysize hasn't been set.  (otherwise,
-        # we'd get
-        # an unbuffered impl because the PEP 249 default value of arraysize is
-        # 1)
+        # rows into a buffer if arraysize hasn't been set.  (otherwise, we'd get
+        # an unbuffered impl because the PEP 249 default value of arraysize is 1)
         return self._buffersize if self._buffersize else 1024
 
     @property
@@ -140,8 +138,8 @@ class BeeswaxCursor(Cursor):
 
         def op():
             if parameters:
-                self._last_operation_string = _bind_parameters(
-                    operation, parameters)
+                self._last_operation_string = _bind_parameters(operation,
+                                                               parameters)
             else:
                 self._last_operation_string = operation
             query = rpc.create_beeswax_query(self._last_operation_string,
@@ -160,10 +158,10 @@ class BeeswaxCursor(Cursor):
         self._wait_to_finish()  # make execute synchronous
         if self.has_result_set:
             schema = rpc.get_results_metadata(self.service,
-                                              self._last_operation_handle)
-            self._description = [tuple(
-                [tup.name, tup.type.upper()] + [None, None, None, None, None])
-                for tup in schema]
+                    self._last_operation_handle)
+            self._description = [tuple([tup.name, tup.type.upper()] +
+                                 [None, None, None, None, None])
+                                 for tup in schema]
         else:
             self._last_operation_active = False
             rpc.close_query(self.service, self._last_operation_handle)
@@ -181,8 +179,8 @@ class BeeswaxCursor(Cursor):
     def _wait_to_finish(self):
         loop_start = time.time()
         while True:
-            operation_state = rpc.get_query_state(self.service,
-                                                  self._last_operation_handle)
+            operation_state = rpc.get_query_state(
+                self.service, self._last_operation_handle)
             if operation_state == self.query_state["FINISHED"]:
                 break
             elif operation_state == self.query_state["EXCEPTION"]:
@@ -205,9 +203,8 @@ class BeeswaxCursor(Cursor):
         for parameters in seq_of_parameters:
             self.execute(operation, parameters)
             if self.has_result_set:
-                raise ProgrammingError(
-                    "Operations that have result sets are not allowed with "
-                    "executemany.")
+                raise ProgrammingError("Operations that have result sets are "
+                                       "not allowed with executemany.")
 
     def fetchone(self):
         # PEP 249
@@ -259,8 +256,8 @@ class BeeswaxCursor(Cursor):
         if len(self._buffer) > 0:
             return self._buffer.pop(0)
         elif self._last_operation_active:
-            # self._buffer is empty here and op is active: try to pull more
-            # rows
+            # self._buffer is empty here and op is active: try to pull
+            # more rows
             rows = rpc.fetch_internal(self.service,
                                       self._last_operation_handle,
                                       self.buffersize)
@@ -275,8 +272,9 @@ class BeeswaxCursor(Cursor):
             raise StopIteration
 
     def ping(self):
-        """Checks connection to server by requesting some info from the
-        server."""
+        """Checks connection to server by requesting some info
+        from the server.
+        """
         return rpc.ping(self.service)
 
     def get_log(self):
@@ -289,8 +287,7 @@ class BeeswaxCursor(Cursor):
     def get_summary(self):
         return rpc.get_summary(self.service, self._last_operation_handle)
 
-    def build_summary_table(
-            self, summary, output, idx=0, is_fragment_root=False,
-            indent_level=0):
+    def build_summary_table(self, summary, output, idx=0,
+                            is_fragment_root=False, indent_level=0):
         return rpc.build_summary_table(
             summary, idx, is_fragment_root, indent_level, output)

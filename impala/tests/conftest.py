@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -102,7 +102,6 @@ def temp_db():
 # main ImpalaContext fixture; pretty much everything else depends on this
 # somehow
 
-
 @fixture(scope='session')
 def ic(request, temp_hdfs_dir, temp_db, nn_host, webhdfs_port, hdfs_user, host,
        port, protocol):
@@ -128,7 +127,6 @@ def hdfs_client(ic):
     if ic._nn_host is None:
         skip("NAMENODE_HOST not set; skipping...")
     from pywebhdfs.webhdfs import PyWebHdfsClient
-
     hdfs_client = PyWebHdfsClient(host=ic._nn_host, port=ic._webhdfs_port,
                                   user_name=ic._hdfs_user)
     return hdfs_client

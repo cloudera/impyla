@@ -5,7 +5,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,8 +39,8 @@ llvm2impala = {
     'struct.impala_udf::TimestampVal': 'TIMESTAMP'
 }
 
-parser = argparse.ArgumentParser(
-    description="Register clang-compiled UDFs with Impala")
+parser = argparse.ArgumentParser(description="Register clang-compiled UDFs "
+                                             "with Impala")
 parser.add_argument('-i', '--llvm-path', required=True,
                     help="Local path to LLVM module")
 parser.add_argument('-o', '--hdfs-path', required=True,
@@ -70,8 +70,8 @@ args = parser.parse_args()
 
 # do some input validation
 if len(args.name) != len(args.return_type):
-    raise ValueError(
-        "Must supply a return type or each specified fucntion name.")
+    raise ValueError("Must supply a return type or each specified "
+                     "function name.")
 if not args.hdfs_path.endswith('.ll'):
     raise ValueError("The HDFS file name must end with .ll")
 
@@ -93,14 +93,13 @@ for function in ll.functions:
         functions.append((symbol, arg_types))
     except (AttributeError, KeyError):
         # this process could fail for non-UDF helper functions...just ignore
-        # them,
-        # because we're not going to be registering them anyway
+        # them, because we're not going to be registering them anyway
         log("Had trouble with function %s; moving on..." % symbol)
         pass
 
 # transfer the LLVM module to HDFS
-hdfs_client = PyWebHdfsClient(
-    host=args.nn_host, port=args.webhdfs_port, user_name=args.user)
+hdfs_client = PyWebHdfsClient(host=args.nn_host, port=args.webhdfs_port,
+                              user_name=args.user)
 hdfs_client.create_file(args.hdfs_path.lstrip('/'), bc, overwrite=args.force)
 log("Transferred LLVM IR to HDFS at %s" % args.hdfs_path)
 
@@ -127,10 +126,9 @@ for (udf_name, return_type) in zip(args.name, args.return_type):
     if args.force and impala_name in registered_functions:
         log("Overwriting function %s" % impala_name)
         cursor.execute("DROP FUNCTION %s" % impala_name)
-    register_query = "CREATE FUNCTION %s RETURNS %s LOCATION '%s' " \
-                     "SYMBOL='%s'" % (
-                         impala_name,
-                         return_type, args.hdfs_path, symbol)
+    register_query = (
+        "CREATE FUNCTION %s RETURNS %s LOCATION '%s' SYMBOL='%s'" % (
+            impala_name, return_type, args.hdfs_path, symbol))
     log(register_query)
     cursor.execute(register_query)
     log("Successfully registered %s" % impala_name)

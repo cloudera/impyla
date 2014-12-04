@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,8 +20,8 @@ import numpy as np
 from sklearn.base import BaseEstimator
 
 from impala.blob import BlobStore
-from impala.util import create_view_from_query, compute_result_schema, \
-    drop_view
+from impala.util import (create_view_from_query, compute_result_schema,
+                         drop_view)
 
 # TO CREATE A NEW ESTIMATOR:
 #
@@ -30,7 +30,7 @@ from impala.util import create_view_from_query, compute_result_schema, \
 # 2. Override _uda_name() to return the name of the registered UDA for this
 # estimator.  The UDA should have a signature like so:
 #
-# uda(prev_model, )
+#   uda(prev_model, )
 #
 # 3. Override _parameter_list() to return a string that is a comma-separated
 # list of the expected parameter values to add to the end of the UDA call.  No
@@ -64,8 +64,9 @@ class ImpalaEstimator(BaseEstimator):
         if len(parameter_list) > 0:
             parameter_list = ', ' + parameter_list
 
-        data_view = create_view_from_query(
-            ic._cursor, bdf._query_ast.to_sql(), safe=True)
+        data_view = create_view_from_query(ic._cursor,
+                                           bdf._query_ast.to_sql(),
+                                           safe=True)
         columns = [tup[0] for tup in bdf.schema]
         if label_column not in columns:
             raise ValueError(
@@ -73,26 +74,25 @@ class ImpalaEstimator(BaseEstimator):
                 label_column)
         data_columns = [c for c in columns if c != label_column]
         model_value = """
-                %(uda_name)s(%(model)s, %(observation)s, %(label_column)s%(
-                parameter_list)s)
-                """ % {'uda_name': uda_name,
-                       'model': '%s.value' % model_store.name,
-                       'observation': 'toarray(%s)' % ', '.join(
-                           ['%s.%s' % (data_view, col) for col in
-                            data_columns]),
-                       'label_column': label_column,
-                       'parameter_list': parameter_list}
-        derived_from_clause = model_store.distribute_value_to_table(
-            prev_key, data_view)
-        # actual query execution here
+            %(uda_name)s(%(model)s, %(observation)s,
+            %(label_column)s%(parameter_list)s)
+            """ % {'uda_name': uda_name,
+                   'model': '%s.value' % model_store.name,
+                   'observation': 'toarray(%s)' % ', '.join(
+                        ['%s.%s' % (data_view, col) for col in data_columns]),
+                   'label_column': label_column,
+                   'parameter_list': parameter_list}
+        derived_from_clause = model_store.distribute_value_to_table(prev_key,
+                                                                    data_view)
+        # actual query execution here:
         model_store.put(next_key, model_value, derived_from_clause)
         drop_view(ic._cursor, data_view)
         self.coef_ = self._decode_coef(model_store[next_key])
 
     def partial_fit(self, ic, model_store, bdf, label_column, epoch):
         prev_epoch = epoch - 1
-        self._iterate_estimator(ic, model_store, str(prev_epoch),
-                                str(epoch), bdf, label_column)
+        self._iterate_estimator(ic, model_store, str(prev_epoch), str(epoch),
+                                bdf, label_column)
 
     def fit(self, ic, bdf, label_column):
         """Fit model.

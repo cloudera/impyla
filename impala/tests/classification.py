@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,11 +26,10 @@ rows = 10000
 cols = 2
 
 # class0 = np.random.multivariate_normal(np.random.normal(0, 1, cols),
-# np.diag(np.exp(np.random.normal(0, 1, cols))),
-# rows / 2)
+#                                        np.diag(np.exp(np.random.normal(0, 1, cols))),
+#                                        rows / 2)
 # class1 = np.random.multivariate_normal(np.random.normal(0, 1, cols),
-#                                        np.diag(np.exp(np.random.normal(0,
-# 1, cols))),
+#                                        np.diag(np.exp(np.random.normal(0, 1, cols))),
 #                                        rows - rows / 2)
 
 class0 = np.random.multivariate_normal([2, 2],
@@ -61,8 +60,7 @@ cursor.execute("CREATE TABLE test_logr (%s, label BOOLEAN)" %
                ', '.join(['feat%i DOUBLE' % i for i in xrange(cols)]))
 data_strings = []
 for i in xrange(rows):
-    row_string = '(' + ', '.join([str(val) for val in data[i, :-1]])\
-                 + ', %s' % ('true' if data[i, -1] > 0 else 'false') + ')'
+    row_string = '(' + ', '.join([str(val) for val in data[i, :-1]]) + ', %s' % ('true' if data[i, -1] > 0 else 'false') + ')'
     data_strings.append(row_string)
     if (i + 1) % 1000 == 0:
         sys.stdout.write("%i\n" % (i + 1))
@@ -133,12 +131,10 @@ fig.show()
 
 
 # model_value = """
-#                 %(udf_name)s(%(model)s, %(observation)s, %(label_column)s,
-#  %(step_size)f, %(mu)f)
+#                 %(udf_name)s(%(model)s, %(observation)s, %(label_column)s, %(step_size)f, %(mu)f)
 #                 """ % {'udf_name': 'logr',
 #                        'model': '%s.value' % model_store.name,
-#                        'observation': 'toarray(%s)' % ', '.join(['%s.%s' %
-#  (data_view, col) for col in data_columns]),
+#                        'observation': 'toarray(%s)' % ', '.join(['%s.%s' % (data_view, col) for col in data_columns]),
 #                        'label_column': label_column,
 #                        'step_size': step_size,
 #                        'mu': mu}
@@ -155,8 +151,7 @@ fig.show()
 # resp = service.GetColumns(req)
 # impala.rpc.err_if_rpc_not_ok(resp)
 # operation_handle = resp.operationHandle
-# results = impala.rpc.fetch_results(service=service,
-# operation_handle=operation_handle)
+# results = impala.rpc.fetch_results(service=service, operation_handle=operation_handle)
 
 
 # def delete_all_tables(cursor):

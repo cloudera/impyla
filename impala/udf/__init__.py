@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,7 +35,6 @@ def udf(signature):
     def wrapper(pyfunc):
         udfobj = UDF(pyfunc, signature)
         return udfobj
-
     return wrapper
 
 
@@ -112,12 +111,12 @@ try:
         impala_name = '%s.%s(%s)' % (database, udf_name, ', '.join(arg_types))
         if overwrite:
             ic._cursor.execute("DROP FUNCTION IF EXISTS %s" % impala_name)
-        register_query = "CREATE FUNCTION %s RETURNS %s LOCATION '%s' " \
-                         "SYMBOL='%s'" % (
-                             impala_name,
-                             return_type, hdfs_path, symbol)
+        register_query = ("CREATE FUNCTION %s RETURNS %s "
+                          "LOCATION '%s' SYMBOL='%s'") % (impala_name,
+                                                          return_type,
+                                                          hdfs_path, symbol)
         ic._cursor.execute(register_query)
 
 except ImportError:
-    print "Failed to import pywebhdfs; you must ship your Python UDFs " \
-          "manually."
+    print ("Failed to import pywebhdfs; you must ship your "
+           "Python UDFs manually.")

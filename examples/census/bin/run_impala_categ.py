@@ -1,11 +1,11 @@
 import sys
-
-sys.path.append('/Users/laserson/repos/impyla/examples/census/categ-models')
 from time import time
 
 from impala.dbapi import connect
-from impala.udf import ship_udf, udf, FunctionContext, StringVal, IntVal, \
-    BigIntVal
+from impala.udf import (ship_udf, udf, FunctionContext, StringVal, IntVal,
+                        BigIntVal)
+
+sys.path.append('/Users/laserson/repos/impyla/examples/census/categ-models')
 
 from model_0 import predict_income as predict_income_0
 from model_100 import predict_income as predict_income_100
@@ -67,6 +67,7 @@ for size in sizes:
     distinct = cursor.fetchall()
     end_score = time()
 
-    print "impala_categ,%i,%i,%.2f,%.2f" % (
-        size, len(udfs[size].func_code.co_code), end_score - start_score,
-        end_compile - start_compile)
+    print "impala_categ,%i,%i,%.2f,%.2f" % (size,
+                                            len(udfs[size].func_code.co_code),
+                                            end_score - start_score,
+                                            end_compile - start_compile)

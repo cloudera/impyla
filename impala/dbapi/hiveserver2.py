@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,7 @@ from impala._thrift_gen.TCLIService.ttypes import TProtocolVersion
 class HiveServer2Connection(Connection):
     # PEP 249
     # HiveServer2Connection objects are associated with a TCLIService.Client
-    #  thrift service
+    # thrift service
     # it's instantiated with an alive TCLIService.Client
 
     def __init__(self, service, default_db=None):
@@ -51,11 +51,10 @@ class HiveServer2Connection(Connection):
         if user is None:
             user = getpass.getuser()
         if session_handle is None:
-            (session_handle, default_config, hs2_protocol_version) = \
-                rpc.open_session(self.service, user, configuration)
-        cursor = HiveServer2Cursor(self.service, session_handle,
-                                   default_config,
-                                   hs2_protocol_version)
+            (session_handle, default_config, hs2_protocol_version) = (
+                rpc.open_session(self.service, user, configuration))
+        cursor = HiveServer2Cursor(
+            self.service, session_handle, default_config, hs2_protocol_version)
         if self.default_db is not None:
             cursor.execute('USE %s' % self.default_db)
         return cursor
@@ -70,8 +69,8 @@ class HiveServer2Cursor(Cursor):
     # they are instantiated with alive session_handles
 
     def __init__(self, service, session_handle, default_config=None,
-                 hs2_protocol_version=TProtocolVersion
-                 .HIVE_CLI_SERVICE_PROTOCOL_V6):
+                 hs2_protocol_version=(
+                    TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6)):
         self.service = service
         self.session_handle = session_handle
         self.default_config = default_config
@@ -115,10 +114,9 @@ class HiveServer2Cursor(Cursor):
     def buffersize(self):
         # this is for internal use.  it provides an alternate default value for
         # the size of the buffer, so that calling .next() will read multiple
-        # rows into a buffer if arraysize hasn't been set.  (otherwise,
-        # we'd get
-        # an unbuffered impl because the PEP 249 default value of arraysize is
-        # 1)
+        # rows into a buffer if arraysize hasn't been set.  (otherwise, we'd
+        # get an unbuffered impl because the PEP 249 default value of arraysize
+        # is 1)
         return self._buffersize if self._buffersize else 1024
 
     @property
@@ -143,8 +141,8 @@ class HiveServer2Cursor(Cursor):
         # PEP 249
         def op():
             if parameters:
-                self._last_operation_string = _bind_parameters(
-                    operation, parameters)
+                self._last_operation_string = _bind_parameters(operation,
+                                                               parameters)
             else:
                 self._last_operation_string = operation
             self._last_operation_handle = rpc.execute_statement(
@@ -161,9 +159,9 @@ class HiveServer2Cursor(Cursor):
         self._wait_to_finish()  # make execute synchronous
         if self.has_result_set:
             schema = rpc.get_result_schema(self.service,
-                                           self._last_operation_handle)
-            self._description = [
-                tup + (None, None, None, None, None) for tup in schema]
+                    self._last_operation_handle)
+            self._description = [tup + (None, None, None, None, None)
+                                 for tup in schema]
 
     def _reset_state(self):
         self._buffer = []
@@ -177,9 +175,8 @@ class HiveServer2Cursor(Cursor):
     def _wait_to_finish(self):
         loop_start = time.time()
         while True:
-            operation_state = rpc.get_operation_status(self.service,
-                                                       self
-                                                       ._last_operation_handle)
+            operation_state = rpc.get_operation_status(
+                self.service, self._last_operation_handle)
             if operation_state == 'ERROR_STATE':
                 raise OperationalError("Operation is in ERROR_STATE")
             if operation_state in ['FINISHED_STATE', 'CANCELED_STATE',
@@ -204,9 +201,8 @@ class HiveServer2Cursor(Cursor):
         for parameters in seq_of_parameters:
             self.execute(operation, parameters)
             if self.has_result_set:
-                raise ProgrammingError(
-                    "Operations that have result sets are not allowed with "
-                    "executemany.")
+                raise ProgrammingError("Operations that have result sets are "
+                                       "not allowed with executemany.")
 
     def fetchone(self):
         # PEP 249
@@ -260,8 +256,7 @@ class HiveServer2Cursor(Cursor):
         elif self._last_operation_active:
             # self._buffer is empty here and op is active: try to pull more
             # rows
-            rows = rpc.fetch_results(self.service,
-                                     self._last_operation_handle,
+            rows = rpc.fetch_results(self.service, self._last_operation_handle,
                                      self.hs2_protocol_version,
                                      self.description, self.buffersize)
             self._buffer.extend(rows)
@@ -288,9 +283,8 @@ class HiveServer2Cursor(Cursor):
         return rpc.get_summary(
             self.service, self._last_operation_handle, self.session_handle)
 
-    def build_summary_table(
-            self, summary, output, idx=0, is_fragment_root=False,
-            indent_level=0):
+    def build_summary_table(self, summary, output, idx=0,
+                            is_fragment_root=False, indent_level=0):
         return rpc.build_summary_table(
             summary, idx, is_fragment_root, indent_level, output)
 
@@ -300,7 +294,6 @@ class HiveServer2Cursor(Cursor):
             self._last_operation_handle = rpc.get_databases(self.service,
                                                             self
                                                             .session_handle)
-
         self._execute_sync(op)
 
     def database_exists(self, db_name):
@@ -316,7 +309,6 @@ class HiveServer2Cursor(Cursor):
             self._last_operation_handle = rpc.get_tables(self.service,
                                                          self.session_handle,
                                                          database_name)
-
         self._execute_sync(op)
 
     def table_exists(self, table_name, database_name=None):
@@ -332,11 +324,8 @@ class HiveServer2Cursor(Cursor):
 
         def op():
             self._last_operation_string = "RPC_DESCRIBE_TABLE"
-            self._last_operation_handle = rpc.get_table_schema(self.service,
-                                                               self
-                                                               .session_handle,
-                                                               table_name,
-                                                               database_name)
+            self._last_operation_handle = rpc.get_table_schema(
+                self.service, self.session_handle, table_name, database_name)
 
         self._execute_sync(op)
         results = self.fetchall()

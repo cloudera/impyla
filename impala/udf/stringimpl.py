@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -77,12 +77,11 @@ def string_split_2(context, builder, sig, args):
 # @register_function
 # @implement(string.split, StringVal, StringVal, IntVal)
 # def string_split_3(context, builder, sig, args):
-# import ipdb
-# ipdb.set_trace()
-# module = cgutils.get_module(builder)
-# precomp_func = context._get_precompiled_function("StringSplitImpl")
-#     func = module.get_or_insert_function(precomp_func.type.pointee,
-# precomp_func.name)
+#     import ipdb
+#     ipdb.set_trace()
+#     module = cgutils.get_module(builder)
+#     precomp_func = context._get_precompiled_function("StringSplitImpl")
+#     func = module.get_or_insert_function(precomp_func.type.pointee, precomp_func.name)
 #     fnctx_arg = context.get_arguments(cgutils.get_function(builder))[0]
 #     cfnctx_arg = builder.bitcast(fnctx_arg, func.args[0].type)
 #     [s, sep, maxsplit] = args
@@ -91,9 +90,9 @@ def string_split_2(context, builder, sig, args):
 #     cmaxsplit = _conv_numba_struct_to_clang(builder, s, func.args[3].type)
 #     array = builder.call(func, [cfnctx_arg, cs, csep, cmaxsplit])
 #     pass
-# allocate array of StringVals
-# fill the array with splits (up through max space) and return total splits
+#     # allocate array of StringVals
+#     # fill the array with splits (up through max space) and return total splits
 
-# count the number of StringVals I need
-# alloca the array
-# fill it
+#     # count the number of StringVals I need
+#     # alloca the array
+#     # fill it

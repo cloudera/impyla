@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import ez_setup
-
 ez_setup.use_setuptools()
 
 from setuptools import setup, find_packages
@@ -47,7 +46,7 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7'
     ],
-    entry_points={'sqlalchemy.dialects': [
-        'impala = impala.sqlalchemy:ImpalaDialect']},
+    entry_points={
+        'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect']},
     zip_safe=False
 )

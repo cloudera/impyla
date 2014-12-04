@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -67,7 +67,6 @@ class Connection(object):
 
 
 class Cursor(object):
-
     """Abstract representation of Cursor"""
 
     def description(self):
@@ -145,8 +144,8 @@ class Cursor(object):
     def get_summary(self):
         raise NotImplementedError
 
-    def build_summary_table(
-            self, summary, idx, is_fragment_root, indent_level, output):
+    def build_summary_table(self, summary, idx, is_fragment_root, indent_level,
+                            output):
         raise NotImplementedError
 
     def __enter__(self):

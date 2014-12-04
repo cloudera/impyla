@@ -118,7 +118,7 @@ def _do_download(version, download_base, to_dir, download_delay):
 
 
 def use_setuptools(version=DEFAULT_VERSION, download_base=DEFAULT_URL,
-	to_dir=os.curdir, download_delay=15):
+        to_dir=os.curdir, download_delay=15):
     to_dir = os.path.abspath(to_dir)
     rep_modules = 'pkg_resources', 'setuptools'
     imported = set(sys.modules).intersection(rep_modules)
@@ -134,7 +134,7 @@ def use_setuptools(version=DEFAULT_VERSION, download_base=DEFAULT_URL,
     except pkg_resources.VersionConflict as VC_err:
         if imported:
             msg = textwrap.dedent("""
-		The required version of setuptools (>={version}) is not available,
+                The required version of setuptools (>={version}) is not available,
                 and can't be installed while this script is running. Please
                 install a more recent version first, using
                 'easy_install -U setuptools'.
@@ -169,7 +169,7 @@ def download_file_powershell(url, target):
     cmd = [
         'powershell',
         '-Command',
-	"(new-object System.Net.WebClient).DownloadFile(%(url)r, %(target)r)" % vars(),
+        "(new-object System.Net.WebClient).DownloadFile(%(url)r, %(target)r)" % vars(),
     ]
     _clean_check(cmd, target)
 
@@ -263,7 +263,7 @@ def get_best_downloader():
             return dl
 
 def download_setuptools(version=DEFAULT_VERSION, download_base=DEFAULT_URL,
-	to_dir=os.curdir, delay=15, downloader_factory=get_best_downloader):
+        to_dir=os.curdir, delay=15, downloader_factory=get_best_downloader):
     """
     Download setuptools from a specified location and return its filename
 

@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -82,14 +82,13 @@ class TestUDFCompile(object):
         def fn(context, a):
             return None
 
-    @skipif(
-        True, reason="cffi_support.ExternCFunction not yet committed to numba")
+    @skipif(True,
+            reason="cffi_support.ExternCFunction not yet committed to numba")
     def test_call_extern_c_fn(self):
         global memcmp
         memcmp = cffi_support.ExternCFunction(
-            'memcmp',
-            'int memcmp ( const uint8_t * ptr1, const uint8_t * ptr2, '
-            'size_t num )')
+            'memcmp', ('int memcmp ( const uint8_t * ptr1, '
+                       'const uint8_t * ptr2, size_t num )'))
 
         @udf(BooleanVal(FunctionContext, StringVal, StringVal))
         def fn(context, a, b):
@@ -103,14 +102,13 @@ class TestUDFCompile(object):
                 return True
             return memcmp(a.ptr, b.ptr, a.len) == 0
 
-    @skipif(
-        True, reason="cffi_support.ExternCFunction not yet committed to numba")
+    @skipif(True,
+            reason="cffi_support.ExternCFunction not yet committed to numba")
     def test_call_extern_c_fn_twice(self):
         global memcmp
         memcmp = cffi_support.ExternCFunction(
-            'memcmp',
-            'int memcmp ( const uint8_t * ptr1, const uint8_t * ptr2, '
-            'size_t num )')
+            'memcmp', ('int memcmp ( const uint8_t * ptr1, '
+                       'const uint8_t * ptr2, size_t num )'))
 
         @udf(boolean(FunctionContext, StringVal, StringVal))
         def fn(context, a, b):

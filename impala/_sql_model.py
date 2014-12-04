@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
 # limitations under the License.
 
 # utilities
-
 
 def _to_TableName(table):
     """Convert string table name ([foo.]bar) into a TableName object."""
@@ -66,8 +65,8 @@ class BinaryExpr(Expr):
 
     def __init__(self, op, expr1, expr2):
         if op not in BinaryExpr._operators:
-            raise ValueError("op %s not one of %s" %
-                             (op, str(BinaryExpr._operators)))
+            raise ValueError(
+                "op %s not one of %s" % (op, str(BinaryExpr._operators)))
         self._op = op
         if not isinstance(expr1, Expr):
             raise ValueError("expr1 %s is not of type Expr" % str(expr1))
@@ -77,8 +76,8 @@ class BinaryExpr(Expr):
         self._expr2 = expr2
 
     def to_sql(self):
-        return "((%s) %s (%s))" % (
-            self._expr1.to_sql(), self._op, self._expr2.to_sql())
+        return "((%s) %s (%s))" % (self._expr1.to_sql(), self._op,
+                                   self._expr2.to_sql())
 
 
 # TableRef hierarchy
@@ -111,7 +110,7 @@ class BaseTableRef(TableRef):
 
     def to_sql(self):
         if self._alias:
-            return "%s AS %s"(self._name.to_sql(), self._alias)
+            return "%s AS %s" % (self._name.to_sql(), self._alias)
         else:
             return self._name.to_sql()
 
@@ -168,8 +167,8 @@ class JoinTableRef(TableRef):
 
     def to_sql(self):
         hint = '' if not self._hint else '[%s]' % self._hint
-        sql = '%s %s JOIN %s %s' % (self._left.to_sql(), self._op,
-                                    hint, self._right.to_sql())
+        sql = '%s %s JOIN %s %s' % (self._left.to_sql(), self._op, hint,
+                                    self._right.to_sql())
         if self._on is not None:
             sql += ' ON %s' % self._on.to_sql()
         return sql
@@ -371,13 +370,13 @@ class SelectStmt(QueryStmt):
         if self._where:
             sql += ' WHERE ' + self._where.to_sql()
         if self._group_by:
-            sql += ' GROUP BY ' + \
-                   ', '.join([g.to_sql() for g in self._group_by])
+            sql += ' GROUP BY ' + ', '.join(
+                [g.to_sql() for g in self._group_by])
         if self._having:
             sql += ' HAVING ' + self._having.to_sql()
         if self._order_by:
-            sql += ' ORDER BY ' + \
-                   ', '.join([o.to_sql() for o in self._order_by])
+            sql += ' ORDER BY ' + ', '.join(
+                [o.to_sql() for o in self._order_by])
         if self._limit:
             sql += self._limit.to_sql()
         return sql
@@ -398,17 +397,16 @@ class UnionStmt(QueryStmt):
 
 # DDL statement helpers (they are not currently modeled)
 
-def _create_table(table_name, table_schema, path=None,
-                  file_format='TEXTFILE', partition_schema=None,
-                  field_terminator='\t',
+def _create_table(table_name, table_schema, path=None, file_format='TEXTFILE',
+                  partition_schema=None, field_terminator='\t',
                   line_terminator='\n', escape_char='\\'):
     external = path is not None
     if external:
         query = "CREATE EXTERNAL TABLE %s" % table_name.to_sql()
     else:
         query = "CREATE TABLE %s" % table_name.to_sql()
-    schema_string = ', '.join(['%s %s' % (col, ty)
-                               for (col, ty) in table_schema])
+    schema_string = ', '.join(
+        ['%s %s' % (col, ty) for (col, ty) in table_schema])
     query += " (%s)" % schema_string
     if partition_schema:
         schema_string = ', '.join(
@@ -417,13 +415,11 @@ def _create_table(table_name, table_schema, path=None,
     if file_format == 'PARQUET':
         query += " STORED AS PARQUET"
     elif file_format == 'TEXTFILE':
-        query += ((
-            " ROW FORMAT DELIMITED FIELDS TERMINATED BY {field!r} "
-            "ESCAPED BY {esc!r} "
-            "LINES TERMINATED BY {line!r} STORED AS "
-            "TEXTFILE").format(field=field_terminator,
-                               esc=escape_char,
-                               line=line_terminator))
+        query += (" ROW FORMAT DELIMITED FIELDS TERMINATED BY {field!r}"
+                  " ESCAPED BY {esc!r} LINES TERMINATED BY {line!r}"
+                  " STORED AS TEXTFILE").format(field=field_terminator,
+                                                esc=escape_char,
+                                                line=line_terminator)
     else:
         raise ValueError("Invalid file format")
     if external:
@@ -442,13 +438,11 @@ def _create_table_as_select(table_name, path=None, file_format='TEXTFILE',
     if file_format == 'PARQUET':
         query += " STORED AS PARQUET"
     elif file_format == 'TEXTFILE':
-        query += ((
-            " ROW FORMAT DELIMITED FIELDS TERMINATED BY {field!r} "
-            "ESCAPED BY {esc!r} "
-            "LINES TERMINATED BY {line!r} STORED AS "
-            "TEXTFILE").format(field=field_terminator,
-                               esc=escape_char,
-                               line=line_terminator))
+        query += (" ROW FORMAT DELIMITED FIELDS TERMINATED BY {field!r}"
+                  " ESCAPED BY {esc!r} LINES TERMINATED BY {line!r}"
+                  " STORED AS TEXTFILE").format(field=field_terminator,
+                                                esc=escape_char,
+                                                line=line_terminator)
     if external:
         query += " LOCATION '%s'" % path
     query += " AS "

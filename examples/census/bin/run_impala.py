@@ -1,10 +1,10 @@
 import sys
-
-sys.path.append('/Users/laserson/repos/impyla/examples/census/models')
 from time import time
 
 from impala.dbapi import connect
 from impala.udf import ship_udf, udf, FunctionContext, StringVal, IntVal
+
+sys.path.append('/Users/laserson/repos/impyla/examples/census/models')
 
 from model_0 import predict_income as predict_income_0
 from model_100 import predict_income as predict_income_100
@@ -28,8 +28,7 @@ cursor.execute('USE laserson')
 
 signature = StringVal(FunctionContext, IntVal, StringVal, IntVal, StringVal,
                       IntVal, StringVal, StringVal, StringVal, StringVal,
-                      StringVal, IntVal,
-                      StringVal, StringVal)
+                      StringVal, IntVal, StringVal, StringVal)
 
 create_table_query = """
     CREATE EXTERNAL TABLE IF NOT EXISTS census_text (age INT, workclass STRING,
@@ -55,7 +54,8 @@ for size in sizes:
     predict_income = udf(signature)(udfs[size])
     end_compile = time()
 
-    ship_udf(cursor, predict_income, '/user/laserson/test-udf/census_%i.ll' %
+    ship_udf(cursor, predict_income,
+             '/user/laserson/test-udf/census_%i.ll' %
              size, 'bottou01-10g.pa.cloudera.com', user='laserson',
              overwrite=True)
 

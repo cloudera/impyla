@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,53 +16,39 @@
 
 # This work builds off of:
 # 1. the Hue interface:
-# hue/apps/beeswax/src/beeswax/server/dbms.py
-# hue/apps/beeswax/src/beeswax/server/hive_server2_lib.py
-# hue/desktop/core/src/desktop/lib/thrift_util.py
+#       hue/apps/beeswax/src/beeswax/server/dbms.py
+#       hue/apps/beeswax/src/beeswax/server/hive_server2_lib.py
+#       hue/desktop/core/src/desktop/lib/thrift_util.py
 # 2. the Impala shell:
-# Impala/shell/original_impala_shell.py
+#       Impala/shell/original_impala_shell.py
 
 import datetime
 import socket
 import operator
 import exceptions
 import re
-
 from decimal import Decimal
 
 from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport, TTransportException
-from thrift.protocol.TBinaryProtocol import \
-    TBinaryProtocolAccelerated as TBinaryProtocol
+from thrift.protocol.TBinaryProtocol import (
+    TBinaryProtocolAccelerated as TBinaryProtocol)
 
 from impala.error import HiveServer2Error
-from impala._thrift_gen.TCLIService.ttypes import (TOpenSessionReq,
-                                                   TFetchResultsReq,
-                                                   TCloseSessionReq,
-                                                   TExecuteStatementReq,
-                                                   TGetInfoReq,
-                                                   TGetInfoType, TTypeId,
-                                                   TFetchOrientation,
-                                                   TGetResultSetMetadataReq,
-                                                   TStatusCode, TGetColumnsReq,
-                                                   TGetSchemasReq,
-                                                   TGetTablesReq,
-                                                   TGetFunctionsReq,
-                                                   TGetOperationStatusReq,
-                                                   TOperationState,
-                                                   TCancelOperationReq,
-                                                   TCloseOperationReq,
-                                                   TGetLogReq,
-                                                   TProtocolVersion)
-from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import \
-    TGetRuntimeProfileReq, TGetExecSummaryReq
+from impala._thrift_gen.TCLIService.ttypes import (
+    TOpenSessionReq, TFetchResultsReq, TCloseSessionReq, TExecuteStatementReq,
+    TGetInfoReq, TGetInfoType, TTypeId, TFetchOrientation,
+    TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq, TGetSchemasReq,
+    TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq, TOperationState,
+    TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion)
+from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
+    TGetRuntimeProfileReq, TGetExecSummaryReq)
 from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
 from impala._thrift_gen.ExecStats.ttypes import TExecStats
 
 # mapping between the schema types (based on
 # com.cloudera.impala.catalog.PrimitiveType) and TColumnValue (in returned
-# rows)
-# helper object for converting from TRow to something friendlier
+# rows) helper object for converting from TRow to something friendlier
 _TTypeId_to_TColumnValue_getters = {
     'BOOLEAN': operator.attrgetter('boolVal'),
     'TINYINT': operator.attrgetter('byteVal'),
@@ -90,15 +76,14 @@ _pre_columnar_protocols = [
 
 def err_if_rpc_not_ok(resp):
     if (resp.status.statusCode != TStatusCode.SUCCESS_STATUS and
-            resp.status.statusCode !=
-            TStatusCode.SUCCESS_WITH_INFO_STATUS and
+            resp.status.statusCode != TStatusCode.SUCCESS_WITH_INFO_STATUS and
             resp.status.statusCode != TStatusCode.STILL_EXECUTING_STATUS):
         raise HiveServer2Error(resp.status.errorMessage)
+
 
 # datetime only supports 6 digits of microseconds but Impala supports 9.
 # If present, the trailing 3 digits will be ignored without warning.
 _TIMESTAMP_PATTERN = re.compile(r'(\d+-\d+-\d+ \d+:\d+:\d+(\.\d{,6})?)')
-
 
 def _parse_timestamp(value):
     if value:
@@ -132,8 +117,8 @@ def retry(func):
         # get the thrift transport
         if 'service' in kwargs:
             transport = kwargs['service']._iprot.trans
-        elif len(args) > 0 and isinstance(args[0],
-                                          ImpalaHiveServer2Service.Client):
+        elif (len(args) > 0 and
+                  isinstance(args[0], ImpalaHiveServer2Service.Client)):
             transport = args[0]._iprot.trans
         else:
             raise HiveServer2Error(
@@ -158,13 +143,10 @@ def retry(func):
     return wrapper
 
 
-# _get_socket and _get_transport based on the Impala shell impl
-
-
 def _get_socket(host, port, use_ssl, ca_cert):
+    # based on the Impala shell impl
     if use_ssl:
         from thrift.transport.TSSLSocket import TSSLSocket
-
         if ca_cert is None:
             return TSSLSocket(host, port, validate=False)
         else:
@@ -174,8 +156,8 @@ def _get_socket(host, port, use_ssl, ca_cert):
 
 
 def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
-                   use_kerberos,
-                   kerberos_service_name):
+                   use_kerberos, kerberos_service_name):
+    # based on the Impala shell impl
     if not use_ldap and not use_kerberos:
         return TBufferedTransport(sock)
     try:
@@ -203,8 +185,7 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
 
 def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
                       use_ldap=False, ldap_user=None, ldap_password=None,
-                      use_kerberos=False,
-                      kerberos_service_name='impala'):
+                      use_kerberos=False, kerberos_service_name='impala'):
     sock = _get_socket(host, port, use_ssl, ca_cert)
     sock.setTimeout(timeout * 1000.)
     transport = _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
@@ -298,9 +279,8 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                 type_ = schema[j][1]
                 values = tcols[j].values
                 nulls = tcols[j].nulls
-                # i / 8 is the byte, i % 8 is position in the byte
-                # get the int repr and pull out the bit at the corresponding
-                # pos
+                # i / 8 is the byte, i % 8 is position in the byte; get the int
+                # repr and pull out the bit at the corresponding pos
                 is_null = ord(nulls[i / 8]) & (1 << (i % 8))
                 if is_null:
                     row.append(None)
@@ -327,8 +307,8 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
             rows.append(tuple(row))
     else:
         raise HiveServer2Error(
-            "Got HiveServer2 version %s. " %
-            TProtocolVersion._VALUES_TO_NAMES[hs2_protocol_version] +
+            ("Got HiveServer2 version %s. " %
+                TProtocolVersion._VALUES_TO_NAMES[hs2_protocol_version]) +
             "Expected V1 - V6")
     return rows
 
@@ -366,8 +346,7 @@ def database_exists(service, session_handle, hs2_protocol_version, db_name):
 
 @retry
 def get_tables(service, session_handle, database_name='.*'):
-    req = TGetTablesReq(sessionHandle=session_handle,
-                        schemaName=database_name,
+    req = TGetTablesReq(sessionHandle=session_handle, schemaName=database_name,
                         tableName='.*')
     resp = service.GetTables(req)
     err_if_rpc_not_ok(resp)
@@ -377,8 +356,7 @@ def get_tables(service, session_handle, database_name='.*'):
 @retry
 def table_exists(service, session_handle, hs2_protocol_version, table_name,
                  database_name='.*'):
-    req = TGetTablesReq(sessionHandle=session_handle,
-                        schemaName=database_name,
+    req = TGetTablesReq(sessionHandle=session_handle, schemaName=database_name,
                         tableName=table_name)
     resp = service.GetTables(req)
     err_if_rpc_not_ok(resp)
@@ -398,8 +376,7 @@ def table_exists(service, session_handle, hs2_protocol_version, table_name,
 @retry
 def get_table_schema(service, session_handle, table_name, database_name='.*'):
     req = TGetColumnsReq(sessionHandle=session_handle,
-                         schemaName=database_name,
-                         tableName=table_name,
+                         schemaName=database_name, tableName=table_name,
                          columnName='.*')
     resp = service.GetColumns(req)
     err_if_rpc_not_ok(resp)
@@ -480,31 +457,25 @@ def get_summary(service, operation_handle, session_handle):
 
 def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     """Direct translation of Coordinator::PrintExecSummary() to recursively
-    build a list
-    of rows of summary statistics, one per exec node
+    build a list of rows of summary statistics, one per exec node
 
     summary: the TExecSummary object that contains all the summary data
 
     idx: the index of the node to print
 
-    is_fragment_root: true if the node to print is the root of a fragment (
-    and therefore
-    feeds into an exchange)
+    is_fragment_root: true if the node to print is the root of a fragment (and
+    therefore feeds into an exchange)
 
     indent_level: the number of spaces to print before writing the node's
-    label, to give
-    the appearance of a tree. The 0th child of a node has the same
-    indent_level as its
-    parent. All other children have an indent_level of one greater than
-    their parent.
+    label, to give the appearance of a tree. The 0th child of a node has the
+    same indent_level as its parent. All other children have an indent_level
+    of one greater than their parent.
 
     output: the list of rows into which to append the rows produced for this
-    node and its
-    children.
+    node and its children.
 
-    Returns the index of the next exec node in summary.exec_nodes that
-    should be
-    processed, used internally to this method only.
+    Returns the index of the next exec node in summary.exec_nodes that should
+    be processed, used internally to this method only.
     """
     attrs = ["latency_ns", "cpu_time_ns", "cardinality", "memory_used"]
 
@@ -528,12 +499,9 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
         avg_time = 0
 
     # If the node is a broadcast-receiving exchange node, the cardinality of
-    #  rows produced
-    # is the max over all instances (which should all have received the same
-    #  number of
-    # rows). Otherwise, the cardinality is the sum over all instances which
-    # process
-    # disjoint partitions.
+    # rows produced is the max over all instances (which should all have
+    # received the same number of rows). Otherwise, the cardinality is the sum
+    # over all instances which process disjoint partitions.
     if node.is_broadcast and is_fragment_root:
         cardinality = max_stats.cardinality
     else:
@@ -580,9 +548,8 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     output.append(row)
     try:
         sender_idx = summary.exch_to_sender_map[idx]
-        # This is an exchange node, so the sender is a fragment root,
-        # and should be printed
-        # next.
+        # This is an exchange node, so the sender is a fragment root, and
+        # should be printed next.
         build_summary_table(summary, sender_idx, True, indent_level, output)
     except (KeyError, TypeError):
         # Fall through if idx not in map, or if exch_to_sender_map itself is
@@ -592,14 +559,12 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     idx += 1
     if node.num_children > 0:
         first_child_output = []
-        idx = \
-            build_summary_table(
-                summary, idx, False, indent_level, first_child_output)
+        idx = build_summary_table(summary, idx, False, indent_level,
+                                  first_child_output)
         for child_idx in xrange(1, node.num_children):
-            # All other children are indented (we only have 0, 1 or 2
-            # children for every exec
+            # All other children are indented (we only have 0, 1 or 2 children for every exec
             # node at the moment)
-            idx = build_summary_table(
-                summary, idx, False, indent_level + 1, output)
+            idx = build_summary_table(summary, idx, False, indent_level + 1,
+                                      output)
         output += first_child_output
     return idx

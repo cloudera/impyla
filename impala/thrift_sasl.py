@@ -64,14 +64,14 @@ class TSaslClientTransport(TTransportBase, CReadableTransport):
 
     if self.sasl is not None:
       raise TTransportException(
-	type=TTransportException.NOT_OPEN,
-	message="Already open!")
+        type=TTransportException.NOT_OPEN,
+        message="Already open!")
     self.sasl = self.sasl_client_factory()
 
     ret, chosen_mech, initial_response = self.sasl.start(self.mechanism)
     if not ret:
       raise TTransportException(type=TTransportException.NOT_OPEN,
-	message=("Could not start SASL: %s" % self.sasl.getError()))
+        message=("Could not start SASL: %s" % self.sasl.getError()))
 
     # Send initial response
     self._send_message(self.START, chosen_mech)
@@ -81,14 +81,14 @@ class TSaslClientTransport(TTransportBase, CReadableTransport):
     while True:
       status, payload = self._recv_sasl_message()
       if status not in (self.OK, self.COMPLETE):
-	raise TTransportException(type=TTransportException.NOT_OPEN,
-	  message=("Bad status: %d (%s)" % (status, payload)))
+        raise TTransportException(type=TTransportException.NOT_OPEN,
+          message=("Bad status: %d (%s)" % (status, payload)))
       if status == self.COMPLETE:
-	break
+        break
       ret, response = self.sasl.step(payload)
       if not ret:
-	raise TTransportException(type=TTransportException.NOT_OPEN,
-	  message=("Bad SASL result: %s" % (self.sasl.getError())))
+        raise TTransportException(type=TTransportException.NOT_OPEN,
+          message=("Bad SASL result: %s" % (self.sasl.getError())))
       self._send_message(self.OK, response)
 
   def _send_message(self, status, body):
@@ -112,7 +112,7 @@ class TSaslClientTransport(TTransportBase, CReadableTransport):
     success, encoded = self.sasl.encode(self.__wbuf.getvalue())
     if not success:
       raise TTransportException(type=TTransportException.UNKNOWN,
-				message=self.sasl.getError())
+                                message=self.sasl.getError())
     # Note stolen from TFramedTransport:
     # N.B.: Doing this string concatenation is WAY cheaper than making
     # two separate calls to the underlying socket object. Socket writes in
@@ -137,7 +137,7 @@ class TSaslClientTransport(TTransportBase, CReadableTransport):
     success, decoded = self.sasl.decode(encoded)
     if not success:
       raise TTransportException(type=TTransportException.UNKNOWN,
-				message=self.sasl.getError())
+                                message=self.sasl.getError())
     self.__rbuf = StringIO(decoded)
 
   def close(self):
