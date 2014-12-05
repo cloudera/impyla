@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,22 +20,29 @@ from impala._thrift_gen.ExecStats.ttypes import TExecStats
 
 from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import TBufferedTransport, TTransportException
-from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated as TBinaryProtocol
+from thrift.protocol.TBinaryProtocol import \
+    TBinaryProtocolAccelerated as TBinaryProtocol
 from thrift.Thrift import TApplicationException
 
 
 class RpcStatus:
+
     """Convenience enum to describe Rpc return statuses"""
     OK = 0
     ERROR = 1
 
+
 def __options_to_string_list(set_query_options):
     return ["%s=%s" % (k, v) for (k, v) in set_query_options.iteritems()]
 
+
 def build_default_query_options_dict(service):
-    # The default query options are retrieved from a hs2_client call, and are dependent
-    # on the impalad to which a connection has been established. They need to be
-    # refreshed each time a connection is made. This is particularly helpful when
+    # The default query options are retrieved from a hs2_client call,
+    # and are dependent
+    # on the impalad to which a connection has been established. They need
+    # to be
+    # refreshed each time a connection is made. This is particularly helpful
+    # when
     # there is a version mismatch between the shell and the impalad.
     try:
         get_default_query_options = service.get_default_configuration(False)
@@ -47,25 +54,33 @@ def build_default_query_options_dict(service):
         raise RPCError("Unable to retrieve default query options")
     return options
 
+
 def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
-    """Direct translation of Coordinator::PrintExecSummary() to recursively build a list
+    """Direct translation of Coordinator::PrintExecSummary() to recursively
+    build a list
     of rows of summary statistics, one per exec node
 
     summary: the TExecSummary object that contains all the summary data
 
     idx: the index of the node to print
 
-    is_fragment_root: true if the node to print is the root of a fragment (and therefore
+    is_fragment_root: true if the node to print is the root of a fragment (
+    and therefore
     feeds into an exchange)
 
-    indent_level: the number of spaces to print before writing the node's label, to give
-    the appearance of a tree. The 0th child of a node has the same indent_level as its
-    parent. All other children have an indent_level of one greater than their parent.
+    indent_level: the number of spaces to print before writing the node's
+    label, to give
+    the appearance of a tree. The 0th child of a node has the same
+    indent_level as its
+    parent. All other children have an indent_level of one greater than
+    their parent.
 
-    output: the list of rows into which to append the rows produced for this node and its
+    output: the list of rows into which to append the rows produced for this
+    node and its
     children.
 
-    Returns the index of the next exec node in summary.exec_nodes that should be
+    Returns the index of the next exec node in summary.exec_nodes that
+    should be
     processed, used internally to this method only.
     """
     attrs = ["latency_ns", "cpu_time_ns", "cardinality", "memory_used"]
@@ -89,9 +104,12 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     else:
         avg_time = 0
 
-    # If the node is a broadcast-receiving exchange node, the cardinality of rows produced
-    # is the max over all instances (which should all have received the same number of
-    # rows). Otherwise, the cardinality is the sum over all instances which process
+    # If the node is a broadcast-receiving exchange node, the cardinality of
+    # rows produced
+    # is the max over all instances (which should all have received the same
+    # number of
+    # rows). Otherwise, the cardinality is the sum over all instances which
+    # process
     # disjoint partitions.
     if node.is_broadcast and is_fragment_root:
         cardinality = max_stats.cardinality
@@ -117,7 +135,8 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
             val /= divisor
 
     def prettyprint_bytes(byte_val):
-        return prettyprint(byte_val, [' B', ' KB', ' MB', ' GB', ' TB'], 1024.0)
+        return prettyprint(
+            byte_val, [' B', ' KB', ' MB', ' GB', ' TB'], 1024.0)
 
     def prettyprint_units(unit_val):
         return prettyprint(unit_val, ["", "K", "M", "B"], 1000.0)
@@ -125,41 +144,48 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     def prettyprint_time(time_val):
         return prettyprint(time_val, ["ns", "us", "ms", "s"], 1000.0)
 
-    row = [ label_prefix + node.label,
-            len(node.exec_stats),
-            prettyprint_time(avg_time),
-            prettyprint_time(max_stats.latency_ns),
-            prettyprint_units(cardinality),
-            prettyprint_units(est_stats.cardinality),
-            prettyprint_bytes(max_stats.memory_used),
-            prettyprint_bytes(est_stats.memory_used),
-            node.label_detail ]
+    row = [label_prefix + node.label,
+           len(node.exec_stats),
+           prettyprint_time(avg_time),
+           prettyprint_time(max_stats.latency_ns),
+           prettyprint_units(cardinality),
+           prettyprint_units(est_stats.cardinality),
+           prettyprint_bytes(max_stats.memory_used),
+           prettyprint_bytes(est_stats.memory_used),
+           node.label_detail]
 
     output.append(row)
     try:
         sender_idx = summary.exch_to_sender_map[idx]
-        # This is an exchange node, so the sender is a fragment root, and should be printed
+        # This is an exchange node, so the sender is a fragment root,
+        # and should be printed
         # next.
         build_summary_table(summary, sender_idx, True, indent_level, output)
     except (KeyError, TypeError):
-        # Fall through if idx not in map, or if exch_to_sender_map itself is not set
+        # Fall through if idx not in map, or if exch_to_sender_map itself is
+        # not set
         pass
 
     idx += 1
     if node.num_children > 0:
         first_child_output = []
         idx = \
-            build_summary_table(summary, idx, False, indent_level, first_child_output)
+            build_summary_table(
+                summary, idx, False, indent_level, first_child_output)
         for child_idx in xrange(1, node.num_children):
-            # All other children are indented (we only have 0, 1 or 2 children for every exec
+            # All other children are indented (we only have 0, 1 or 2
+            # children for every exec
             # node at the moment)
-            idx = build_summary_table(summary, idx, False, indent_level + 1, output)
+            idx = build_summary_table(
+                summary, idx, False, indent_level + 1, output)
         output += first_child_output
     return idx
+
 
 def _get_socket(host, port, use_ssl, ca_cert):
     if use_ssl:
         from thrift.transport.TSSLSocket import TSSLSocket
+
         if ca_cert is None:
             return TSSLSocket(host, port, validate=False)
         else:
@@ -167,9 +193,11 @@ def _get_socket(host, port, use_ssl, ca_cert):
     else:
         return TSocket(host, port)
 
+
 def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
-        use_ldap=False, ldap_user=None, ldap_password=None, use_kerberos=False,
-        kerberos_service_name='impala'):
+                      use_ldap=False, ldap_user=None, ldap_password=None,
+                      use_kerberos=False,
+                      kerberos_service_name='impala'):
     sock = _get_socket(host, port, use_ssl, ca_cert)
     sock.setTimeout(timeout * 1000.)
     transport = _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
@@ -178,17 +206,22 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
     protocol = TBinaryProtocol(transport)
     service = ImpalaService.Client(protocol)
     return service
-    # We get a TApplicationException if the transport is valid, but the RPC does not
+    # We get a TApplicationException if the transport is valid, but the RPC
+    # does not
     # exist.
 
+
 # _get_socket and _get_transport based on the Impala shell impl
+
 
 def ping(service):
     result = service.PingImpalaService()
     return result.version
 
-def _get_transport(sock, host, use_ldap, ldap_user, ldap_password, use_kerberos,
-        kerberos_service_name):
+
+def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
+                   use_kerberos,
+                   kerberos_service_name):
     if not use_ldap and not use_kerberos:
         return TBufferedTransport(sock)
     try:
@@ -196,6 +229,7 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password, use_kerberos,
     except ImportError:
         import sasl
     from thrift_sasl import TSaslClientTransport
+
     def sasl_factory():
         sasl_client = sasl.Client()
         sasl_client.setAttr("host", host)
@@ -206,19 +240,25 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password, use_kerberos,
             sasl_client.setAttr("service", kerberos_service_name)
         sasl_client.init()
         return sasl_client
+
     if use_kerberos:
         return TSaslClientTransport(sasl_factory, "GSSAPI", sock)
     else:
         return TSaslClientTransport(sasl_factory, "PLAIN", sock)
 
+
 def close_service(service):
     service._iprot.trans.close()
+
 
 def reconnect(service):
     service._iprot.trans.close()
     service._iprot.trans.open()
 
+
 # TODO: Pass is actual set_query_options
+
+
 def create_beeswax_query(query_str, user, set_query_options):
     """Create a beeswax query object from a query string"""
     query = BeeswaxService.Query()
@@ -227,12 +267,14 @@ def create_beeswax_query(query_str, user, set_query_options):
     query.configuration = __options_to_string_list(set_query_options)
     return query
 
+
 def execute_statement(service, query):
     rpc_result = __do_rpc(lambda: service.query(query))
     last_query_handle, status = rpc_result
     if status != RpcStatus.OK:
         raise RPCError("Error executing the query")
     return last_query_handle
+
 
 def fetch_internal(service, last_query_handle, buffer_size):
     """Fetch all the results.
@@ -243,7 +285,7 @@ def fetch_internal(service, last_query_handle, buffer_size):
     while True:
         rpc_result = __do_rpc(
             lambda: service.fetch(last_query_handle, False,
-                                                                         buffer_size))
+                                  buffer_size))
 
         result, status = rpc_result
 
@@ -256,10 +298,11 @@ def fetch_internal(service, last_query_handle, buffer_size):
             rows = [row.split('\t') for row in result_rows]
             return rows
 
+
 def close_insert(service, last_query_handle):
     """Fetches the results of an INSERT query"""
     rpc_result = __do_rpc(
-            lambda: service.CloseInsert(last_query_handle))
+        lambda: service.CloseInsert(last_query_handle))
     insert_result, status = rpc_result
 
     if status != RpcStatus.OK:
@@ -268,12 +311,14 @@ def close_insert(service, last_query_handle):
     num_rows = sum([int(k) for k in insert_result.rows_appended.values()])
     return num_rows
 
+
 def close_query(service, last_query_handle):
     """Close the query handle"""
     # Make closing a query handle idempotent
     rpc_result = __do_rpc(lambda: service.close(last_query_handle))
     _, status = rpc_result
     return status == RpcStatus.OK
+
 
 def cancel_query(service, last_query_handle):
     """Cancel a query on a keyboard interrupt from the shell."""
@@ -283,20 +328,23 @@ def cancel_query(service, last_query_handle):
     _, status = rpc_result
     return status == RpcStatus.OK
 
+
 def get_query_state(service, last_query_handle):
     rpc_result = __do_rpc(
-            lambda: service.get_state(last_query_handle))
+        lambda: service.get_state(last_query_handle))
     state, status = rpc_result
     if status != RpcStatus.OK:
         return "EXCEPTION"
     return state
 
+
 def get_runtime_profile(service, last_query_handle):
     rpc_result = __do_rpc(
-            lambda: service.GetRuntimeProfile(last_query_handle))
+        lambda: service.GetRuntimeProfile(last_query_handle))
     profile, status = rpc_result
     if status == RpcStatus.OK and profile:
         return profile
+
 
 def get_summary(service, last_query_handle):
     """Calls GetExecSummary() for the last query handle"""
@@ -307,50 +355,57 @@ def get_summary(service, last_query_handle):
         return summary
     return None
 
+
 def __do_rpc(rpc):
     """Executes the provided callable."""
-#     if not self.connected:
-#         raise DisconnectedError("Not connected (use CONNECT to establish a connection)")
-#         return None, RpcStatus.ERROR
+    # if not self.connected:
+    # raise DisconnectedError("Not connected (use CONNECT to establish a
+    # connection)")
+    # return None, RpcStatus.ERROR
     try:
         ret = rpc()
         status = RpcStatus.OK
-        # TODO: In the future more advanced error detection/handling can be done based on
-        # the TStatus return value. For now, just print any error(s) that were encountered
+        # TODO: In the future more advanced error detection/handling can be
+        # done based on
+        # the TStatus return value. For now, just print any error(s) that
+        # were encountered
         # and validate the result of the operation was a success.
         if ret is not None and isinstance(ret, TStatus):
             if ret.status_code != TStatusCode.OK:
                 print(ret.error_msgs)
                 if ret.error_msgs:
-                    raise RPCError ('RPC Error: %s' % '\n'.join(ret.error_msgs))
+                    raise RPCError('RPC Error: %s' % '\n'.join(ret.error_msgs))
                 status = RpcStatus.ERROR
         return ret, status
     except BeeswaxService.QueryNotFoundException:
         raise QueryStateError('Error: Stale query handle')
     # beeswaxException prints out the entire object, printing
     # just the message is far more readable/helpful.
-    except BeeswaxService.BeeswaxException, b:
-            raise RPCError("ERROR: %s" % (b.message))
-    except TTransportException, e:
+    except BeeswaxService.BeeswaxException as b:
+        raise RPCError("ERROR: %s" % (b.message))
+    except TTransportException as e:
         # issue with the connection with the impalad
         raise DisconnectedError("Error communicating with impalad: %s" % e)
-    except TApplicationException, t:
+    except TApplicationException as t:
         raise RPCError("Application Exception : %s" % (t))
     return None, RpcStatus.ERROR
 
+
 def get_column_names(service, last_query_handle):
     rpc_result = __do_rpc(
-            lambda: service.get_results_metadata(last_query_handle))
+        lambda: service.get_results_metadata(last_query_handle))
     metadata, _ = rpc_result
     if not metadata is None:
         return [fs.name for fs in metadata.schema.fieldSchemas]
 
+
 def get_results_metadata(service, last_query_handle):
     rpc_result = __do_rpc(
-            lambda: service.get_results_metadata(last_query_handle))
+        lambda: service.get_results_metadata(last_query_handle))
     metadata, _ = rpc_result
     if not metadata is None:
         return metadata.schema.fieldSchemas
+
 
 def expect_result_metadata(query_str):
     """ Given a query string, return True if impalad expects result metadata"""
@@ -359,11 +414,12 @@ def expect_result_metadata(query_str):
         return False
     return True
 
+
 def get_warning_log(service, last_query_handle):
     if last_query_handle is None:
         return "Query could not be executed"
     rpc_result = __do_rpc(
-            lambda: service.get_log(last_query_handle.log_context))
+        lambda: service.get_log(last_query_handle.log_context))
     log, status = rpc_result
     if status != RpcStatus.OK:
         return "Failed to get warning log: %s" % status

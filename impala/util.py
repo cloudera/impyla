@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,28 +20,33 @@ import random
 
 try:
     import pandas as pd
+
     def as_pandas(cursor):
         names = [metadata[0] for metadata in cursor.description]
         return pd.DataFrame.from_records(cursor.fetchall(), columns=names)
 except ImportError:
     print "Failed to import pandas"
 
+
 def _random_id(prefix='', length=8):
     return prefix + ''.join(random.sample(string.ascii_uppercase, length))
 
+
 def _get_table_schema_hack(cursor, table):
     """Get the schema of table by talking to Impala
-    
+
     table must be a string (incl possible db name)
     """
     # get the schema of the query result via a LIMIT 0 hack
     cursor.execute('SELECT * FROM %s LIMIT 0' % table)
     schema = [tup[:2] for tup in cursor.description]
-    cursor.fetchall() # resets the state of the cursor and closes operation
+    cursor.fetchall()  # resets the state of the cursor and closes operation
     return schema
 
+
 def _gen_safe_random_table_name(cursor, prefix='tmp'):
-    # unlikely but can be problematic if generated table name is taken in the interim
+    # unlikely but can be problematic if generated table name is taken in the
+    # interim
     tries_left = 3
     while tries_left > 0:
         name = _random_id(prefix, 8)
@@ -49,6 +54,7 @@ def _gen_safe_random_table_name(cursor, prefix='tmp'):
             return name
         tries_left -= 1
     raise ValueError("Failed to generate a safe table name")
+
 
 def compute_result_schema(cursor, query_string):
     temp_name = _random_id(prefix="tmp_crs_")
@@ -60,14 +66,17 @@ def compute_result_schema(cursor, query_string):
         cursor.execute("DROP VIEW %s" % temp_name)
     return schema
 
+
 def create_view_from_query(cursor, query_string, view_name=None, safe=False):
     if view_name is None:
         view_name = _random_id(prefix="tmp_cv_")
     cursor.execute("CREATE VIEW %s AS %s" % (view_name, query_string))
     return view_name
 
+
 def drop_view(cursor, view_name):
     cursor.execute("DROP VIEW %s" % view_name)
+
 
 def _escape(s):
     e = s
@@ -77,6 +86,7 @@ def _escape(s):
     e = e.replace("'", "\\'")
     e = e.replace('"', '\\"')
     return e
+
 
 def _py_to_sql_string(value):
     if value is None:

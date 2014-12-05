@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,16 +19,21 @@ from __future__ import absolute_import
 import llvm.core as lc
 
 from impala.udf.types import (AnyVal, BooleanVal, TinyIntVal, SmallIntVal,
-        IntVal, BigIntVal, FloatVal, DoubleVal, StringVal)
+                              IntVal, BigIntVal, FloatVal, DoubleVal,
+                              StringVal)
 from impala.udf.impl_utils import (BooleanValStruct, TinyIntValStruct,
-        SmallIntValStruct, IntValStruct, BigIntValStruct, FloatValStruct,
-        DoubleValStruct, StringValStruct, _get_is_null, _set_is_null)
+                                   SmallIntValStruct, IntValStruct,
+                                   BigIntValStruct, FloatValStruct,
+                                   DoubleValStruct, StringValStruct,
+                                   _get_is_null, _set_is_null)
 
 
 class ABIHandling(object):
+
     """
     Adapt to C++ ABI for x86-64
     """
+
     def __init__(self, context, func, restype, argtypes):
         self.context = context
         self.func = func
@@ -36,14 +41,16 @@ class ABIHandling(object):
         self.argtypes = argtypes
 
     def build_wrapper(self, wrappername):
-        abi_restype = self.get_abi_return_type(self.restype).pointee # should always ret pointer type
+        # should always ret pointer type
+        abi_restype = self.get_abi_return_type(self.restype).pointee
         abi_argtypes = [self.get_abi_argument_type(a)
                         for a in self.argtypes]
         fnty = lc.Type.function(abi_restype, abi_argtypes)
         wrapper = self.func.module.add_function(fnty, name=wrappername)
 
         builder = lc.Builder.new(wrapper.append_basic_block(''))
-        status, res = self.context.call_function(builder, self.func, self.restype,
+        status, res = self.context.call_function(builder, self.func,
+                                                 self.restype,
                                                  self.argtypes, wrapper.args)
         # FIXME ignoring error in function for now
         cres = lower_return_type(self.context, builder, self.restype, res)
@@ -61,13 +68,17 @@ class ABIHandling(object):
         elif ty == IntVal:
             return lc.Type.pointer(lc.Type.int(64))
         elif ty == BigIntVal:
-            return lc.Type.pointer(lc.Type.struct([lc.Type.int(8), lc.Type.int(64)]))
+            return lc.Type.pointer(
+                lc.Type.struct([lc.Type.int(8), lc.Type.int(64)]))
         elif ty == FloatVal:
             return lc.Type.pointer(lc.Type.int(64))
         elif ty == DoubleVal:
-            return lc.Type.pointer(lc.Type.struct([lc.Type.int(8), lc.Type.double()]))
+            return lc.Type.pointer(
+                lc.Type.struct([lc.Type.int(8), lc.Type.double()]))
         elif ty == StringVal:
-            return lc.Type.pointer(lc.Type.struct([lc.Type.int(64), lc.Type.pointer(lc.Type.int(8))]))
+            return lc.Type.pointer(
+                lc.Type.struct(
+                    [lc.Type.int(64), lc.Type.pointer(lc.Type.int(8))]))
         else:
             return self.context.get_return_type(ty)
 
@@ -120,9 +131,10 @@ def lower_return_type(context, builder, ty, val):
         # Endian specific
         iv = BigIntValStruct(context, builder, value=val)
         is_null = builder.zext(_get_is_null(builder, iv), lc.Type.int(8))
-        asstructi8i64 = builder.insert_value(lc.Constant.undef(lc.Type.struct([lc.Type.int(8), lc.Type.int(64)])),
-                                             is_null,
-                                             0)
+        asstructi8i64 = builder.insert_value(lc.Constant.undef(
+            lc.Type.struct([lc.Type.int(8), lc.Type.int(64)])),
+            is_null,
+            0)
         asstructi8i64 = builder.insert_value(asstructi8i64, iv.val, 1)
         return asstructi8i64
     elif ty == FloatVal:
@@ -140,9 +152,10 @@ def lower_return_type(context, builder, ty, val):
         # Endian specific
         iv = DoubleValStruct(context, builder, value=val)
         is_null = builder.zext(_get_is_null(builder, iv), lc.Type.int(8))
-        asstructi8double = builder.insert_value(lc.Constant.undef(lc.Type.struct([lc.Type.int(8), lc.Type.double()])),
-                                                is_null,
-                                                0)
+        asstructi8double = builder.insert_value(lc.Constant.undef(
+            lc.Type.struct([lc.Type.int(8), lc.Type.double()])),
+            is_null,
+            0)
         asstructi8double = builder.insert_value(asstructi8double, iv.val, 1)
         return asstructi8double
     elif ty == StringVal:
@@ -153,13 +166,15 @@ def lower_return_type(context, builder, ty, val):
         len_ = builder.zext(iv.len, lc.Type.int(64))
         asint64 = builder.shl(len_, lc.Constant.int(lc.Type.int(64), 32))
         asint64 = builder.or_(asint64, is_null)
-        asstructi64i8p = builder.insert_value(lc.Constant.undef(lc.Type.struct([lc.Type.int(64), lc.Type.pointer(lc.Type.int(8))])),
-                                              asint64,
-                                              0)
+        asstructi64i8p = builder.insert_value(lc.Constant.undef(lc.Type.struct(
+            [lc.Type.int(64), lc.Type.pointer(lc.Type.int(8))])),
+            asint64,
+            0)
         asstructi64i8p = builder.insert_value(asstructi64i8p, iv.ptr, 1)
         return asstructi64i8p
     else:
         return val
+
 
 def raise_return_type(context, builder, ty, val):
     if ty == BooleanVal:

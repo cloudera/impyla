@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('/Users/laserson/repos/impyla/examples/census/models')
 from time import time
 
@@ -26,8 +27,9 @@ cursor = conn.cursor()
 cursor.execute('USE laserson')
 
 signature = StringVal(FunctionContext, IntVal, StringVal, IntVal, StringVal,
-        IntVal, StringVal, StringVal, StringVal, StringVal, StringVal, IntVal,
-        StringVal, StringVal)
+                      IntVal, StringVal, StringVal, StringVal, StringVal,
+                      StringVal, IntVal,
+                      StringVal, StringVal)
 
 create_table_query = """
     CREATE EXTERNAL TABLE IF NOT EXISTS census_text (age INT, workclass STRING,
@@ -53,11 +55,16 @@ for size in sizes:
     predict_income = udf(signature)(udfs[size])
     end_compile = time()
 
-    ship_udf(cursor, predict_income, '/user/laserson/test-udf/census_%i.ll' % size, 'bottou01-10g.pa.cloudera.com', user='laserson', overwrite=True)
+    ship_udf(cursor, predict_income, '/user/laserson/test-udf/census_%i.ll' %
+             size, 'bottou01-10g.pa.cloudera.com', user='laserson',
+             overwrite=True)
 
     start_score = time()
     cursor.execute(score_obs_query)
     distinct = cursor.fetchall()
     end_score = time()
 
-    print "impala,%i,%i,%.2f,%.2f" % (size, len(udfs[size].func_code.co_code), end_score - start_score, end_compile - start_compile)
+    print "impala,%i,%i,%.2f,%.2f" % (size,
+                                      len(udfs[size].func_code.co_code),
+                                      end_score - start_score,
+                                      end_compile - start_compile)

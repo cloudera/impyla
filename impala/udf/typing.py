@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,9 +25,12 @@ from impala.udf import types
 from impala.udf import typeconv
 from impala.udf import stringdecl
 from impala.udf.types import (FunctionContext, AnyVal, BooleanVal,
-        BooleanValType, TinyIntVal, TinyIntValType, SmallIntVal,
-        SmallIntValType, IntVal, IntValType, BigIntVal, BigIntValType, FloatVal,
-        FloatValType, DoubleVal, DoubleValType, StringVal, StringValType)
+                              BooleanValType, TinyIntVal, TinyIntValType,
+                              SmallIntVal,
+                              SmallIntValType, IntVal, IntValType, BigIntVal,
+                              BigIntValType, FloatVal,
+                              FloatValType, DoubleVal, DoubleValType,
+                              StringVal, StringValType)
 
 
 registry = Registry()
@@ -42,7 +45,9 @@ def _ctor_factory(Val, ValType, argty):
     class ValCtor(ConcreteTemplate):
         key = ValType
         cases = [signature(Val, argty)]
+
     return register_function(ValCtor)
+
 
 BooleanValCtor = _ctor_factory(BooleanVal, BooleanValType, ntypes.int8)
 TinyIntValCtor = _ctor_factory(TinyIntVal, TinyIntValType, ntypes.int8)
@@ -51,7 +56,8 @@ IntValCtor = _ctor_factory(IntVal, IntValType, ntypes.int32)
 BigIntValCtor = _ctor_factory(BigIntVal, BigIntValType, ntypes.int64)
 FloatValCtor = _ctor_factory(FloatVal, FloatValType, ntypes.float32)
 DoubleValCtor = _ctor_factory(DoubleVal, DoubleValType, ntypes.float64)
-StringValCtor = _ctor_factory(StringVal, StringValType, ntypes.CPointer(ntypes.char))
+StringValCtor = _ctor_factory(
+    StringVal, StringValType, ntypes.CPointer(ntypes.char))
 
 
 # *Val attributes
@@ -67,7 +73,9 @@ def _attr_factory(Val, ValType, retty):
         def resolve_val(self, val):
             # *Val::val
             return retty
+
     return register_attribute(ValAttr)
+
 
 BooleanValAttr = _attr_factory(BooleanVal, BooleanValType, ntypes.int8)
 TinyIntValAttr = _attr_factory(TinyIntVal, TinyIntValType, ntypes.int8)
@@ -76,6 +84,7 @@ IntValAttr = _attr_factory(IntVal, IntValType, ntypes.int32)
 BigIntValAttr = _attr_factory(BigIntVal, BigIntValType, ntypes.int64)
 FloatValAttr = _attr_factory(FloatVal, FloatValType, ntypes.float32)
 DoubleValAttr = _attr_factory(DoubleVal, DoubleValType, ntypes.float64)
+
 
 @register_attribute
 class StringValAttr(AttributeTemplate):
@@ -105,7 +114,8 @@ class LenStringVal(ConcreteTemplate):
 @register_function
 class CmpOpEqPtr(ConcreteTemplate):
     key = '=='
-    cases = [signature(ntypes.boolean, ntypes.CPointer(ntypes.uint8), ntypes.CPointer(ntypes.uint8))]
+    cases = [signature(ntypes.boolean, ntypes.CPointer(
+        ntypes.uint8), ntypes.CPointer(ntypes.uint8))]
 
 
 @register_function
@@ -136,6 +146,7 @@ class GetItemStringVal(ConcreteTemplate):
 class BinOpAddStringVal(ConcreteTemplate):
     key = "+"
     cases = [signature(StringVal, StringVal, StringVal)]
+
 
 def impala_typing_context():
     base = Context()

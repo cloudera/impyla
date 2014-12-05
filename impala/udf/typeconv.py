@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,13 +21,16 @@ import itertools
 from numba import types as ntypes
 
 from impala.udf.types import (AnyVal, BooleanVal, TinyIntVal, SmallIntVal,
-        IntVal, BigIntVal, FloatVal, DoubleVal, StringVal)
+                              IntVal, BigIntVal, FloatVal, DoubleVal,
+                              StringVal)
+
 
 def register_impala_numeric_type_conversions(base):
     impala_integral = (BooleanVal, TinyIntVal, SmallIntVal, IntVal, BigIntVal)
     impala_float = (FloatVal, DoubleVal)
     impala_all = impala_integral + impala_float
-    numba_integral = (ntypes.boolean, ntypes.int8, ntypes.int16, ntypes.int32, ntypes.int64)
+    numba_integral = (
+        ntypes.boolean, ntypes.int8, ntypes.int16, ntypes.int32, ntypes.int64)
     numba_float = (ntypes.float32, ntypes.float64)
     numba_all = numba_integral + numba_float
     all_numeric = impala_all + numba_all
@@ -82,8 +85,10 @@ def register_impala_numeric_type_conversions(base):
     for a in impala_all:
         base.tm.set_safe_convert(ntypes.none, a)
 
+
 def register_impala_other_type_conversions(base):
-    # base.tm.set_unsafe_convert(ntypes.CPointer(ntypes.uint8), ntypes.Dummy('void*'))
+    # base.tm.set_unsafe_convert(ntypes.CPointer(ntypes.uint8),
+    # ntypes.Dummy('void*'))
     base.tm.set_safe_convert(ntypes.string, StringVal)
     base.tm.set_unsafe_convert(StringVal, AnyVal)
     base.tm.set_safe_convert(ntypes.none, StringVal)

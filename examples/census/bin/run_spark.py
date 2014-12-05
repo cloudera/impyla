@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('/home/laserson/models')
 from time import time
 
@@ -25,16 +26,18 @@ udfs = {0: predict_income_0,
         1500: predict_income_1500,
         2000: predict_income_2000}
 
-ident = lambda x: x # do nothing for strings
+ident = lambda x: x  # do nothing for strings
 types = (int, ident, int, ident, int, ident, ident, ident, ident, ident, int,
-        ident, ident)
+         ident, ident)
 num_fields = len(types)
+
 
 def parse_obs(line):
     fields = line.split('\t')
     parsed = [types[i](fields[i]) for i in xrange(num_fields)]
     # the None is where the FunctionContext would go; for Impala compatibility
     return [None] + parsed
+
 
 observations = sc.textFile('/user/laserson/bigml/census_text').map(parse_obs)
 
@@ -45,6 +48,7 @@ for size in sizes:
     predictions = observations.map(lambda tup: predict_income(*tup))
     distinct = predictions.distinct().collect()
     end_score = time()
-    results.append("spark,%i,%i,%.2f," % (size, len(udfs[size].func_code.co_code), end_score - start_score))
+    results.append("spark,%i,%i,%.2f," % (
+        size, len(udfs[size].func_code.co_code), end_score - start_score))
 
 print '\n'.join(results)

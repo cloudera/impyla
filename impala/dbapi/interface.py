@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,9 +19,11 @@ from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           InternalError, OperationalError, ProgrammingError,
                           IntegrityError, DataError, NotSupportedError)
 
+
 class Connection(object):
     # PEP 249
-    # Connection objects are associated with a TCLIService.Client thrift service
+    # Connection objects are associated with a TCLIService.Client thrift
+    # service
     # it's instantiated with an alive TCLIService.Client
 
     def close(self):
@@ -51,7 +53,6 @@ class Connection(object):
         if exc_type is not None:
             reraise(exc_type, exc_val, exc_tb)
 
-
     # optional DB API addition to make the errors attributes of Connection
     Error = Error
     Warning = Warning
@@ -66,6 +67,7 @@ class Connection(object):
 
 
 class Cursor(object):
+
     """Abstract representation of Cursor"""
 
     def description(self):
@@ -143,7 +145,8 @@ class Cursor(object):
     def get_summary(self):
         raise NotImplementedError
 
-    def build_summary_table(self, summary, idx, is_fragment_root, indent_level, output):
+    def build_summary_table(
+            self, summary, idx, is_fragment_root, indent_level, output):
         raise NotImplementedError
 
     def __enter__(self):
@@ -153,6 +156,7 @@ class Cursor(object):
         self.close()
         if exc_type is not None:
             reraise(exc_type, exc_val, exc_tb)
+
 
 def _bind_parameters(operation, parameters):
     # inspired by MySQL Python Connector (conversion.py)

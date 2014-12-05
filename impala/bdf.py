@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,16 +20,18 @@ from copy import copy
 from cStringIO import StringIO
 import csv
 
-
 import pandas as pd
 
 from impala.util import (as_pandas, _random_id, _py_to_sql_string,
-        _get_table_schema_hack)
+                         _get_table_schema_hack)
 from impala._sql_model import (_to_TableName, BaseTableRef, JoinTableRef,
-        SelectItem, SelectStmt, UnionStmt, Literal, InlineView, TableName,
-        Expr, _create_table, _create_table_as_select, LimitElement)
+                               SelectItem, SelectStmt, UnionStmt, Literal,
+                               InlineView, TableName,
+                               Expr, _create_table, _create_table_as_select,
+                               LimitElement)
 
 # utilities
+
 
 def _numpy_dtype_to_impala_PrimitiveType(ty):
     """Convert numpy dtype to Impala type string.
@@ -54,33 +56,40 @@ def _numpy_dtype_to_impala_PrimitiveType(ty):
         return 'BOOLEAN'
     return 'STRING'
 
+
 # BigDataFrame creation
+
 
 def from_sql_query(ic, query, alias=None):
     """Create a BDF from a SQL query executed by Impala"""
     query_alias = alias if alias else _random_id('inline_', 4)
     table_ref = InlineView(query, query_alias)
     schema = _get_table_schema_hack(ic._cursor, table_ref.to_sql())
-    select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
+    select_list = tuple([SelectItem(expr=Literal(col))
+                         for (col, ty) in schema])
     return BigDataFrame(ic, SelectStmt(select_list, table_ref))
+
 
 def from_sql_table(ic, table):
     """Create a BDF from a table name usable in Impala"""
     table_name = _to_TableName(table)
     table_ref = BaseTableRef(table_name)
     schema = _get_table_schema_hack(ic._cursor, table_ref.to_sql())
-    select_list = tuple([SelectItem(expr=Literal(col)) for (col, ty) in schema])
+    select_list = tuple([SelectItem(expr=Literal(col))
+                         for (col, ty) in schema])
     return BigDataFrame(ic, SelectStmt(select_list, table_ref))
 
+
 def from_hdfs(ic, path, schema, table=None, overwrite=False,
-        file_format='TEXTFILE', partition_schema=None,
-        field_terminator='\t', line_terminator='\n', escape_char='\\'):
+              file_format='TEXTFILE', partition_schema=None,
+              field_terminator='\t', line_terminator='\n', escape_char='\\'):
     """Create a BDF backed by an external file in HDFS.
 
     File must be Impala-compatible
     """
     if partition_schema is not None:
-        raise NotImplementedError("Partitions not yet implemented in .from_hdfs()")
+        raise NotImplementedError(
+            "Partitions not yet implemented in .from_hdfs()")
     if table is None:
         temp_table = _random_id('tmp_table_', 8)
         table = "%s.%s" % (ic._temp_db, temp_table)
@@ -88,17 +97,22 @@ def from_hdfs(ic, path, schema, table=None, overwrite=False,
     if overwrite:
         ic._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
     create_stmt = _create_table(table_name, schema, path=path,
-            file_format=file_format, field_terminator=field_terminator,
-            line_terminator=line_terminator, escape_char=escape_char)
+                                file_format=file_format,
+                                field_terminator=field_terminator,
+                                line_terminator=line_terminator,
+                                escape_char=escape_char)
     ic._cursor.execute(create_stmt)
     return from_sql_table(ic, table_name.to_sql())
 
+
 def from_pandas(ic, df, table=None, path=None, method='in_query',
-        file_format='TEXTFILE', field_terminator='\t', line_terminator='\n',
-        escape_char='\\',
-        hdfs_host=None, webhdfs_port=50070, hdfs_user=None, overwrite=False):
+                file_format='TEXTFILE', field_terminator='\t',
+                line_terminator='\n',
+                escape_char='\\',
+                hdfs_host=None, webhdfs_port=50070, hdfs_user=None,
+                overwrite=False):
     """Create a BDF by shipping an in-memory pandas `DataFrame` into Impala
-    
+
     path is the dir, not the filename
     """
     # TODO: this is not atomic
@@ -114,28 +128,36 @@ def from_pandas(ic, df, table=None, path=None, method='in_query',
     types = [_numpy_dtype_to_impala_PrimitiveType(ty) for ty in df.dtypes]
     schema = zip(columns, types)
     create_stmt = _create_table(table_name, schema, path=path,
-            file_format=file_format, field_terminator=field_terminator,
-            line_terminator=line_terminator, escape_char=escape_char)
+                                file_format=file_format,
+                                field_terminator=field_terminator,
+                                line_terminator=line_terminator,
+                                escape_char=escape_char)
     ic._cursor.execute(create_stmt)
     if method == 'in_query':
         query = "INSERT INTO %s VALUES " % table_name.to_sql()
-        query += ', '.join(['(%s)' % ', '.join(map(_py_to_sql_string, row)) for row in df.values])
+        query += ', '.join(['(%s)' % ', '.join(map(_py_to_sql_string, row))
+                            for row in df.values])
         ic._cursor.execute(query)
     elif method == 'webhdfs':
         if file_format != 'TEXTFILE':
             raise ValueError("only TEXTFILE format supported for webhdfs")
         if path is None:
-            raise ValueError("must supply a path for EXTERNAL table for webhdfs")
+            raise ValueError(
+                "must supply a path for EXTERNAL table for webhdfs")
         from pywebhdfs.webhdfs import PyWebHdfsClient
+
         hdfs_client = PyWebHdfsClient(host=hdfs_host, port=webhdfs_port,
-                user_name=hdfs_user)
+                                      user_name=hdfs_user)
         raw_data = StringIO()
         df.to_csv(raw_data, sep=field_terminator,
-                line_terminator=line_terminator, quoting=csv.QUOTE_NONE, escapechar=escape_char, header=False, index=False)
-        hdfs_client.create_file(os.path.join(path, 'data.txt').lstrip('/'), raw_data.getvalue(), overwrite=overwrite)
+                  line_terminator=line_terminator, quoting=csv.QUOTE_NONE,
+                  escapechar=escape_char, header=False, index=False)
+        hdfs_client.create_file(os.path.join(path, 'data.txt').lstrip(
+            '/'), raw_data.getvalue(), overwrite=overwrite)
         raw_data.close()
     else:
-        raise ValueError("method must be 'in_query' or 'webhdfs'; got %s" % method)
+        raise ValueError(
+            "method must be 'in_query' or 'webhdfs'; got %s" % method)
     return from_sql_table(ic, table_name.to_sql())
 
 
@@ -149,8 +171,10 @@ class BigDataFrame(object):
     @property
     def schema(self):
         if self._schema is None:
-            table_ref = InlineView(self._query_ast.to_sql(), _random_id('inline_', 4))
-            self._schema = _get_table_schema_hack(self._ic._cursor, table_ref.to_sql())
+            table_ref = InlineView(
+                self._query_ast.to_sql(), _random_id('inline_', 4))
+            self._schema = _get_table_schema_hack(
+                self._ic._cursor, table_ref.to_sql())
         return self._schema
 
     @property
@@ -165,10 +189,12 @@ class BigDataFrame(object):
     def __getitem__(self, obj):
         """'Indexing' functionality for the BigDataFrame
 
-        Given a single object or list, the BDF will interpret it as a relational
+        Given a single object or list, the BDF will interpret it as a
+        relational
         projection (i.e., a selection of columns).
 
-        Given a tuple of length 2, the first element will be interpreted for row
+        Given a tuple of length 2, the first element will be interpreted for
+        row
         selection (i.e., predicate/filter/WHERE clause), while the second
         element will be interpreted as a projection.
         """
@@ -178,7 +204,9 @@ class BigDataFrame(object):
             table_ref = InlineView(self._query_ast.to_sql(), alias)
             (limit_elt, where) = self._query_ast._filter(obj[0])
             select_list = self._query_ast._projection(obj[1])
-            return BigDataFrame(self._ic, SelectStmt(select_list, table_ref, where=where, limit=limit_elt))
+            return BigDataFrame(
+                self._ic, SelectStmt(select_list, table_ref, where=where,
+                                     limit=limit_elt))
         elif isinstance(obj, list):
             alias = _random_id('inline_', 4)
             table_ref = InlineView(self._query_ast.to_sql(), alias)
@@ -244,7 +272,8 @@ class BigDataFrame(object):
             unique_values[col] = self._cursor.fetchall()
 
     def store(self, path=None, table=None, file_format='TEXTFILE',
-            field_terminator='\t', line_terminator='\n', escape_char='\\', overwrite=False):
+              field_terminator='\t', line_terminator='\n', escape_char='\\',
+              overwrite=False):
         """Materialize the results and stores them in HFDS
 
         Implemented through a `CREATE TABLE AS SELECT`.
@@ -256,10 +285,14 @@ class BigDataFrame(object):
             path = os.path.join(self._temp_dir, temp_table)
         table_name = _to_TableName(table)
         if overwrite:
-            self._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
+            self._cursor.execute(
+                "DROP TABLE IF EXISTS %s" % table_name.to_sql())
         create_stmt = _create_table_as_select(table_name, path=path,
-                file_format=file_format, field_terminator=field_terminator,
-                line_terminator=line_terminator, escape_char=escape_char)
+                                              file_format=file_format,
+                                              field_terminator=
+                                              field_terminator,
+                                              line_terminator=line_terminator,
+                                              escape_char=escape_char)
         query = create_stmt + self.to_sql()
         self._cursor.execute(query)
         return from_sql_table(self._ic, table_name.to_sql())
@@ -269,9 +302,10 @@ class BigDataFrame(object):
         # TODO: is this fn useful?
         table_name = _to_TableName(name)
         if overwrite:
-            self._ic._cursor.execute('DROP VIEW IF EXISTS %s' % table_name.to_sql())
+            self._ic._cursor.execute(
+                'DROP VIEW IF EXISTS %s' % table_name.to_sql())
         sql = 'CREATE VIEW %s AS %s' % (table_name.to_sql(),
-                self._query_ast.to_sql())
+                                        self._query_ast.to_sql())
         self._ic._cursor.execute(sql)
         return from_sql_table(self._ic, table_name.to_sql())
 
@@ -288,7 +322,8 @@ class BigDataFrame(object):
         """
         alias = _random_id('inline_', 4)
         table_ref = InlineView(self._query_ast.to_sql(), alias)
-        select_list = [SelectItem(table_name=TableName(table_ref.name))] # SELECT alias.*
+        # SELECT alias.*
+        select_list = [SelectItem(table_name=TableName(table_ref.name))]
         limit_elt = LimitElement(Literal(n), None)
         ast = SelectStmt(select_list, table_ref, limit=limit_elt)
         bdf = BigDataFrame(self._ic, ast)
@@ -299,7 +334,9 @@ class BigDataFrame(object):
         return as_pandas(self.__iter__())
 
     def count(self):
-        count_query = 'SELECT COUNT(*) FROM (%s) AS count_tbl' % self._query_ast.to_sql()
+        count_query = 'SELECT COUNT(*) FROM (%s) AS count_tbl' % \
+                      self._query_ast.to_sql(
+                      )
         self._ic._cursor.execute(count_query)
         return self._ic._cursor.fetchall()[0][0]
 
@@ -323,7 +360,8 @@ class GroupBy(object):
     def __getitem__(self, obj):
         """Expression evaluation against groups.
 
-        Given a single object or list, the GroupBy will interpret it as a set of
+        Given a single object or list, the GroupBy will interpret it as a
+        set of
         SELECT expressions to evaluate in the context of the GROUP BY.
 
         Given a tuple of length 2, the first element will be interpreted for

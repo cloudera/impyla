@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,15 +29,20 @@ from numba.targets.imputils import Registry, implement, impl_attribute
 from impala.udf import stringimpl
 from impala.udf.abi import ABIHandling, raise_return_type
 from impala.udf.types import (FunctionContext,
-        AnyVal, BooleanVal, BooleanValType, TinyIntVal, TinyIntValType,
-        SmallIntVal, SmallIntValType, IntVal, IntValType, BigIntVal,
-        BigIntValType, FloatVal, FloatValType, DoubleVal, DoubleValType,
-        StringVal, StringValType)
+                              AnyVal, BooleanVal, BooleanValType, TinyIntVal,
+                              TinyIntValType,
+                              SmallIntVal, SmallIntValType, IntVal, IntValType,
+                              BigIntVal,
+                              BigIntValType, FloatVal, FloatValType, DoubleVal,
+                              DoubleValType,
+                              StringVal, StringValType)
 from impala.udf.impl_utils import (AnyValStruct, BooleanValStruct,
-        TinyIntValStruct, SmallIntValStruct, IntValStruct, BigIntValStruct,
-        FloatValStruct, DoubleValStruct, StringValStruct)
+                                   TinyIntValStruct, SmallIntValStruct,
+                                   IntValStruct, BigIntValStruct,
+                                   FloatValStruct, DoubleValStruct,
+                                   StringValStruct)
 from impala.udf.impl_utils import (precompiled, _get_is_null, _set_is_null,
-        _conv_numba_struct_to_clang)
+                                   _conv_numba_struct_to_clang)
 
 
 registry = Registry()
@@ -55,15 +60,19 @@ def _ctor_factory(Struct, Type, *input_args):
         _set_is_null(builder, v, cgutils.false_bit)
         v.val = x
         return v._getvalue()
+
     return register_function(Val_ctor)
+
 
 BooleanVal_ctor = _ctor_factory(BooleanValStruct, BooleanValType, ntypes.int8)
 TinyIntVal_ctor = _ctor_factory(TinyIntValStruct, TinyIntValType, ntypes.int8)
-SmallIntVal_ctor = _ctor_factory(SmallIntValStruct, SmallIntValType, ntypes.int16)
+SmallIntVal_ctor = _ctor_factory(
+    SmallIntValStruct, SmallIntValType, ntypes.int16)
 IntVal_ctor = _ctor_factory(IntValStruct, IntValType, ntypes.int32)
 BigIntVal_ctor = _ctor_factory(BigIntValStruct, BigIntValType, ntypes.int64)
 FloatVal_ctor = _ctor_factory(FloatValStruct, FloatValType, ntypes.float32)
 DoubleVal_ctor = _ctor_factory(DoubleValStruct, DoubleValType, ntypes.float64)
+
 
 @register_function
 @implement(StringValType, ntypes.string)
@@ -73,9 +82,12 @@ def StringVal_ctor(context, builder, sig, args):
     iv = StringValStruct(context, builder)
     _set_is_null(builder, iv, cgutils.false_bit)
     fndesc = lowering.ExternalFunctionDescriptor('strlen', ntypes.uintp,
-            [ntypes.CPointer(ntypes.char)])
-    func = context.declare_external_function(cgutils.get_module(builder), fndesc)
-    strlen_x = context.call_external_function(builder, func, fndesc.argtypes, [x])
+                                                 [ntypes.CPointer(
+                                                     ntypes.char)])
+    func = context.declare_external_function(
+        cgutils.get_module(builder), fndesc)
+    strlen_x = context.call_external_function(
+        builder, func, fndesc.argtypes, [x])
     len_x = builder.trunc(strlen_x, lc.Type.int(32))
     iv.len = len_x
     iv.ptr = x
@@ -90,13 +102,16 @@ def _is_null_attr_factory(Struct, Val):
         v = Struct(context, builder, value=value)
         is_null = _get_is_null(builder, v)
         return is_null
+
     return register_attribute(Val_is_null)
+
 
 def _val_attr_factory(Struct, Val, retty):
     @impl_attribute(Val, "val", retty)
     def Val_val(context, builder, typ, value):
         v = Struct(context, builder, value=value)
         return v.val
+
     return register_attribute(Val_val)
 
 # *Val.is_null
@@ -112,11 +127,13 @@ StringVal_is_null = _is_null_attr_factory(StringValStruct, StringVal)
 # *Val.val
 BooleanVal_val = _val_attr_factory(BooleanValStruct, BooleanVal, ntypes.int8)
 TinyIntVal_val = _val_attr_factory(TinyIntValStruct, TinyIntVal, ntypes.int8)
-SmallIntVal_val = _val_attr_factory(SmallIntValStruct, SmallIntVal, ntypes.int16)
+SmallIntVal_val = _val_attr_factory(
+    SmallIntValStruct, SmallIntVal, ntypes.int16)
 IntVal_val = _val_attr_factory(IntValStruct, IntVal, ntypes.int32)
 BigIntVal_val = _val_attr_factory(BigIntValStruct, BigIntVal, ntypes.int64)
 FloatVal_val = _val_attr_factory(FloatValStruct, FloatVal, ntypes.float32)
 DoubleVal_val = _val_attr_factory(DoubleValStruct, DoubleVal, ntypes.float64)
+
 
 @register_attribute
 @impl_attribute(StringVal, "len", ntypes.int32)
@@ -124,6 +141,7 @@ def StringVal_len(context, builder, typ, value):
     """StringVal::len"""
     iv = StringValStruct(context, builder, value=value)
     return iv.len
+
 
 @register_attribute
 @impl_attribute(StringVal, "ptr", ntypes.CPointer(ntypes.uint8))
@@ -142,19 +160,27 @@ def anyval_is_none_impl(context, builder, sig, args):
     val = AnyValStruct(context, builder, value=x)
     return builder.trunc(val.is_null, lc.Type.int(1))
 
+
 def starval_is_none_impl(context, builder, sig, args):
     [x, y] = args
     x = builder.extract_value(x, 0)
     val = AnyValStruct(context, builder, value=x)
     return builder.trunc(val.is_null, lc.Type.int(1))
 
-register_function(implement('is', BooleanVal, ntypes.none)(starval_is_none_impl))
-register_function(implement('is', TinyIntVal, ntypes.none)(starval_is_none_impl))
-register_function(implement('is', SmallIntVal, ntypes.none)(starval_is_none_impl))
+
+register_function(
+    implement('is', BooleanVal, ntypes.none)(starval_is_none_impl))
+register_function(
+    implement('is', TinyIntVal, ntypes.none)(starval_is_none_impl))
+register_function(
+    implement('is', SmallIntVal, ntypes.none)(starval_is_none_impl))
 register_function(implement('is', IntVal, ntypes.none)(starval_is_none_impl))
-register_function(implement('is', BigIntVal, ntypes.none)(starval_is_none_impl))
+register_function(
+    implement('is', BigIntVal, ntypes.none)(starval_is_none_impl))
 register_function(implement('is', FloatVal, ntypes.none)(starval_is_none_impl))
-register_function(implement('is', DoubleVal, ntypes.none)(starval_is_none_impl))
+register_function(
+    implement('is', DoubleVal, ntypes.none)(starval_is_none_impl))
+
 
 @register_function
 @implement(ntypes.len_type, StringVal)
@@ -163,23 +189,27 @@ def len_stringval_impl(context, builder, sig, args):
     val = StringValStruct(context, builder, value=s)
     return val.len
 
+
 @register_function
 @implement("==", ntypes.CPointer(ntypes.uint8), ntypes.CPointer(ntypes.uint8))
 def eq_ptr_impl(context, builder, sig, args):
     [p1, p2] = args
     return builder.icmp(lc.ICMP_EQ, p1, p2)
 
+
 @register_function
 @implement("==", StringVal, StringVal)
 def eq_stringval(context, builder, sig, args):
     module = cgutils.get_module(builder)
     precomp_func = context._get_precompiled_function("EqStringValImpl")
-    func = module.get_or_insert_function(precomp_func.type.pointee, precomp_func.name)
+    func = module.get_or_insert_function(
+        precomp_func.type.pointee, precomp_func.name)
     [s1, s2] = args
     cs1 = _conv_numba_struct_to_clang(builder, s1, func.args[0].type)
     cs2 = _conv_numba_struct_to_clang(builder, s2, func.args[1].type)
     result = builder.call(func, [cs1, cs2])
-    return result # ret bool so no need to raise type
+    return result  # ret bool so no need to raise type
+
 
 @register_function
 @implement("!=", StringVal, StringVal)
@@ -188,23 +218,27 @@ def neq_stringval(context, builder, sig, args):
     neq = builder.xor(lc.Constant.int(lc.Type.int(1), 1), eq)
     return neq
 
+
 @register_function
 @implement("getitem", StringVal, ntypes.intc)
 def getitem_stringval(context, builder, sig, args):
     module = cgutils.get_module(builder)
     precomp_func = context._get_precompiled_function("GetItemStringValImpl")
-    func = module.get_or_insert_function(precomp_func.type.pointee, precomp_func.name)
+    func = module.get_or_insert_function(
+        precomp_func.type.pointee, precomp_func.name)
     [s, i] = args
     cs = _conv_numba_struct_to_clang(builder, s, func.args[0].type)
     result = builder.call(func, [cs, i])
     return raise_return_type(context, builder, StringVal, result)
+
 
 @register_function
 @implement("+", StringVal, StringVal)
 def add_stringval(context, builder, sig, args):
     module = cgutils.get_module(builder)
     precomp_func = context._get_precompiled_function("AddStringValImpl")
-    func = module.get_or_insert_function(precomp_func.type.pointee, precomp_func.name)
+    func = module.get_or_insert_function(
+        precomp_func.type.pointee, precomp_func.name)
     fnctx_arg = context.get_arguments(cgutils.get_function(builder))[0]
     cfnctx_arg = builder.bitcast(fnctx_arg, func.args[0].type)
     [s1, s2] = args
@@ -255,7 +289,8 @@ class ImpalaTargetContext(BaseContext):
         self.optimizer = self.build_pass_manager()
 
         # once per context
-        self._fnctxtype = precompiled.get_type_named("class.impala_udf::FunctionContext")
+        self._fnctxtype = precompiled.get_type_named(
+            "class.impala_udf::FunctionContext")
 
     def _get_precompiled_function(self, name):
         fns = [fn for fn in precompiled.functions if name in fn.name]
@@ -264,7 +299,8 @@ class ImpalaTargetContext(BaseContext):
 
     def cast(self, builder, val, fromty, toty):
         if fromty not in self._impala_types and toty not in self._impala_types:
-            return super(ImpalaTargetContext, self).cast(builder, val, fromty, toty)
+            return super(ImpalaTargetContext, self).cast(
+                builder, val, fromty, toty)
 
         if fromty == toty:
             return val
@@ -278,10 +314,13 @@ class ImpalaTargetContext(BaseContext):
             iv1 = TYPE_LAYOUT[fromty](self, builder, value=val)
             is_null = _get_is_null(builder, iv1)
             iv2 = AnyValStruct(self, builder)
-            # this is equiv to _set_is_null, but changes the GEP bc of AnyVal's structure
+            # this is equiv to _set_is_null, but changes the GEP bc of AnyVal's
+            # structure
             byte = builder.zext(is_null, lc.Type.int(8))
             builder.store(byte, builder.gep(iv2._getpointer(),
-                    [lc.Constant.int(lc.Type.int(32), 0)] * 2, inbounds=True))
+                                            [lc.Constant.int(lc.Type.int(32),
+                                                             0)] * 2,
+                                            inbounds=True))
             return iv2._getvalue()
 
         if fromty == BooleanVal:
@@ -308,35 +347,44 @@ class ImpalaTargetContext(BaseContext):
 
         # no way fromty is a *Val starting here
         if toty == BooleanVal:
-            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int8)
+            val = super(ImpalaTargetContext, self).cast(
+                builder, val, fromty, ntypes.int8)
             return BooleanVal_ctor(self, builder, None, [val])
         if toty == TinyIntVal:
-            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int8)
+            val = super(ImpalaTargetContext, self).cast(
+                builder, val, fromty, ntypes.int8)
             return TinyIntVal_ctor(self, builder, None, [val])
         if toty == SmallIntVal:
-            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int16)
+            val = super(ImpalaTargetContext, self).cast(
+                builder, val, fromty, ntypes.int16)
             return SmallIntVal_ctor(self, builder, None, [val])
         if toty == IntVal:
-            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int32)
+            val = super(ImpalaTargetContext, self).cast(
+                builder, val, fromty, ntypes.int32)
             return IntVal_ctor(self, builder, None, [val])
         if toty == BigIntVal:
-            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.int64)
+            val = super(ImpalaTargetContext, self).cast(
+                builder, val, fromty, ntypes.int64)
             return BigIntVal_ctor(self, builder, None, [val])
         if toty == FloatVal:
-            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.float32)
+            val = super(ImpalaTargetContext, self).cast(
+                builder, val, fromty, ntypes.float32)
             return FloatVal_ctor(self, builder, None, [val])
         if toty == DoubleVal:
-            val = super(ImpalaTargetContext, self).cast(builder, val, fromty, ntypes.float64)
+            val = super(ImpalaTargetContext, self).cast(
+                builder, val, fromty, ntypes.float64)
             return DoubleVal_ctor(self, builder, None, [val])
         if toty == StringVal:
             return StringVal_ctor(self, builder, None, [val])
 
-        return super(ImpalaTargetContext, self).cast(builder, val, fromty, toty)
+        return super(ImpalaTargetContext, self).cast(
+            builder, val, fromty, toty)
 
     def get_constant_string(self, builder, ty, val):
         assert ty == ntypes.string
         literal = lc.Constant.stringz(val)
-        gv = cgutils.get_module(builder).add_global_variable(literal.type, 'str_literal')
+        gv = cgutils.get_module(builder).add_global_variable(
+            literal.type, 'str_literal')
         gv.linkage = lc.LINKAGE_PRIVATE
         gv.initializer = literal
         gv.global_constant = True
@@ -377,7 +425,8 @@ class ImpalaTargetContext(BaseContext):
             iv.ptr = self.get_constant_string(builder, ntypes.string, val)
             return iv._getvalue()
         else:
-            return super(ImpalaTargetContext, self).get_constant_struct(builder, ty, val)
+            return super(ImpalaTargetContext, self).get_constant_struct(
+                builder, ty, val)
 
     def get_struct_type(self, struct):
         if hasattr(struct, '_name'):
@@ -385,7 +434,7 @@ class ImpalaTargetContext(BaseContext):
             return precompiled.get_type_named(struct._name)
         else:
             return super(ImpalaTargetContext, self).get_struct_type(struct)
-    
+
     def get_data_type(self, ty):
         if ty in LLVM_TYPE:
             return LLVM_TYPE[ty]
@@ -398,11 +447,11 @@ class ImpalaTargetContext(BaseContext):
         # only handle uniform type
         assert all(x == itemtys[0] for x in itemtys)
         if ty not in self._impala_types:
-            raise NotImplementedError("Arrays of non-Impala types not supported")
-
+            raise NotImplementedError(
+                "Arrays of non-Impala types not supported")
 
     def build_pass_manager(self):
-        opt = 0 # let Impala optimize
+        opt = 0  # let Impala optimize
         # opt = 3 # optimize ourselves
         pms = lp.build_pass_managers(tm=self.tm, opt=opt, loop_vectorize=True,
                                      fpm=False)

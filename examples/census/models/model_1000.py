@@ -1,4 +1,9 @@
-def predict_income(impala_function_context, age, workclass, final_weight, education, education_num, marital_status, occupation, relationship, race, sex, hours_per_week, native_country, income):
+
+
+def predict_income(impala_function_context, age, workclass, final_weight,
+                   education, education_num,
+                   marital_status, occupation, relationship, race, sex,
+                   hours_per_week, native_country, income):
     """ Predictor for income from model/53603152ffa04466f9000e6b
 
         https://archive.ics.uci.edu/ml/machine-learning-databases/adult/
@@ -59,9 +64,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (final_weight is None):
                                                 return '>50K'
                                             if (final_weight > 142784):
-                                                if (workclass == 'Self-emp-not-inc'):
+                                                if (workclass ==
+                                                        'Self-emp-not-inc'):
                                                     return '<=50K'
-                                                if (workclass != 'Self-emp-not-inc'):
+                                                if (workclass !=
+                                                        'Self-emp-not-inc'):
                                                     return '<=50K'
                                             if (final_weight <= 142784):
                                                 if (final_weight > 92181):
@@ -84,9 +91,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (workclass == 'Private'):
                                                 if (race is None):
                                                     return '>50K'
-                                                if (race == 'Asian-Pac-Islander'):
+                                                if (race ==
+                                                        'Asian-Pac-Islander'):
                                                     return '<=50K'
-                                                if (race != 'Asian-Pac-Islander'):
+                                                if (race !=
+                                                        'Asian-Pac-Islander'):
                                                     return '>50K'
                                             if (workclass != 'Private'):
                                                 return '>50K'
@@ -98,9 +107,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (relationship != 'Not-in-family'):
                                             if (occupation is None):
                                                 return '>50K'
-                                            if (occupation == 'Transport-moving'):
+                                            if (occupation ==
+                                                    'Transport-moving'):
                                                 return '<=50K'
-                                            if (occupation != 'Transport-moving'):
+                                            if (occupation !=
+                                                    'Transport-moving'):
                                                 if (age > 57):
                                                     return '<=50K'
                                                 if (age <= 57):
@@ -117,9 +128,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week > 57):
                                                 if (occupation is None):
                                                     return '<=50K'
-                                                if (occupation == 'Exec-managerial'):
+                                                if (occupation ==
+                                                        'Exec-managerial'):
                                                     return '>50K'
-                                                if (occupation != 'Exec-managerial'):
+                                                if (occupation !=
+                                                        'Exec-managerial'):
                                                     return '<=50K'
                                             if (hours_per_week <= 57):
                                                 if (hours_per_week > 39):
@@ -147,9 +160,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (final_weight <= 323185):
                                                 if (race is None):
                                                     return '>50K'
-                                                if (race == 'Amer-Indian-Eskimo'):
+                                                if (race ==
+                                                        'Amer-Indian-Eskimo'):
                                                     return '<=50K'
-                                                if (race != 'Amer-Indian-Eskimo'):
+                                                if (race !=
+                                                        'Amer-Indian-Eskimo'):
                                                     return '>50K'
                             if (age <= 38):
                                 if (occupation is None):
@@ -172,9 +187,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (sex is None):
                                                 return '>50K'
                                             if (sex == 'Male'):
-                                                if (occupation == 'Machine-op-inspct'):
+                                                if (occupation ==
+                                                        'Machine-op-inspct'):
                                                     return '<=50K'
-                                                if (occupation != 'Machine-op-inspct'):
+                                                if (occupation !=
+                                                        'Machine-op-inspct'):
                                                     return '>50K'
                                             if (sex != 'Male'):
                                                 return '>50K'
@@ -281,9 +298,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (final_weight > 121061):
                                         if (final_weight > 232277):
                                             if (age > 36):
-                                                if (occupation == 'Other-service'):
+                                                if (occupation ==
+                                                        'Other-service'):
                                                     return '<=50K'
-                                                if (occupation != 'Other-service'):
+                                                if (occupation !=
+                                                        'Other-service'):
                                                     return '>50K'
                                             if (age <= 36):
                                                 if (hours_per_week > 39):
@@ -291,12 +310,14 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 if (hours_per_week <= 39):
                                                     return '>50K'
                                         if (final_weight <= 232277):
-                                            if (occupation == 'Transport-moving'):
+                                            if (occupation ==
+                                                    'Transport-moving'):
                                                 if (hours_per_week > 42):
                                                     return '>50K'
                                                 if (hours_per_week <= 42):
                                                     return '<=50K'
-                                            if (occupation != 'Transport-moving'):
+                                            if (occupation !=
+                                                    'Transport-moving'):
                                                 if (workclass is None):
                                                     return '>50K'
                                                 if (workclass == 'Local-gov'):
@@ -315,9 +336,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week <= 53):
                                                 if (workclass is None):
                                                     return '>50K'
-                                                if (workclass == 'Self-emp-not-inc'):
+                                                if (workclass ==
+                                                        'Self-emp-not-inc'):
                                                     return '<=50K'
-                                                if (workclass != 'Self-emp-not-inc'):
+                                                if (workclass !=
+                                                        'Self-emp-not-inc'):
                                                     return '>50K'
                 if (age <= 28):
                     if (age > 24):
@@ -615,14 +638,16 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (sex != 'Male'):
                                                 return '>50K'
                                         if (workclass != 'State-gov'):
-                                            if (workclass == 'Self-emp-not-inc'):
+                                            if (workclass ==
+                                                    'Self-emp-not-inc'):
                                                 if (education is None):
                                                     return '<=50K'
                                                 if (education == 'Assoc-voc'):
                                                     return '<=50K'
                                                 if (education != 'Assoc-voc'):
                                                     return '>50K'
-                                            if (workclass != 'Self-emp-not-inc'):
+                                            if (workclass !=
+                                                    'Self-emp-not-inc'):
                                                 if (hours_per_week > 48):
                                                     return '>50K'
                                                 if (hours_per_week <= 48):
@@ -634,9 +659,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (final_weight > 133264):
                                                 if (workclass is None):
                                                     return '>50K'
-                                                if (workclass == 'Self-emp-not-inc'):
+                                                if (workclass ==
+                                                        'Self-emp-not-inc'):
                                                     return '<=50K'
-                                                if (workclass != 'Self-emp-not-inc'):
+                                                if (workclass !=
+                                                        'Self-emp-not-inc'):
                                                     return '>50K'
                                             if (final_weight <= 133264):
                                                 if (final_weight > 45882):
@@ -654,9 +681,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (occupation != 'Tech-support'):
                                                 if (workclass is None):
                                                     return '<=50K'
-                                                if (workclass == 'Self-emp-inc'):
+                                                if (workclass ==
+                                                        'Self-emp-inc'):
                                                     return '>50K'
-                                                if (workclass != 'Self-emp-inc'):
+                                                if (workclass !=
+                                                        'Self-emp-inc'):
                                                     return '<=50K'
                         if (education_num <= 9):
                             if (occupation is None):
@@ -854,9 +883,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 if (education_num <= 9):
                                                     return '<=50K'
                                             if (age <= 59):
-                                                if (occupation == 'Handlers-cleaners'):
+                                                if (occupation ==
+                                                        'Handlers-cleaners'):
                                                     return '>50K'
-                                                if (occupation != 'Handlers-cleaners'):
+                                                if (occupation !=
+                                                        'Handlers-cleaners'):
                                                     return '<=50K'
                                         if (age <= 41):
                                             return '<=50K'
@@ -965,9 +996,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week > 61):
                                                 return '<=50K'
                                             if (hours_per_week <= 61):
-                                                if (occupation == 'Adm-clerical'):
+                                                if (occupation ==
+                                                        'Adm-clerical'):
                                                     return '>50K'
-                                                if (occupation != 'Adm-clerical'):
+                                                if (occupation !=
+                                                        'Adm-clerical'):
                                                     return '<=50K'
                                     if (age <= 31):
                                         if (occupation == 'Handlers-cleaners'):
@@ -1012,9 +1045,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             return '<=50K'
                                         if (workclass == 'Federal-gov'):
                                             if (age > 30):
-                                                if (occupation == 'Tech-support'):
+                                                if (occupation ==
+                                                        'Tech-support'):
                                                     return '<=50K'
-                                                if (occupation != 'Tech-support'):
+                                                if (occupation !=
+                                                        'Tech-support'):
                                                     return '>50K'
                                             if (age <= 30):
                                                 return '>50K'
@@ -1024,9 +1059,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (relationship == 'Own-child'):
                                                 return '<=50K'
                                             if (relationship != 'Own-child'):
-                                                if (occupation == 'Handlers-cleaners'):
+                                                if (occupation ==
+                                                        'Handlers-cleaners'):
                                                     return '<=50K'
-                                                if (occupation != 'Handlers-cleaners'):
+                                                if (occupation !=
+                                                        'Handlers-cleaners'):
                                                     return '<=50K'
                     if (age <= 24):
                         if (hours_per_week is None):
@@ -1140,9 +1177,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             return '<=50K'
                                     if (final_weight <= 162184):
                                         if (final_weight > 151824):
-                                            if (occupation == 'Machine-op-inspct'):
+                                            if (occupation ==
+                                                    'Machine-op-inspct'):
                                                 return '<=50K'
-                                            if (occupation != 'Machine-op-inspct'):
+                                            if (occupation !=
+                                                    'Machine-op-inspct'):
                                                 return '>50K'
                                         if (final_weight <= 151824):
                                             if (final_weight > 118909):
@@ -1256,9 +1295,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (occupation == 'Sales'):
                                                 return '>50K'
                                             if (occupation != 'Sales'):
-                                                if (occupation == 'Machine-op-inspct'):
+                                                if (occupation ==
+                                                        'Machine-op-inspct'):
                                                     return '>50K'
-                                                if (occupation != 'Machine-op-inspct'):
+                                                if (occupation !=
+                                                        'Machine-op-inspct'):
                                                     return '<=50K'
                                     if (workclass != 'Self-emp-inc'):
                                         if (age > 40):
@@ -1282,9 +1323,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (education != '7th-8th'):
                                                 if (occupation is None):
                                                     return '<=50K'
-                                                if (occupation == 'Craft-repair'):
+                                                if (occupation ==
+                                                        'Craft-repair'):
                                                     return '<=50K'
-                                                if (occupation != 'Craft-repair'):
+                                                if (occupation !=
+                                                        'Craft-repair'):
                                                     return '>50K'
                     if (hours_per_week <= 22):
                         return '<=50K'
@@ -1348,9 +1391,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 if (education != '7th-8th'):
                                                     return '<=50K'
                                             if (age <= 29):
-                                                if (occupation == 'Other-service'):
+                                                if (occupation ==
+                                                        'Other-service'):
                                                     return '<=50K'
-                                                if (occupation != 'Other-service'):
+                                                if (occupation !=
+                                                        'Other-service'):
                                                     return '>50K'
                                         if (age <= 28):
                                             return '<=50K'
@@ -1377,9 +1422,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week <= 30):
                                                 return '<=50K'
                                         if (age <= 27):
-                                            if (occupation == 'Transport-moving'):
+                                            if (occupation ==
+                                                    'Transport-moving'):
                                                 return '>50K'
-                                            if (occupation != 'Transport-moving'):
+                                            if (occupation !=
+                                                    'Transport-moving'):
                                                 return '<=50K'
                                     if (final_weight <= 149463):
                                         return '<=50K'
@@ -1494,9 +1541,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week > 55):
                                                 return '<=50K'
                                             if (hours_per_week <= 55):
-                                                if (marital_status == 'Never-married'):
+                                                if (marital_status ==
+                                                        'Never-married'):
                                                     return '>50K'
-                                                if (marital_status != 'Never-married'):
+                                                if (marital_status !=
+                                                        'Never-married'):
                                                     return '<=50K'
                                 if (age <= 52):
                                     if (hours_per_week > 52):
@@ -1552,9 +1601,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (relationship != 'Own-child'):
                                             if (workclass is None):
                                                 return '>50K'
-                                            if (workclass == 'Self-emp-not-inc'):
+                                            if (workclass ==
+                                                    'Self-emp-not-inc'):
                                                 return '<=50K'
-                                            if (workclass != 'Self-emp-not-inc'):
+                                            if (workclass !=
+                                                    'Self-emp-not-inc'):
                                                 if (race is None):
                                                     return '>50K'
                                                 if (race == 'White'):
@@ -1568,9 +1619,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             return '>50K'
                                         if (race != 'Asian-Pac-Islander'):
                                             if (occupation == 'Adm-clerical'):
-                                                if (marital_status == 'Never-married'):
+                                                if (marital_status ==
+                                                        'Never-married'):
                                                     return '>50K'
-                                                if (marital_status != 'Never-married'):
+                                                if (marital_status !=
+                                                        'Never-married'):
                                                     return '<=50K'
                                             if (occupation != 'Adm-clerical'):
                                                 if (hours_per_week > 87):
@@ -1587,9 +1640,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (workclass == 'Self-emp-inc'):
                                                 return '<=50K'
                                             if (workclass != 'Self-emp-inc'):
-                                                if (marital_status == 'Separated'):
+                                                if (marital_status ==
+                                                        'Separated'):
                                                     return '<=50K'
-                                                if (marital_status != 'Separated'):
+                                                if (marital_status !=
+                                                        'Separated'):
                                                     return '>50K'
                                         if (age <= 32):
                                             if (race is None):
@@ -1606,9 +1661,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     return '<=50K'
                                 if (final_weight > 151124):
                                     if (final_weight > 158605):
-                                        if (marital_status == 'Married-spouse-absent'):
+                                        if (marital_status ==
+                                                'Married-spouse-absent'):
                                             return '>50K'
-                                        if (marital_status != 'Married-spouse-absent'):
+                                        if (marital_status !=
+                                                'Married-spouse-absent'):
                                             if (race is None):
                                                 return '<=50K'
                                             if (race == 'Asian-Pac-Islander'):
@@ -1683,9 +1740,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week > 37):
                                                 if (occupation is None):
                                                     return '<=50K'
-                                                if (occupation == 'Prof-specialty'):
+                                                if (occupation ==
+                                                        'Prof-specialty'):
                                                     return '<=50K'
-                                                if (occupation != 'Prof-specialty'):
+                                                if (occupation !=
+                                                        'Prof-specialty'):
                                                     return '<=50K'
                                             if (hours_per_week <= 37):
                                                 return '>50K'
@@ -1744,9 +1803,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (sex == 'Male'):
                                             if (occupation is None):
                                                 return '<=50K'
-                                            if (occupation == 'Prof-specialty'):
+                                            if (occupation ==
+                                                    'Prof-specialty'):
                                                 return '>50K'
-                                            if (occupation != 'Prof-specialty'):
+                                            if (occupation !=
+                                                    'Prof-specialty'):
                                                 return '<=50K'
                                         if (sex != 'Male'):
                                             return '<=50K'
@@ -1798,9 +1859,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (age > 40):
                                                 return '>50K'
                                             if (age <= 40):
-                                                if (marital_status == 'Widowed'):
+                                                if (marital_status ==
+                                                        'Widowed'):
                                                     return '>50K'
-                                                if (marital_status != 'Widowed'):
+                                                if (marital_status !=
+                                                        'Widowed'):
                                                     return '<=50K'
                                         if (sex != 'Male'):
                                             return '<=50K'
@@ -1809,16 +1872,20 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             return '<=50K'
                                         if (final_weight > 101112):
                                             if (age > 34):
-                                                if (marital_status == 'Never-married'):
+                                                if (marital_status ==
+                                                        'Never-married'):
                                                     return '<=50K'
-                                                if (marital_status != 'Never-married'):
+                                                if (marital_status !=
+                                                        'Never-married'):
                                                     return '<=50K'
                                             if (age <= 34):
                                                 if (occupation is None):
                                                     return '<=50K'
-                                                if (occupation == 'Adm-clerical'):
+                                                if (occupation ==
+                                                        'Adm-clerical'):
                                                     return '<=50K'
-                                                if (occupation != 'Adm-clerical'):
+                                                if (occupation !=
+                                                        'Adm-clerical'):
                                                     return '<=50K'
                                         if (final_weight <= 101112):
                                             if (age > 28):
@@ -1893,9 +1960,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 if (race != 'White'):
                                                     return '<=50K'
                                             if (relationship != 'Unmarried'):
-                                                if (occupation == 'Exec-managerial'):
+                                                if (occupation ==
+                                                        'Exec-managerial'):
                                                     return '<=50K'
-                                                if (occupation != 'Exec-managerial'):
+                                                if (occupation !=
+                                                        'Exec-managerial'):
                                                     return '<=50K'
                                     if (workclass != 'Private'):
                                         return '<=50K'
@@ -1932,9 +2001,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (hours_per_week > 61):
                                                 return '>50K'
                                             if (hours_per_week <= 61):
-                                                if (occupation == 'Tech-support'):
+                                                if (occupation ==
+                                                        'Tech-support'):
                                                     return '>50K'
-                                                if (occupation != 'Tech-support'):
+                                                if (occupation !=
+                                                        'Tech-support'):
                                                     return '<=50K'
                         if (age <= 53):
                             if (relationship is None):
@@ -1965,9 +2036,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (workclass is None):
                                             return '<=50K'
                                         if (workclass == 'Federal-gov'):
-                                            if (marital_status == 'Never-married'):
+                                            if (marital_status ==
+                                                    'Never-married'):
                                                 return '>50K'
-                                            if (marital_status != 'Never-married'):
+                                            if (marital_status !=
+                                                    'Never-married'):
                                                 return '<=50K'
                                         if (workclass != 'Federal-gov'):
                                             return '<=50K'
@@ -2084,20 +2157,24 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                 return '<=50K'
                             if (relationship == 'Not-in-family'):
                                 if (occupation == 'Adm-clerical'):
-                                    if (marital_status == 'Married-spouse-absent'):
+                                    if (marital_status ==
+                                            'Married-spouse-absent'):
                                         if (education is None):
                                             return '<=50K'
                                         if (education == 'HS-grad'):
                                             return '<=50K'
                                         if (education != 'HS-grad'):
                                             return '>50K'
-                                    if (marital_status != 'Married-spouse-absent'):
+                                    if (marital_status !=
+                                            'Married-spouse-absent'):
                                         if (sex is None):
                                             return '<=50K'
                                         if (sex == 'Male'):
-                                            if (marital_status == 'Never-married'):
+                                            if (marital_status ==
+                                                    'Never-married'):
                                                 return '<=50K'
-                                            if (marital_status != 'Never-married'):
+                                            if (marital_status !=
+                                                    'Never-married'):
                                                 if (final_weight is None):
                                                     return '<=50K'
                                                 if (final_weight > 126659):
@@ -2143,14 +2220,18 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                                 if (education_num <= 10):
                                                     return '>50K'
                                         if (occupation != 'Protective-serv'):
-                                            if (occupation == 'Transport-moving'):
+                                            if (occupation ==
+                                                    'Transport-moving'):
                                                 if (education is None):
                                                     return '<=50K'
-                                                if (education == 'Some-college'):
+                                                if (education ==
+                                                        'Some-college'):
                                                     return '<=50K'
-                                                if (education != 'Some-college'):
+                                                if (education !=
+                                                        'Some-college'):
                                                     return '<=50K'
-                                            if (occupation != 'Transport-moving'):
+                                            if (occupation !=
+                                                    'Transport-moving'):
                                                 if (occupation == 'Sales'):
                                                     return '<=50K'
                                                 if (occupation != 'Sales'):
@@ -2194,14 +2275,18 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                             if (education == 'Assoc-voc'):
                                                 if (workclass is None):
                                                     return '<=50K'
-                                                if (workclass == 'Federal-gov'):
+                                                if (workclass ==
+                                                        'Federal-gov'):
                                                     return '<=50K'
-                                                if (workclass != 'Federal-gov'):
+                                                if (workclass !=
+                                                        'Federal-gov'):
                                                     return '<=50K'
                                             if (education != 'Assoc-voc'):
-                                                if (occupation == 'Adm-clerical'):
+                                                if (occupation ==
+                                                        'Adm-clerical'):
                                                     return '<=50K'
-                                                if (occupation != 'Adm-clerical'):
+                                                if (occupation !=
+                                                        'Adm-clerical'):
                                                     return '<=50K'
             if (age <= 31):
                 if (age > 21):
@@ -2324,9 +2409,11 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                     if (occupation != 'Protective-serv'):
                                         if (relationship == 'Own-child'):
                                             if (age > 29):
-                                                if (occupation == 'Craft-repair'):
+                                                if (occupation ==
+                                                        'Craft-repair'):
                                                     return '<=50K'
-                                                if (occupation != 'Craft-repair'):
+                                                if (occupation !=
+                                                        'Craft-repair'):
                                                     return '<=50K'
                                             if (age <= 29):
                                                 return '<=50K'
@@ -2349,14 +2436,18 @@ def predict_income(impala_function_context, age, workclass, final_weight, educat
                                         if (occupation is None):
                                             return '<=50K'
                                         if (occupation == 'Craft-repair'):
-                                            if (marital_status == 'Never-married'):
+                                            if (marital_status ==
+                                                    'Never-married'):
                                                 if (relationship is None):
                                                     return '<=50K'
-                                                if (relationship == 'Not-in-family'):
+                                                if (relationship ==
+                                                        'Not-in-family'):
                                                     return '<=50K'
-                                                if (relationship != 'Not-in-family'):
+                                                if (relationship !=
+                                                        'Not-in-family'):
                                                     return '>50K'
-                                            if (marital_status != 'Never-married'):
+                                            if (marital_status !=
+                                                    'Never-married'):
                                                 return '<=50K'
                                         if (occupation != 'Craft-repair'):
                                             return '<=50K'
