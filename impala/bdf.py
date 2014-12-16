@@ -29,6 +29,7 @@ from impala._sql_model import (_to_TableName, BaseTableRef, JoinTableRef,
                                InlineView, TableName, Expr, _create_table,
                                _create_table_as_select, LimitElement)
 
+
 # utilities
 
 def _numpy_dtype_to_impala_PrimitiveType(ty):
@@ -258,11 +259,12 @@ class BigDataFrame(object):
         """
         # TODO
         raise NotImplementedError
-        unique_values = {}
-        for col in categoricals:
-            distinct_query = "SELECT DISTINCT %s FROM %s" % (col, bdf.to_sql())
-            self._cursor.execute(distinct_query)
-            unique_values[col] = self._cursor.fetchall()
+        # unique_values = {}
+        # for col in categoricals:
+        #     distinct_query = "SELECT DISTINCT %s FROM %s" % (
+        #         col, bdf.to_sql())
+        #     self._cursor.execute(distinct_query)
+        #     unique_values[col] = self._cursor.fetchall()
 
     def store(self, path=None, table=None, file_format='TEXTFILE',
               field_terminator='\t', line_terminator='\n', escape_char='\\',
@@ -282,8 +284,8 @@ class BigDataFrame(object):
                 "DROP TABLE IF EXISTS %s" % table_name.to_sql())
         create_stmt = _create_table_as_select(
             table_name, path=path, file_format=file_format,
-            field_terminator= field_terminator,
-            line_terminator=line_terminator, escape_char=escape_char)
+            field_terminator=field_terminator, line_terminator=line_terminator,
+            escape_char=escape_char)
         query = create_stmt + self.to_sql()
         self._cursor.execute(query)
         return from_sql_table(self._ic, table_name.to_sql())

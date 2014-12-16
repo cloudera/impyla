@@ -25,7 +25,6 @@
 import datetime
 import socket
 import operator
-import exceptions
 import re
 from decimal import Decimal
 
@@ -85,6 +84,7 @@ def err_if_rpc_not_ok(resp):
 # If present, the trailing 3 digits will be ignored without warning.
 _TIMESTAMP_PATTERN = re.compile(r'(\d+-\d+-\d+ \d+:\d+:\d+(\.\d{,6})?)')
 
+
 def _parse_timestamp(value):
     if value:
         match = _TIMESTAMP_PATTERN.match(value)
@@ -130,11 +130,11 @@ def retry(func):
                 if not transport.isOpen():
                     transport.open()
                 return func(*args, **kwargs)
-            except socket.error as e:
+            except socket.error:
                 pass
-            except TTransportException as e:
+            except TTransportException:
                 pass
-            except Exception as e:
+            except Exception:
                 raise
             transport.close()
             tries_left -= 1
@@ -164,6 +164,7 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
         import saslwrapper as sasl
     except ImportError:
         import sasl
+
     from impala.thrift_sasl import TSaslClientTransport
 
     def sasl_factory():
@@ -429,12 +430,12 @@ def ping(service, session_handle):
                       infoType=TGetInfoType.CLI_SERVER_NAME)
     try:
         resp = service.GetInfo(req)
-    except TTransportException as e:
+    except TTransportException:
         return False
 
     try:
         err_if_rpc_not_ok(resp)
-    except HiveServer2Error as e:
+    except HiveServer2Error:
         return False
     return True
 
@@ -562,8 +563,8 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
         idx = build_summary_table(summary, idx, False, indent_level,
                                   first_child_output)
         for child_idx in xrange(1, node.num_children):
-            # All other children are indented (we only have 0, 1 or 2 children for every exec
-            # node at the moment)
+            # All other children are indented (we only have 0, 1 or 2 children
+            # for every exec node at the moment)
             idx = build_summary_table(summary, idx, False, indent_level + 1,
                                       output)
         output += first_child_output

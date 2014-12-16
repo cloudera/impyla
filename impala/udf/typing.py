@@ -25,10 +25,9 @@ from impala.udf import types
 from impala.udf import typeconv
 from impala.udf import stringdecl
 from impala.udf.types import (
-    FunctionContext, AnyVal, BooleanVal, BooleanValType, TinyIntVal,
-    TinyIntValType, SmallIntVal, SmallIntValType, IntVal, IntValType,
-    BigIntVal, BigIntValType, FloatVal, FloatValType, DoubleVal, DoubleValType,
-    StringVal, StringValType)
+    AnyVal, BooleanVal, BooleanValType, TinyIntVal, TinyIntValType,
+    SmallIntVal, SmallIntValType, IntVal, IntValType, BigIntVal, BigIntValType,
+    FloatVal, FloatValType, DoubleVal, DoubleValType, StringVal, StringValType)
 
 
 registry = Registry()

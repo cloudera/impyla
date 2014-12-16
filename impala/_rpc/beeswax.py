@@ -51,6 +51,7 @@ def build_default_query_options_dict(service):
         raise RPCError("Unable to retrieve default query options")
     return options
 
+
 def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     """Direct translation of Coordinator::PrintExecSummary() to recursively
     build a list of rows of summary statistics, one per exec node
@@ -371,7 +372,7 @@ def get_column_names(service, last_query_handle):
     rpc_result = __do_rpc(
         lambda: service.get_results_metadata(last_query_handle))
     metadata, _ = rpc_result
-    if not metadata is None:
+    if metadata is not None:
         return [fs.name for fs in metadata.schema.fieldSchemas]
 
 
@@ -379,7 +380,7 @@ def get_results_metadata(service, last_query_handle):
     rpc_result = __do_rpc(
         lambda: service.get_results_metadata(last_query_handle))
     metadata, _ = rpc_result
-    if not metadata is None:
+    if metadata is not None:
         return metadata.schema.fieldSchemas
 
 

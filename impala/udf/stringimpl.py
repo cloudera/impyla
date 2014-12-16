@@ -81,7 +81,8 @@ def string_split_2(context, builder, sig, args):
 #     ipdb.set_trace()
 #     module = cgutils.get_module(builder)
 #     precomp_func = context._get_precompiled_function("StringSplitImpl")
-#     func = module.get_or_insert_function(precomp_func.type.pointee, precomp_func.name)
+#     func = module.get_or_insert_function(precomp_func.type.pointee,
+#                                          precomp_func.name)
 #     fnctx_arg = context.get_arguments(cgutils.get_function(builder))[0]
 #     cfnctx_arg = builder.bitcast(fnctx_arg, func.args[0].type)
 #     [s, sep, maxsplit] = args
@@ -91,7 +92,8 @@ def string_split_2(context, builder, sig, args):
 #     array = builder.call(func, [cfnctx_arg, cs, csep, cmaxsplit])
 #     pass
 #     # allocate array of StringVals
-#     # fill the array with splits (up through max space) and return total splits
+#     # fill the array with splits (up through max space) and return
+#     # total splits
 
 #     # count the number of StringVals I need
 #     # alloca the array

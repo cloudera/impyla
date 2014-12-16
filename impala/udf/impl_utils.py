@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 import pkgutil
 
-import llvm.core as lc
+import llvmlite.llvmpy.core as lc
 from numba import types as ntypes
 from numba import cgutils
 
@@ -33,9 +33,10 @@ precompiled = lc.Module.from_bitcode(
 # the gep needs a (0, 0, 0) offset
 
 def _get_is_null_pointer(builder, val):
-    ptr = builder.gep(val._getpointer(),
-                      [lc.Constant.int(lc.Type.int(32), 0)] * 3, # gep(0, 0, 0)
-                      inbounds=True)
+    ptr = builder.gep(
+        val._getpointer(),
+        [lc.Constant.int(lc.Type.int(32), 0)] * 3,  # gep(0, 0, 0)
+        inbounds=True)
     return ptr
 
 

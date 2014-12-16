@@ -19,14 +19,12 @@ from __future__ import absolute_import
 import os
 import pkgutil
 
-import llvm.core as lc
+import llvmlite.llvmpy.core as lc
 from numba import sigutils
 from numba.compiler import compile_extra, Flags
 
 from impala.udf.target import ImpalaTargetContext
 from impala.udf.typing import impala_typing_context
-from impala.udf.types import (BooleanVal, TinyIntVal, SmallIntVal, IntVal,
-                              BigIntVal, FloatVal, DoubleVal, StringVal)
 
 
 # functionality to compile Python UDFs into Impala-executable IR

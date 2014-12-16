@@ -16,10 +16,10 @@
 
 from __future__ import absolute_import
 
-import llvm.core as lc
+import llvmlite.llvmpy.core as lc
 
 from impala.udf.types import (
-    AnyVal, BooleanVal, TinyIntVal, SmallIntVal, IntVal, BigIntVal, FloatVal,
+    BooleanVal, TinyIntVal, SmallIntVal, IntVal, BigIntVal, FloatVal,
     DoubleVal, StringVal)
 from impala.udf.impl_utils import (
     BooleanValStruct, TinyIntValStruct, SmallIntValStruct, IntValStruct,

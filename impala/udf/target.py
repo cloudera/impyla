@@ -16,11 +16,9 @@
 
 from __future__ import absolute_import
 
-import pkgutil
-
-import llvm.core as lc
-import llvm.passes as lp
-import llvm.ee as le
+import llvmlite.llvmpy.core as lc
+import llvmlite.llvmpy.passes as lp
+import llvmlite.llvmpy.ee as le
 from numba import types as ntypes
 from numba import cgutils, lowering
 from numba.targets.base import BaseContext
@@ -432,6 +430,7 @@ class ImpalaTargetContext(BaseContext):
     def get_array(self, builder, itemvals, itemtys):
         # only handle uniform type
         assert all(x == itemtys[0] for x in itemtys)
+        ty = itemtys[0]
         if ty not in self._impala_types:
             raise NotImplementedError(
                 "Arrays of non-Impala types not supported")
