@@ -55,3 +55,7 @@ class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
 
     def test_setoutputsize(self):
         pass
+
+    @pytest.mark.skipif(protocol == 'beeswax', reason='Beeswax messes up NULL')
+    def test_None(self):
+        return super(ImpalaDBAPI20Test, self).test_None()

@@ -1,50 +1,29 @@
-## Testing against a nightly on Cloudera internal Jenkins
+## Jenkins testing using the internal Cloudera sandbox environment
 
-To configure a Jenkins job to test impyla, you must inject the following
-environment variables.  These variables make some assumption related to
-Cloudera's internal CM/CDH testing.
+All the `impyla` jobs are prefixed with `impyla-`.
 
-```bash
-# example config
-HOST_SHORT_NAME=nightly
-NIGHTLY_JOB_NAME=CM-Master-Refresh-Nightly-Cluster
-PYMODULE_VERSIONS=master
-IMPALA_PROTOCOL=hiveserver2
-```
+Testing occurs against either:
 
-Here are possible values for the variables:
+* the `nightly` build of CM/CDH or
 
-`HOST_SHORT_NAME` and `NIGHTLY_JOB_NAME`:
+* the stable `bottou` cluster
 
-* `nightly` and `CM-Master-Refresh-Nightly-Cluster`
+The tests run are either:
 
-* `nightly52` and `CM-Refresh-5.2-Cluster`
+* DB API (PEP 249)-only (`run-dbapi.sh`)
 
-* `nightly-kerberized` and `CM-Refresh-Nightly-Kerberos-Cluster`
+* All tests, including UDF (`run-all.sh`)
 
+The two main scripts specify the necessary environment variables that must be
+set.  This also includes testing either HiveServer2 or Beeswax for
+connectivity, and using released versus master versions of Numba.
 
-`PYMODULE_VERSIONS`
-
-* `master`
-
-* `release`
-
-
-`IMPALA_PROTOCOL`
-
-* `hiveserver2`
-
-* `beeswax`
-
-
-## Testing against bottou using Cloudera internal Jenkins
-
-Set the following vars
+Finally, the jobs that run against `nightly` will only start if the `nightly`
+build succeeds.  This is accomplished by creating a dependence on a job called
+`golden-nightly-success`, which runs a script like
 
 ```bash
-# example config
-PYMODULE_VERSIONS=master
-IMPALA_PROTOCOL=hiveserver2
+NIGHTLY_URL="http://golden.jenkins.sf.cloudera.com/job/CM-Master-Refresh-Nightly-Cluster/lastBuild/api/json"
+NIGHTLY_STATUS=$(curl -s -L "$NIGHTLY_URL" | $WORKSPACE/jenkins/parse-build-result.py)
+if [ "$NIGHTLY_STATUS" != "SUCCESS" ]; then exit 1; fi
 ```
-
-Possible values are as above.

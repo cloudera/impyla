@@ -13,43 +13,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# See README.md for necessary environment variables for this script
+# Check for necessary environment variables
+: ${IMPALA_HOST:?"IMPALA_HOST is unset"}
+: ${IMPALA_PROTOCOL:?"IMPALA_PROTOCOL is unset"}
+: ${IMPALA_PORT:?"IMPALA_PORT is unset"}
+: ${NAMENODE_HOST:?"NAMENODE_HOST is unset"}
+: ${WEBHDFS_PORT:?"WEBHDFS_PORT is unset"}
+: ${LLVM_CONFIG_PATH:?"LLVM_CONFIG_PATH is unset"}
+: ${NUMBA_VERSION:?"NUMBA_VERSION is unset"}
 
-# Set up necessary vars
-export IMPALA_HOST=bottou03-10g.pa.cloudera.com
-if [ "$IMPALA_PROTOCOL" == "hiveserver2" ]; then
-    export IMPALA_PORT=21050
-elif [ "$IMPALA_PROTOCOL" == "beeswax" ]; then
-    export IMPALA_PORT=21000
-else
-    echo "IMPALA_PROTOCOL must be set to 'hiveserver2' or 'beeswax'; got $IMPALA_PROTOCOL"
-    echo "aborting impyla Jenkins job with FAIL"
-    exit 1
-fi
-export NAMENODE_HOST=bottou01-10g.pa.cloudera.com
-export WEBHDFS_PORT=20101
-export LLVM_CONFIG_PATH=/opt/toolchain/llvm-3.3/bin/llvm-config
-VENV_NAME=impyla-it-pyenv-bottou-$PYMODULE_VERSIONS-$IMPALA_PROTOCOL-$BUILD_NUMBER
-
-# Install all the necessary prerequisites
-cd /tmp
-virtualenv $VENV_NAME
-source $VENV_NAME/bin/activate
+# Set up virtualenv and install prereqs
+VENV_NAME=$JOB_NAME-pyvenv-$BUILD_NUMBER
+cd /tmp && virtualenv $VENV_NAME && source $VENV_NAME/bin/activate
 pip install pytest
 pip install thrift
 pip install unittest2
 pip install numpy
 pip install pandas
 pip install pywebhdfs
-if [ "$PYMODULE_VERSIONS" == "master" ]; then
+if [ "$NUMBA_VERSION" == "master" ]; then
     pip install git+https://github.com/llvmpy/llvmpy.git@master
     pip install git+https://github.com/numba/numba.git@master
-elif [ "$PYMODULE_VERSIONS" == "release" ]; then
+elif [ "$NUMBA_VERSION" == "release" ]; then
     pip install llvmpy
-    pip install numba
+    pip install numba==0.13.4
 else
-    echo "PYMODULE_VERSIONS must be 'master' or 'release'; got $PYMODULE_VERSIONS"
-    echo "aborting impyla Jenkins job with FAIL"
+    echo "NUMBA_VERSION must be 'master' or 'release'; got $NUMBA_VERSION"
     exit 1
 fi
 
