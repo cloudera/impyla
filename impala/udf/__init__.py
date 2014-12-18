@@ -19,7 +19,7 @@ from __future__ import absolute_import
 import os
 import pkgutil
 
-import llvmlite.llvmpy.core as lc
+import llvm.core as lc
 from numba import sigutils
 from numba.compiler import compile_extra, Flags
 

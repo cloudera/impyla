@@ -16,9 +16,9 @@
 
 from __future__ import absolute_import
 
-import llvmlite.llvmpy.core as lc
-import llvmlite.llvmpy.passes as lp
-import llvmlite.llvmpy.ee as le
+import llvm.core as lc
+import llvm.passes as lp
+import llvm.ee as le
 from numba import types as ntypes
 from numba import cgutils, lowering
 from numba.targets.base import BaseContext

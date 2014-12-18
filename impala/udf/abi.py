@@ -16,7 +16,7 @@
 
 from __future__ import absolute_import
 
-import llvmlite.llvmpy.core as lc
+import llvm.core as lc
 
 from impala.udf.types import (
     BooleanVal, TinyIntVal, SmallIntVal, IntVal, BigIntVal, FloatVal,

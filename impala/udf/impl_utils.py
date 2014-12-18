@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 import pkgutil
 
-import llvmlite.llvmpy.core as lc
+import llvm.core as lc
 from numba import types as ntypes
 from numba import cgutils
 
