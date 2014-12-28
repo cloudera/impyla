@@ -26,6 +26,7 @@ import pytest
 
 import impala.dbapi
 from impala.tests import _dbapi20_tests
+from impala.util import _random_id
 
 if 'IMPALA_HOST' not in os.environ:
     raise ValueError("Please set IMPALA_HOST env variable")
@@ -46,9 +47,11 @@ class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
     connect_kw_args = {'host': host,
                        'port': port,
                        'protocol': protocol}
-    table_prefix = 'dbapi20test_'
+    table_prefix = _random_id(prefix='dbapi20test_')
     ddl1 = 'create table %sbooze (name string)' % table_prefix
     ddl2 = 'create table %sbarflys (name string)' % table_prefix
+    xddl1 = 'drop table %sbooze' % table_prefix
+    xddl2 = 'drop table %sbarflys' % table_prefix
 
     def test_nextset(self):
         pass
