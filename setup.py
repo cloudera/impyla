@@ -37,7 +37,7 @@ setup(
         'impala.tests': ['data/iris.data']
     },
     scripts=['bin/register-impala-udfs.py'],
-    install_requires=['thrift'],
+    install_requires=['six', 'thrift'],
     keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark pydata '
               'pandas distributed db api pep 249'),
     license='Apache License, Version 2.0',

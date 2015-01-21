@@ -40,6 +40,8 @@ Required for DB API connectivity:
 
 * `python2.6` or `python2.7`
 
+* `six`
+
 * `thrift>=0.8` (Python package only; no need for code-gen)
 
 Required for UDFs:
