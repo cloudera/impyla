@@ -25,7 +25,7 @@ def readme():
 
 setup(
     name='impyla',
-    version='0.9.0-dev',
+    version='0.9.0',
     description='Python client for the Impala distributed query engine',
     long_description=readme(),
     author='Uri Laserson',

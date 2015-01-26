@@ -46,7 +46,7 @@ Required for DB API connectivity:
 
 Required for UDFs:
 
-* `numba` (which has a few requirements, like LLVM)
+* `numba<=0.13.4` (which has a few requirements, like LLVM)
 
 * `boost` (because `udf.h` depends on `boost/cstdint.hpp`)
 
@@ -74,7 +74,7 @@ This project is installed with `setuptools`.
 
 ### Installation
 
-Install the latest release (`0.8.1`) with `pip`:
+Install the latest release (`0.9.0`) with `pip`:
 
 ```bash
 pip install impyla
@@ -128,9 +128,9 @@ print cursor.description # prints the result set's schema
 results = cursor.fetchall()
 ```
 
-**Note**: the specified port number should be for the *HiveServer2* service
-(defaults to 21050 in CM), not Beeswax (defaults to 21000) which is what the
-Impala shell uses.
+**Note**: if connecting to Impala through the *HiveServer2* service, make sure
+to set the port to the HiveServer2 port (defaults to 21050 in CM), not Beeswax
+(defaults to 21000) which is what the Impala shell uses.
 
 The `Cursor` object also supports the iterator interface, which is buffered
 (controlled by `cursor.arraysize`):
