@@ -116,10 +116,10 @@ for (udf_name, return_type) in zip(args.name, args.return_type):
     # find matching LLVM symbols to the current UDF name
     matches = [pair for pair in functions if udf_name in pair[0]]
     if len(matches) == 0:
-	log("Couldn't find a symbol matching %s; skipping..." % udf_name)
+        log("Couldn't find a symbol matching %s; skipping..." % udf_name)
         continue
     if len(matches) > 1:
-	log("Found multiple symbols matching %s; skipping..." % udf_name)
+        log("Found multiple symbols matching %s; skipping..." % udf_name)
         continue
     (symbol, arg_types) = matches[0]
     impala_name = '%s(%s)' % (udf_name, ','.join(arg_types))
