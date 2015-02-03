@@ -158,10 +158,9 @@ class HiveServer2Cursor(Cursor):
         self._last_operation_active = True
         self._wait_to_finish()  # make execute synchronous
         if self.has_result_set:
-            schema = rpc.get_result_schema(
-                self.service, self._last_operation_handle)
-            self._description = [tup + (None, None, None, None, None)
-                                 for tup in schema]
+            schema = rpc.get_result_schema(self.service,
+                                           self._last_operation_handle)
+            self._description = schema
 
     def _reset_state(self):
         self._buffer = []

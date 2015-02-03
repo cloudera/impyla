@@ -245,9 +245,17 @@ def get_result_schema(service, operation_handle):
     schema = []
     for column in resp.schema.columns:
         name = column.columnName
-        type_ = TTypeId._VALUES_TO_NAMES[
-            column.typeDesc.types[0].primitiveEntry.type].split('_')[0]
-        schema.append((name, type_))
+        entry = column.typeDesc.types[0].primitiveEntry
+        type_ = TTypeId._VALUES_TO_NAMES[entry.type].split('_')[0]
+        if type_ == 'DECIMAL':
+            qualifiers = entry.typeQualifiers.qualifiers
+            precision = qualifiers['precision'].i32Value
+            scale = qualifiers['scale'].i32Value
+            schema.append((name, type_, None, None,
+                           precision, scale, None))
+        else:
+            schema.append((name, type_, None, None, None, None, None))
+
 
     return schema
 
