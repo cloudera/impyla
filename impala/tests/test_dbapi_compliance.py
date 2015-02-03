@@ -81,11 +81,11 @@ class ImpalaDecimalTests(unittest.TestCase):
 
     def setUp(self):
         ddl = """
-CREATE TABLE {} (
-  f1 decimal(10, 2),
-  f2 decimal(7, 5),
-  f3 decimal(38, 17)
-)""".format(self.tablename)
+            CREATE TABLE {0} (
+              f1 decimal(10, 2),
+              f2 decimal(7, 5),
+              f3 decimal(38, 17))
+        """.format(self.tablename)
         con = self._connect()
         try:
             cur = con.cursor()
@@ -100,7 +100,7 @@ CREATE TABLE {} (
         con = self._connect()
         try:
             cur = con.cursor()
-            cur.execute('drop table {}'.format(self.tablename))
+            cur.execute('drop table {0}'.format(self.tablename))
             con.commit()
         except:
             raise
@@ -126,7 +126,7 @@ CREATE TABLE {} (
         con = self._connect()
         try:
             cur = con.cursor()
-            cur.execute('select * from {} limit 0'.format(self.tablename))
+            cur.execute('select * from {0} limit 0'.format(self.tablename))
 
             desc = cur.description
             for (ex_p, ex_s), val in zip(cases, desc):
