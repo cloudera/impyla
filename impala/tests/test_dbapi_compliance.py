@@ -40,13 +40,15 @@ host = os.environ['IMPALA_HOST']
 port = int(os.environ.get('IMPALA_PORT', 21050))
 protocol = os.environ.get('IMPALA_PROTOCOL', 'hiveserver2')
 
+connect_kw_args = {'host': host,
+                   'port': port,
+                   'protocol': protocol}
 
 @pytest.mark.dbapi_compliance
 class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
     driver = impala.dbapi
-    connect_kw_args = {'host': host,
-                       'port': port,
-                       'protocol': protocol}
+    connect_kw_args = connect_kw_args
+
     table_prefix = _random_id(prefix='dbapi20test_')
     ddl1 = 'create table %sbooze (name string)' % table_prefix
     ddl2 = 'create table %sbarflys (name string)' % table_prefix
@@ -62,3 +64,75 @@ class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
     @pytest.mark.skipif(protocol == 'beeswax', reason='Beeswax messes up NULL')
     def test_None(self):
         return super(ImpalaDBAPI20Test, self).test_None()
+
+
+@pytest.mark.dbapi_compliance
+class ImpalaDecimalTests(unittest.TestCase):
+
+    driver = impala.dbapi
+    table_prefix = _random_id(prefix='dbapi20test_')
+    tablename = table_prefix + 'decimaltests'
+
+    def _connect(self):
+        try:
+            return self.driver.connect(**connect_kw_args)
+        except AttributeError:
+            self.fail("No connect method found in self.driver module")
+
+    def setUp(self):
+        ddl = """
+CREATE TABLE {} (
+  f1 decimal(10, 2),
+  f2 decimal(7, 5),
+  f3 decimal(38, 17)
+)""".format(self.tablename)
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            cur.execute(ddl)
+            con.commit()
+        except:
+            raise
+        finally:
+            con.close()
+
+    def tearDown(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            cur.execute('drop table {}'.format(self.tablename))
+            con.commit()
+        except:
+            raise
+        finally:
+            con.close()
+
+    def test_cursor_description_precision_scale(self):
+        # According to the DBAPI 2.0, these are the 7 fields of the cursor
+        # description
+        # - name
+        # - type_code
+        # - display_size
+        # - internal_size
+        # - precision
+        # - scale
+        # - null_ok
+        cases = [
+            (10, 2),
+            (7, 5),
+            (38, 17)
+        ]
+
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            cur.execute('select * from {} limit 0'.format(self.tablename))
+
+            desc = cur.description
+            for (ex_p, ex_s), val in zip(cases, desc):
+                assert val[4] == ex_p
+                assert val[5] == ex_s
+
+            con.commit()
+        finally:
+            con.close()
