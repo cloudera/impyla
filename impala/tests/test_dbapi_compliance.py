@@ -67,6 +67,8 @@ class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
 
 
 @pytest.mark.dbapi_compliance
+@pytest.mark.skipif(protocol == 'beeswax',
+                    reason='Beeswax does not support DECIMAL')
 class ImpalaDecimalTests(unittest.TestCase):
 
     driver = impala.dbapi
