@@ -21,6 +21,7 @@ from cStringIO import StringIO
 import csv
 
 import pandas as pd
+from impala.context import ImpalaContext
 
 from impala.util import (as_pandas, _random_id, _py_to_sql_string,
                          _get_table_schema_hack)
@@ -105,13 +106,13 @@ def from_hdfs(ic, path, schema, table=None, overwrite=False,
 
 def from_pandas(ic, df, table=None, path=None, method='in_query',
                 file_format='TEXTFILE', field_terminator='\t',
-                line_terminator='\n', escape_char='\\', hdfs_host=None,
-                webhdfs_port=50070, hdfs_user=None, overwrite=False):
+                line_terminator='\n', escape_char='\\', overwrite=False):
     """Create a BDF by shipping an in-memory pandas `DataFrame` into Impala
 
     path is the dir, not the filename
     """
     # TODO: this is not atomic
+    assert isinstance(ic, ImpalaContext)
     temp_table = _random_id('tmp_table_', 8)
     if table is None:
         table = "%s.%s" % (ic._temp_db, temp_table)
@@ -140,9 +141,7 @@ def from_pandas(ic, df, table=None, path=None, method='in_query',
         if path is None:
             raise ValueError(
                 "must supply a path for EXTERNAL table for webhdfs")
-        from pywebhdfs.webhdfs import PyWebHdfsClient
-        hdfs_client = PyWebHdfsClient(host=hdfs_host, port=webhdfs_port,
-                                      user_name=hdfs_user)
+        hdfs_client = ic.hdfs_client()
         raw_data = StringIO()
         df.to_csv(raw_data, sep=field_terminator,
                   line_terminator=line_terminator, quoting=csv.QUOTE_NONE,
@@ -266,19 +265,9 @@ class BigDataFrame(object):
         #     self._cursor.execute(distinct_query)
         #     unique_values[col] = self._cursor.fetchall()
 
-    def store(self, path=None, table=None, file_format='TEXTFILE',
+    def _store(self, path=None, table_name=None, file_format='TEXTFILE',
               field_terminator='\t', line_terminator='\n', escape_char='\\',
               overwrite=False):
-        """Materialize the results and stores them in HFDS
-
-        Implemented through a `CREATE TABLE AS SELECT`.
-        """
-        temp_table = _random_id('tmp_table_', 8)
-        if table is None:
-            table = "%s.%s" % (self._temp_db, temp_table)
-        if path is None:
-            path = os.path.join(self._temp_dir, temp_table)
-        table_name = _to_TableName(table)
         if overwrite:
             self._cursor.execute(
                 "DROP TABLE IF EXISTS %s" % table_name.to_sql())
@@ -289,6 +278,35 @@ class BigDataFrame(object):
         query = create_stmt + self.to_sql()
         self._cursor.execute(query)
         return from_sql_table(self._ic, table_name.to_sql())
+
+    def store(self, path=None, table=None, file_format='TEXTFILE',
+              field_terminator='\t', line_terminator='\n', escape_char='\\',
+              overwrite=False):
+        """Materialize the results and stores them in HFDS. Functions as an EXTERNAL table.
+
+        Implemented through a `CREATE TABLE AS SELECT`.
+        """
+        temp_table = _random_id('tmp_table_', 8)
+        if table is None:
+            table = "%s.%s" % (self._temp_db, temp_table)
+        if path is None:
+            path = os.path.join(self._temp_dir, temp_table)
+        table_name = _to_TableName(table)
+        return self._store(path=path, table_name=table_name, file_format=file_format, field_terminator=field_terminator,
+                    line_terminator=line_terminator, escape_char=escape_char, overwrite=overwrite)
+
+
+
+    def store_managed(self, table, file_format='PARQUET', field_terminator='\t', line_terminator='\n', escape_char='\\',
+              overwrite=False):
+        """Materialize the results and stores them in HDFS as an impala managed table.
+
+        Implemented through a `CREATE TABLE AS SELECT`.
+        """
+        table_name = _to_TableName(table)
+        return self._store(path=None, table_name=table_name, file_format=file_format, field_terminator=field_terminator,
+            line_terminator=line_terminator, escape_char=escape_char, overwrite=overwrite)
+
 
     def save_view(self, name, overwrite=False):
         """Create a named view representing this BDF for later reference"""
