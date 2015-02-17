@@ -70,9 +70,7 @@ def test_from_pandas_in_query(ic):
 def test_from_pandas_webhdfs(ic):
     df1 = pd.DataFrame({'a': (1, 2, 5), 'b': ('foo', 'bar', 'pasta')})
     path = os.path.join(ic._temp_dir, 'test_pandas_webhdfs_dir')
-    bdf = from_pandas(ic, df1, method='webhdfs', path=path,
-                      hdfs_host=ic._nn_host, webhdfs_port=ic._webhdfs_port,
-                      hdfs_user=ic._hdfs_user)
+    bdf = from_pandas(ic, df1, method='webhdfs', path=path)
     df2 = bdf.collect()
     assert tuple(df2.columns) == ('a', 'b')
     assert df2.shape == df1.shape
