@@ -81,7 +81,6 @@ udf_to_impala_type = {'BooleanVal': 'BOOLEAN',
                       'TimestampVal': 'TIMESTAMP'}
 
 try:
-    from pywebhdfs.webhdfs import PyWebHdfsClient
 
     def ship_udf(ic, function, hdfs_path=None, udf_name=None, database=None,
                  overwrite=False):
@@ -95,8 +94,7 @@ try:
                      for arg in function.signature.args[1:]]
 
         # ship the IR to the cluster
-        hdfs_client = PyWebHdfsClient(host=ic._nn_host, port=ic._webhdfs_port,
-                                      user_name=ic._hdfs_user)
+        hdfs_client = ic.hdfs_client()
         if hdfs_path is None:
             hdfs_path = os.path.join(ic._temp_dir, udf_name + '.ll')
         if not hdfs_path.endswith('.ll'):

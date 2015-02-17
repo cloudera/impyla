@@ -126,9 +126,8 @@ def hdfs_client(ic):
     pywebhdfs = importorskip('pywebhdfs')
     if ic._nn_host is None:
         skip("NAMENODE_HOST not set; skipping...")
-    from pywebhdfs.webhdfs import PyWebHdfsClient
-    hdfs_client = PyWebHdfsClient(host=ic._nn_host, port=ic._webhdfs_port,
-                                  user_name=ic._hdfs_user)
+
+    hdfs_client = ic.hdfs_client()
     return hdfs_client
 
 

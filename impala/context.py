@@ -72,10 +72,7 @@ class ImpalaContext(object):
         # drop the temp dir in HDFS
         try:
             from requests.exceptions import ConnectionError
-            from pywebhdfs.webhdfs import PyWebHdfsClient
-            hdfs_client = PyWebHdfsClient(
-                host=self._nn_host, port=self._webhdfs_port,
-                user_name=self._hdfs_user)
+            hdfs_client = self.hdfs_client()
             hdfs_client.delete_file_dir(self._temp_dir.lstrip('/'),
                                         recursive=True)
         except ImportError:
@@ -88,3 +85,9 @@ class ImpalaContext(object):
             sys.stderr.write("Could not connect via pywebhdfs. "
                              "You must delete the temporary directory "
                              "manually: %s" % self._temp_dir)
+
+    def hdfs_client(self):
+        from pywebhdfs.webhdfs import PyWebHdfsClient
+        return PyWebHdfsClient(
+            host=self._nn_host, port=self._webhdfs_port,
+            user_name=self._hdfs_user)
