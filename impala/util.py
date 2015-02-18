@@ -17,14 +17,11 @@ from __future__ import absolute_import
 import string
 import random
 
-try:
-    import pandas as pd
 
-    def as_pandas(cursor):
-        names = [metadata[0] for metadata in cursor.description]
-        return pd.DataFrame.from_records(cursor.fetchall(), columns=names)
-except ImportError:
-    print "Failed to import pandas"
+def as_pandas(cursor):
+    from pandas import DataFrame
+    names = [metadata[0] for metadata in cursor.description]
+    return DataFrame.from_records(cursor.fetchall(), columns=names)
 
 
 def _random_id(prefix='', length=8):
