@@ -146,7 +146,8 @@ class HiveServer2Cursor(Cursor):
             else:
                 self._last_operation_string = operation
             self._last_operation_handle = rpc.execute_statement(
-                self.service, self.session_handle, self._last_operation_string)
+                self.service, self.session_handle, self._last_operation_string,
+                configuration)
 
         self._execute_sync(op)
 
