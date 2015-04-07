@@ -24,11 +24,12 @@ from impala.context import ImpalaContext
 from impala.bdf import from_pandas
 
 
-def test_context_cleanup(host, port, protocol, ic, hdfs_client):
+def test_context_cleanup(host, port, protocol, use_kerberos, ic, hdfs_client):
     # create a *new* ImpalaContext
     ctx = ImpalaContext(temp_dir=None, temp_db=None, nn_host=ic._nn_host,
                         webhdfs_port=ic._webhdfs_port, hdfs_user=ic._hdfs_user,
-                        host=host, port=port, protocol=protocol)
+                        host=host, port=port, protocol=protocol,
+                        use_kerberos=use_kerberos)
 
     # check that the database was created
     ctx._cursor.execute('SHOW DATABASES')
@@ -49,13 +50,12 @@ def test_context_cleanup(host, port, protocol, ic, hdfs_client):
 
     # check that the temporary directory was created
     # (raises FileNotFound on failure)
-    assert hdfs_client.get_file_dir_status(ctx._temp_dir.lstrip('/'))
+    assert hdfs_client.status(ctx._temp_dir)
 
     # check that the corresponding data file has the correct size
-    listing = hdfs_client.list_dir(
-        os.path.join(ctx._temp_dir, table_name).lstrip('/'))
-    statuses = listing['FileStatuses']['FileStatus']
-    sizes = [s['length'] for s in statuses if s['type'] == 'FILE']
+    table_path = os.path.join(ctx._temp_dir, table_name)
+    sizes = [s['length'] for (_, s) in hdfs_client.list(table_path)
+             if s['type'] == 'FILE']
     assert len(sizes) == 1
     assert sizes[0] == 20
 
@@ -68,7 +68,7 @@ def test_context_cleanup(host, port, protocol, ic, hdfs_client):
 
     # check that the temp dir was deleted
     # I know this is importable because this test depends on hdfs_client, which
-    # skips if pywebhdfs is not available
-    from pywebhdfs.errors import FileNotFound
-    with pytest.raises(FileNotFound):
-        assert hdfs_client.get_file_dir_status(ctx._temp_dir.lstrip('/'))
+    # skips if hdfs is not available
+    from hdfs.util import HdfsError
+    with pytest.raises(HdfsError):
+        assert hdfs_client.status(ctx._temp_dir)

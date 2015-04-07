@@ -99,7 +99,7 @@ try:
             hdfs_path = os.path.join(ic._temp_dir, udf_name + '.ll')
         if not hdfs_path.endswith('.ll'):
             raise ValueError("The HDFS file name must end with .ll")
-        hdfs_client.create_file(hdfs_path.lstrip('/'), ir, overwrite=overwrite)
+        hdfs_client.write(hdfs_path, ir, overwrite=overwrite)
 
         # register the function in Impala
         if database is None:
@@ -114,5 +114,5 @@ try:
         ic._cursor.execute(register_query)
 
 except ImportError:
-    print ("Failed to import pywebhdfs; you must ship your "
+    print ("Failed to import hdfs; you must ship your "
            "Python UDFs manually.")

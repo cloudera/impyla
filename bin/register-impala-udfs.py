@@ -17,7 +17,7 @@ import sys
 import argparse
 
 import llvm.core as lc
-from pywebhdfs.webhdfs import PyWebHdfsClient
+from hdfs.client import InsecureClient
 
 import impala.dbapi
 
@@ -98,9 +98,10 @@ for function in ll.functions:
         pass
 
 # transfer the LLVM module to HDFS
-hdfs_client = PyWebHdfsClient(host=args.nn_host, port=args.webhdfs_port,
-                              user_name=args.user)
-hdfs_client.create_file(args.hdfs_path.lstrip('/'), bc, overwrite=args.force)
+url = 'http://{nn_host}:{webhdfs_port}'.format(
+    nn_host=args.nn_host, webhdfs_port=args.webhdfs_port)
+hdfs_client = InsecureClient(url, user=args.user)
+hdfs_client.write(args.hdfs_path, bc, overwrite=args.force)
 log("Transferred LLVM IR to HDFS at %s" % args.hdfs_path)
 
 # register the functions with impala
