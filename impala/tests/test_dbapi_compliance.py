@@ -36,13 +36,17 @@ if 'IMPALA_PORT' not in os.environ:
 if 'IMPALA_PROTOCOL' not in os.environ:
     print >>sys.stderr, ("Using default Impala protocol of 'hiveserver2', or "
                          "set IMPALA_PROTOCOL env variable")
+if 'USE_KERBEROS' not in os.environ:
+    print >>sys.stderr, ("Set USE_KERBEROS=True if you want to use Kerberos")
 host = os.environ['IMPALA_HOST']
 port = int(os.environ.get('IMPALA_PORT', 21050))
 protocol = os.environ.get('IMPALA_PROTOCOL', 'hiveserver2')
+use_kerberos = os.environ.get('USE_KERBEROS', 'False').lower() == 'true'
 
 connect_kw_args = {'host': host,
                    'port': port,
-                   'protocol': protocol}
+                   'protocol': protocol,
+                   'use_kerberos': use_kerberos}
 
 @pytest.mark.dbapi_compliance
 class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):

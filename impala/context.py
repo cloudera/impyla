@@ -32,10 +32,11 @@ class ImpalaContext(object):
             suffix if temp_db is None else temp_db)
         self._conn = connect(*args, **kwargs)
         self._cursor = self._conn.cursor()
-        # used for pywebhdfs cleanup of temp dir; not required
+        # used for webhdfs cleanup of temp dir; not required
         self._nn_host = nn_host
         self._webhdfs_port = webhdfs_port
         self._hdfs_user = hdfs_user
+        self._kerberized = self._conn.kerberized()
         if temp_db is None:
             self._cursor.execute("CREATE DATABASE %s LOCATION '%s'" %
                                  (self._temp_db, self._temp_dir))
@@ -69,25 +70,36 @@ class ImpalaContext(object):
                     self._temp_db, uda))
         self._cursor.execute('USE default')
         self._cursor.execute('DROP DATABASE IF EXISTS %s' % self._temp_db)
-        # drop the temp dir in HDFS
+        # The DROP DATABASE command deletes the associated directory if it
+        # didn't already exist.  But if it did, we delete it here using WebHDFS
         try:
             from requests.exceptions import ConnectionError
+            from hdfs.util import HdfsError
             hdfs_client = self.hdfs_client()
-            hdfs_client.delete_file_dir(self._temp_dir.lstrip('/'),
-                                        recursive=True)
+            try:
+                # generates an exception if file doesn't exist
+                _ = hdfs_client.status(self._temp_dir)
+                hdfs_client.delete(self._temp_dir, recursive=True)
+            except HdfsError:
+                pass
         except ImportError:
             import sys
-            sys.stderr.write("Could not import requests or pywebhdfs. "
+            sys.stderr.write("Could not import requests or hdfs. "
                              "You must delete the temporary directory "
                              "manually: %s" % self._temp_dir)
         except ConnectionError:
             import sys
-            sys.stderr.write("Could not connect via pywebhdfs. "
+            sys.stderr.write("Could not connect via webhdfs. "
                              "You must delete the temporary directory "
                              "manually: %s" % self._temp_dir)
 
     def hdfs_client(self):
-        from pywebhdfs.webhdfs import PyWebHdfsClient
-        return PyWebHdfsClient(
-            host=self._nn_host, port=self._webhdfs_port,
-            user_name=self._hdfs_user)
+        url = 'http://{nn_host}:{webhdfs_port}'.format(
+            nn_host=self._nn_host, webhdfs_port=self._webhdfs_port)
+        if self._kerberized:
+            from hdfs.ext.kerberos import KerberosClient
+            client = KerberosClient(url, mutual_auth='REQUIRED')
+        else:
+            from hdfs.client import InsecureClient
+            client = InsecureClient(url, user=self._hdfs_user)
+        return client

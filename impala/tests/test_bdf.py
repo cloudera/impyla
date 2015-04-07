@@ -49,7 +49,7 @@ def test_from_hdfs(ic, hdfs_client):
     raw_data = pkgutil.get_data('impala.tests', 'data/iris.data')
     dir_ = os.path.join(ic._temp_dir, 'test_small_data_dir')
     file_ = os.path.join(dir_, 'iris.data')
-    hdfs_client.create_file(file_.lstrip('/'), raw_data)
+    hdfs_client.write(file_, raw_data)
     schema = [('a', 'DOUBLE'), ('b', 'DOUBLE'), ('c', 'DOUBLE'),
               ('d', 'DOUBLE'), ('e', 'STRING')]
     bdf = from_hdfs(ic, dir_, schema)

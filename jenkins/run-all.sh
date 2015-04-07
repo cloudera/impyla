@@ -27,10 +27,11 @@ VENV_NAME=$JOB_NAME-pyvenv-$BUILD_NUMBER
 cd /tmp && virtualenv $VENV_NAME && source $VENV_NAME/bin/activate
 pip install pytest
 pip install thrift
+pip install sasl
 pip install unittest2
 pip install numpy
 pip install pandas
-pip install pywebhdfs
+pip install hdfs[kerberos]
 if [ "$NUMBA_VERSION" == "master" ]; then
     pip install git+https://github.com/llvmpy/llvmpy.git@master
     pip install git+https://github.com/numba/numba.git@master

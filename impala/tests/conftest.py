@@ -53,6 +53,15 @@ def protocol():
 
 
 @fixture(scope='session')
+def use_kerberos():
+    if 'USE_KERBEROS' in os.environ:
+        return os.environ['USE_KERBEROS'].lower() == 'true'
+    else:
+        sys.stderr.write("USE_KERBEROS not set; using default 'False'")
+        return False
+
+
+@fixture(scope='session')
 def nn_host():
     if 'NAMENODE_HOST' in os.environ:
         return os.environ['NAMENODE_HOST']
@@ -104,15 +113,14 @@ def temp_db():
 
 @fixture(scope='session')
 def ic(request, temp_hdfs_dir, temp_db, nn_host, webhdfs_port, hdfs_user, host,
-       port, protocol):
+       port, protocol, use_kerberos):
     """Provides an ImpalaContext"""
     from impala.context import ImpalaContext
 
     ctx = ImpalaContext(temp_dir=temp_hdfs_dir, temp_db=temp_db,
-                        nn_host=nn_host,
-                        webhdfs_port=webhdfs_port, hdfs_user=hdfs_user,
-                        host=host,
-                        port=port, protocol=protocol)
+                        nn_host=nn_host, webhdfs_port=webhdfs_port,
+                        hdfs_user=hdfs_user, host=host, port=port,
+                        protocol=protocol, use_kerberos=use_kerberos)
 
     def fin():
         ctx.close()
@@ -123,12 +131,10 @@ def ic(request, temp_hdfs_dir, temp_db, nn_host, webhdfs_port, hdfs_user, host,
 
 @fixture(scope='session')
 def hdfs_client(ic):
-    pywebhdfs = importorskip('pywebhdfs')
+    hdfs = importorskip('hdfs')
     if ic._nn_host is None:
         skip("NAMENODE_HOST not set; skipping...")
-
-    hdfs_client = ic.hdfs_client()
-    return hdfs_client
+    return ic.hdfs_client()
 
 
 @fixture(scope='session')

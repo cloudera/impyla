@@ -60,7 +60,7 @@ Required for `BigDataFrame`:
 
 Required for utilizing automated shipping/registering of code/UDFs/BDFs/etc:
 
-* `pywebhdfs`
+* `hdfs[kerberos]` (a Python client that wraps WebHDFS; kerberos is optional)
 
 For manipulating results as pandas `DataFrame`s, we recommend installing pandas
 regardless.

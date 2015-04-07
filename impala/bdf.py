@@ -146,8 +146,8 @@ def from_pandas(ic, df, table=None, path=None, method='in_query',
         df.to_csv(raw_data, sep=field_terminator,
                   line_terminator=line_terminator, quoting=csv.QUOTE_NONE,
                   escapechar=escape_char, header=False, index=False)
-        hdfs_client.create_file(
-            os.path.join(path, 'data.txt').lstrip('/'), raw_data.getvalue(),
+        hdfs_client.write(
+            os.path.join(path, 'data.txt'), raw_data.getvalue(),
             overwrite=overwrite)
         raw_data.close()
     else:
