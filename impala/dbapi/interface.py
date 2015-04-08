@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 from six import reraise
 
 from impala.util import _escape
@@ -164,9 +165,55 @@ class Cursor(object):
         if exc_type is not None:
             reraise(exc_type, exc_val, exc_tb)
 
+def _replace_numeric_markers(operation, string_parameters):
+    """
+    Replaces qname and numeric markers in the given operation, from
+    the string_parameters list.
+    Raises ProgrammingError on wrong number of parameters or bindings
+    when using qmark. There is no error checking on numeric parameters.
+    """
+    # replace qmark parameters
+    param_count = len(string_parameters)
+    qmark_index = 0
+    while operation.find('?') > -1:
+        if qmark_index < param_count:
+            operation = operation.replace('?',
+                                          string_parameters[qmark_index],
+                                          1)
+            qmark_index += 1
+        else:
+            raise ProgrammingError("Incorrect number of bindings "+
+                "supplied. The current statement uses "
+                "%d or more, and there are %d supplied." %
+                (qmark_index+1, param_count))
+    if qmark_index != 0 and qmark_index != param_count:
+        raise ProgrammingError("Incorrect number of bindings "+
+            "supplied. The current statement uses "
+            "%d or more, and there are %d supplied." %
+            (qmark_index+1, param_count))
 
-def _bind_parameters(operation, parameters):
-    # inspired by MySQL Python Connector (conversion.py)
+    # replace numbered parameters
+    # Go through them backwards so smaller numbers don't replace
+    # parts of larger ones
+    for index in range(param_count, 0, -1):
+        operation = operation.replace(':' + str(index),
+                                      string_parameters[index-1])
+    return operation
+
+def _bind_parameters_list(operation, parameters):
+    string_parameters = []
+    for value in parameters:
+        if value is None:
+            string_parameters.append('NULL')
+        elif isinstance(value, basestring):
+            string_parameters.append("'" + _escape(value) + "'")
+        else:
+            string_parameters.append(str(value))
+
+    # replace qmark and numeric parameters
+    return _replace_numeric_markers(operation, string_parameters)
+
+def _bind_parameters_dict(operation, parameters):
     string_parameters = {}
     for (name, value) in parameters.iteritems():
         if value is None:
@@ -175,4 +222,20 @@ def _bind_parameters(operation, parameters):
             string_parameters[name] = "'" + _escape(value) + "'"
         else:
             string_parameters[name] = str(value)
+
+    # replace named parameters by their pyformat equivalents
+    operation = re.sub(":([^\d\W]\w*)", "%(\g<1>)s", operation)
+
+    # replace pyformat parameters
     return operation % string_parameters
+
+def _bind_parameters(operation, parameters):
+    # If parameters is a list, assume either qmark or numeric
+    # format. If not, assume either named or pyformat parameters
+    if isinstance(parameters, (list, tuple)):
+        return _bind_parameters_list(operation, parameters)
+    elif isinstance(parameters, dict):
+        return _bind_parameters_dict(operation, parameters)
+    else:
+        raise ProgrammingError("Query parameters argument should be a "+
+                               "list, tuple, or dict object")
