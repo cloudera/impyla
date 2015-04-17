@@ -349,7 +349,12 @@ class BigDataFrame(object):
                        self._query_ast.to_sql())
         self._ic._cursor.execute(count_query)
         return self._ic._cursor.fetchall()[0][0]
-
+    
+    def head(self, row_count = 5):
+        head_query = ('SELECT * FROM (%s) AS head_tbl LIMIT %d' %
+                       (self._query_ast.to_sql(), row_count))
+        self._ic._cursor.execute(head_query)
+        return as_pandas(self._ic._cursor)
 
 class GroupBy(object):
 
