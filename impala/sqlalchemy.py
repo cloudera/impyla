@@ -20,7 +20,7 @@ import re
 
 from sqlalchemy.dialects import registry
 from sqlalchemy.engine.default import DefaultDialect
-from sqlalchemy.sql.compiler import IdentifierPreparer
+from sqlalchemy.sql.compiler import IdentifierPreparer, GenericTypeCompiler
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
                               DECIMAL, Integer, Float, String)
 
@@ -43,17 +43,18 @@ class STRING(String):
     __visit_name__ = 'STRING'
 
 
-_impala_type_to_sqlalchemy_type = {
-    'BOOLEAN': BOOLEAN,
-    'TINYINT': TINYINT,
-    'SMALLINT': SMALLINT,
-    'INT': INT,
-    'BIGINT': BIGINT,
-    'TIMESTAMP': TIMESTAMP,
-    'FLOAT': FLOAT,
-    'DOUBLE': DOUBLE,
-    'STRING': STRING,
-    'DECIMAL': DECIMAL}
+class ImpalaTypeCompiler(GenericTypeCompiler):
+    def visit_TINYINT(self, type_):
+        return 'TINYINT'
+
+    def visit_INT(self, type_):
+        return 'INT'
+
+    def visit_DOUBLE(self, type_):
+        return 'DOUBLE'
+
+    def visit_STRING(self, type_):
+        return 'STRING'
 
 
 class ImpalaIdentifierPreparer(IdentifierPreparer):
@@ -92,6 +93,19 @@ class ImpalaIdentifierPreparer(IdentifierPreparer):
                                                        initial_quote='`')
 
 
+_impala_type_to_sqlalchemy_type = {
+    'BOOLEAN': BOOLEAN,
+    'TINYINT': TINYINT,
+    'SMALLINT': SMALLINT,
+    'INT': INT,
+    'BIGINT': BIGINT,
+    'TIMESTAMP': TIMESTAMP,
+    'FLOAT': FLOAT,
+    'DOUBLE': DOUBLE,
+    'STRING': STRING,
+    'DECIMAL': DECIMAL}
+
+
 class ImpalaDialect(DefaultDialect):
     name = 'impala'
     driver = 'impala'
@@ -106,6 +120,7 @@ class ImpalaDialect(DefaultDialect):
     supports_native_enum = False
     supports_default_values = False
     returns_unicode_strings = True
+    type_compiler = ImpalaTypeCompiler
 
     @classmethod
     def dbapi(cls):
