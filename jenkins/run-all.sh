@@ -29,6 +29,7 @@ pip install pytest
 pip install thrift
 pip install sasl
 pip install unittest2
+pip install sqlalchemy
 pip install numpy
 pip install pandas
 pip install hdfs[kerberos]
