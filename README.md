@@ -5,14 +5,14 @@ Python client for the Impala distributed query engine.
 
 ### Features
 
-Fully supported:
+Fully implemented:
 
 * Lightweight, `pip`-installable package for connecting to Impala databases
 
 * Fully [DB API 2.0 (PEP 249)][pep249]-compliant Python client (similar to
 sqlite or MySQL clients)
 
-* Support for HiveServer2 and Beeswax; support for Kerberos
+* Runs on HiveServer2 and Beeswax; runs with Kerberos
 
 * Converter to [pandas][pandas] `DataFrame`, allowing easy integration into the
 Python data stack (including [scikit-learn][sklearn] and
@@ -132,7 +132,7 @@ results = cursor.fetchall()
 to set the port to the HiveServer2 port (defaults to 21050 in CM), not Beeswax
 (defaults to 21000) which is what the Impala shell uses.
 
-The `Cursor` object also supports the iterator interface, which is buffered
+The `Cursor` object also exposes the iterator interface, which is buffered
 (controlled by `cursor.arraysize`):
 
 ```python
