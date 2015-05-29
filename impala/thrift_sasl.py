@@ -22,6 +22,8 @@
 
 # Copied from the Impala repo
 
+from __future__ import absolute_import
+
 import sys
 
 from cStringIO import StringIO

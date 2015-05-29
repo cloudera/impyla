@@ -152,8 +152,8 @@ def iris_data(ic):
                    "petal_width DOUBLE, label STRING) ROW FORMAT DELIMITED "
                    "FIELDS TERMINATED BY '\\t' STORED AS TEXTFILE")
     raw_data = pkgutil.get_data('impala.tests', 'data/iris.data')
-    lines = filter(lambda x: x != '', raw_data.split('\n'))
-    tuples = map(lambda x: tuple(x.split(',')), lines)
+    lines = [x for x in raw_data.split('\n') if x != '']
+    tuples = [tuple(x.split(',')) for x in lines]
     sql_strings = ['(%s, %s, %s, %s, "%s")' % tup for tup in tuples]
     cursor.execute("INSERT INTO iris_data VALUES %s" % ', '.join(sql_strings))
 

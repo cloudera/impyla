@@ -14,14 +14,12 @@
 
 """Impala exception classes.  Also implements PEP 249."""
 
-import exceptions
 
-
-class Error(exceptions.StandardError):
+class Error(Exception):
     pass
 
 
-class Warning(exceptions.StandardError):
+class Warning(Exception):
     pass
 
 

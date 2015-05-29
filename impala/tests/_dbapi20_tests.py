@@ -11,6 +11,8 @@
     -- Ian Bicking
 '''
 
+from __future__ import absolute_import
+
 __rcs_id__  = '$Id: dbapi20.py,v 1.11 2005/01/02 02:41:01 zenzen Exp $'
 __version__ = '$Revision: 1.12 $'[11:-2]
 __author__ = 'Stuart Bishop <stuart@stuartbishop.net>'
@@ -18,6 +20,7 @@ __author__ = 'Stuart Bishop <stuart@stuartbishop.net>'
 import unittest
 import time
 import sys
+from six.moves import range
 
 
 # Revision 1.12  2009/02/06 03:35:11  kf7xm
@@ -193,8 +196,8 @@ class DatabaseAPI20Test(unittest.TestCase):
             self.failUnless(issubclass(self.driver.Warning,Exception))
             self.failUnless(issubclass(self.driver.Error,Exception))
         else:
-            self.failUnless(issubclass(self.driver.Warning,StandardError))
-            self.failUnless(issubclass(self.driver.Error,StandardError))
+            self.failUnless(issubclass(self.driver.Warning,Exception))
+            self.failUnless(issubclass(self.driver.Error,Exception))
 
         self.failUnless(
             issubclass(self.driver.InterfaceError,self.driver.Error)

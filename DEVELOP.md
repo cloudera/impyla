@@ -11,10 +11,10 @@ Fork the repo and send a pull request against `master`.  Contributions welcome!
 
     ```bash
     rm -rf $IMPYLA_REPO/impala/_thrift_gen
-    rm -rf $IMPYLA_REPO/thrift/*.thrift
+    rm -rf $IMPYLA_REPO/impala/thrift/*.thrift
     ```
 
-1. Execute `$IMPYLA_REPO/thrift/process_thrift.sh`
+1. Execute `$IMPYLA_REPO/impala/thrift/process_thrift.sh`
 
 This should only need to be done very irregularly, as the generated code is
 committed to the repo.  Only when the original thrift IDL files change. People

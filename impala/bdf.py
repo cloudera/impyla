@@ -19,6 +19,9 @@ import datetime
 from copy import copy
 from cStringIO import StringIO
 import csv
+import six
+from six.moves import map
+from six.moves import zip
 
 import pandas as pd
 from impala.context import ImpalaContext
@@ -29,6 +32,7 @@ from impala._sql_model import (_to_TableName, BaseTableRef, JoinTableRef,
                                SelectItem, SelectStmt, UnionStmt, Literal,
                                InlineView, TableName, Expr, _create_table,
                                _create_table_as_select, LimitElement)
+
 
 
 # utilities
@@ -123,7 +127,7 @@ def from_pandas(ic, df, table=None, path=None, method='in_query',
         ic._cursor.execute("DROP TABLE IF EXISTS %s" % table_name.to_sql())
     columns = list(df.columns)
     types = [_numpy_dtype_to_impala_PrimitiveType(ty) for ty in df.dtypes]
-    schema = zip(columns, types)
+    schema = list(zip(columns, types))
     create_stmt = _create_table(table_name, schema, path=path,
                                 file_format=file_format,
                                 field_terminator=field_terminator,
@@ -230,7 +234,7 @@ class BigDataFrame(object):
         """
         if not isinstance(by, (tuple, list)):
             by = (by,)
-        if not all([isinstance(e, (basestring, Expr)) for e in by]):
+        if not all([isinstance(e, (six.string_types, Expr)) for e in by]):
             raise ValueError("must supply only strings or Exprs")
         by = tuple([e if isinstance(e, Expr) else Literal(e) for e in by])
         table_ref = InlineView(self._query_ast.to_sql(), 'inner_tbl')
@@ -390,7 +394,7 @@ class GroupBy(object):
         for elt in obj:
             if isinstance(elt, SelectItem):
                 select_list.append(elt)
-            elif isinstance(elt, basestring):
+            elif isinstance(elt, six.string_types):
                 select_list.append(SelectItem(expr=Literal(elt)))
             elif isinstance(elt, Expr):
                 select_list.append(SelectItem(expr=elt))

@@ -12,13 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
+import os
+import sys
+import six
 import time
 import getpass
 
 from impala.dbapi.interface import Connection, Cursor, _bind_parameters
 from impala._rpc import hiveserver2 as rpc
 from impala.error import NotSupportedError, OperationalError, ProgrammingError
-from impala._thrift_gen.TCLIService.ttypes import TProtocolVersion
+if six.PY2:
+    from impala._thrift_gen.TCLIService.ttypes import TProtocolVersion
+elif six.PY3:
+    # dynamically load the thrift modules
+    from thriftpy import load
+    thrift_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                              'thrift')
+    TCLIService = load(os.path.join(thrift_dir, 'TCLIService.thrift'),
+                       include_dirs=[thrift_dir])
+    sys.modules[TCLIService.__name__] = TCLIService
+    from TCLIService import TProtocolVersion
 
 
 class HiveServer2Connection(Connection):
@@ -209,7 +224,7 @@ class HiveServer2Cursor(Cursor):
         if not self.has_result_set:
             raise ProgrammingError("Tried to fetch but no results.")
         try:
-            return self.next()
+            return next(self)
         except StopIteration:
             return None
 
@@ -223,7 +238,7 @@ class HiveServer2Cursor(Cursor):
         i = 0
         while i < size:
             try:
-                local_buffer.append(self.next())
+                local_buffer.append(next(self))
                 i += 1
             except StopIteration:
                 break
@@ -247,7 +262,7 @@ class HiveServer2Cursor(Cursor):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         if not self.has_result_set:
             raise ProgrammingError(
                 "Trying to fetch results on an operation with no results.")
