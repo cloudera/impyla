@@ -17,7 +17,10 @@ from __future__ import absolute_import
 import os
 import datetime
 from copy import copy
-from cStringIO import StringIO
+try:
+  from cStringIO import StringIO
+except ImportError:
+  from io import StringIO
 import csv
 import six
 from six.moves import map

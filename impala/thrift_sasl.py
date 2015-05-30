@@ -26,7 +26,10 @@ from __future__ import absolute_import
 
 import sys
 
-from cStringIO import StringIO
+try:
+  from cStringIO import StringIO
+except ImportError:
+  from io import StringIO
 from thrift.transport import TTransport
 from thrift.transport.TTransport import *
 from thrift.protocol import TBinaryProtocol
