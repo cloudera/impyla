@@ -18,9 +18,9 @@ import os
 import datetime
 from copy import copy
 try:
-  from cStringIO import StringIO
+    from cStringIO import StringIO
 except ImportError:
-  from io import StringIO
+    from io import StringIO
 import csv
 import six
 from six.moves import map
