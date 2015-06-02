@@ -14,6 +14,8 @@
 
 """Impala exception classes.  Also implements PEP 249."""
 
+from __future__ import absolute_import
+
 
 class Error(Exception):
     pass

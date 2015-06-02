@@ -19,6 +19,8 @@
 
 # Initially copied from the Impala repo
 
+from __future__ import absolute_import
+
 import sys
 import struct
 
