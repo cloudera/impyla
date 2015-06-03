@@ -37,12 +37,13 @@ elif six.PY3:
         # import thriftpy code
     from thriftpy import load
     from thriftpy.thrift import TClient, TApplicationException
-    from thriftpy.protocol import TBinaryProtocol
+    # TODO: reenable cython
+    # from thriftpy.protocol import TBinaryProtocol
+    from thriftpy.protocol.binary import TBinaryProtocol
     from thriftpy.transport import TSocket, TTransportException
-    try:
-        from thriftpy.transport import TCyBufferedTransport as TBufferedTransport
-    except ImportError:
-        from thriftpy.transport import TBufferedTransport
+    # TODO: reenable cython
+    # from thriftpy.transport import TBufferedTransport
+    from thriftpy.transport.buffered import TBufferedTransport
 
     # dynamically load the thrift modules
     thrift_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
@@ -250,10 +251,8 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
     # based on the Impala shell impl
     if not use_ldap and not use_kerberos:
         return TBufferedTransport(sock)
-    try:
-        import saslwrapper as sasl
-    except ImportError:
-        import sasl
+    
+    import sasl
     from thrift_sasl import TSaslClientTransport
 
     def sasl_factory():
