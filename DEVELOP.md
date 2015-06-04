@@ -38,7 +38,7 @@ Copy a fresh copy of the `udf.h` header file
     git log $LAST_RELEASE_TAG..HEAD
     ```
 
-2. Set the release version in `setup.py` (remove the `-dev` tag if applicable)
+2. Set the release version in `setup.py` (remove the `.dev0` tag if applicable)
 and commit the version number change.  Also set the new version number in the
 readme (under "Installation")
 

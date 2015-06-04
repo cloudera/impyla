@@ -10,7 +10,7 @@ Fully implemented:
 * Lightweight, `pip`-installable package for connecting to Impala databases
 
 * Fully [DB API 2.0 (PEP 249)][pep249]-compliant Python client (similar to
-sqlite or MySQL clients)
+sqlite or MySQL clients) supporting Python 2 and Python 3.
 
 * Runs on HiveServer2 and Beeswax; runs with Kerberos
 
@@ -42,7 +42,8 @@ Required for DB API connectivity:
 
 * `six`
 
-* `thrift>=0.8` (Python package only; no need for code-gen)
+* `thrift>=0.8` (Python package only; no need for code-gen) for Python 2, or
+`thriftpy` for Python 3
 
 Required for UDFs:
 
@@ -57,6 +58,10 @@ Required for SQLAlchemy integration (and Blaze):
 Required for `BigDataFrame`:
 
 * `pandas`
+
+Required for Kerberos support:
+
+* `python-sasl` (for Python 3 support, requires laserson/python-sasl@cython)
 
 Required for utilizing automated shipping/registering of code/UDFs/BDFs/etc:
 
@@ -74,7 +79,7 @@ This project is installed with `setuptools`.
 
 ### Installation
 
-Install the latest release (`0.9.0`) with `pip`:
+Install the latest release (`0.10.0`) with `pip`:
 
 ```bash
 pip install impyla
