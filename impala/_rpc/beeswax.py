@@ -21,49 +21,10 @@ from six.moves import map
 from six.moves import range
 
 from impala.error import RPCError, QueryStateError, DisconnectedError
-
-if six.PY2:
-    from thrift.transport.TSocket import TSocket
-    from thrift.transport.TTransport import TBufferedTransport, TTransportException
-    from thrift.protocol.TBinaryProtocol import (
-        TBinaryProtocolAccelerated as TBinaryProtocol)
-    from thrift.Thrift import TApplicationException
-
-    from impala._thrift_gen.beeswax import BeeswaxService
-    from impala._thrift_gen.ImpalaService import ImpalaService
-    from impala._thrift_gen.Status.ttypes import TStatus, TStatusCode
-    from impala._thrift_gen.ExecStats.ttypes import TExecStats
-elif six.PY3:
-        # import thriftpy code
-    from thriftpy import load
-    from thriftpy.thrift import TClient, TApplicationException
-    # TODO: reenable cython
-    # from thriftpy.protocol import TBinaryProtocol
-    from thriftpy.protocol.binary import TBinaryProtocol
-    from thriftpy.transport import TSocket, TTransportException
-    # TODO: reenable cython
-    # from thriftpy.transport import TBufferedTransport
-    from thriftpy.transport.buffered import TBufferedTransport
-
-    # dynamically load the thrift modules
-    thrift_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                              'thrift')
-    ExecStats = load(os.path.join(thrift_dir, 'ExecStats.thrift'),
-                     include_dirs=[thrift_dir])
-    Status = load(os.path.join(thrift_dir, 'Status.thrift'),
-                  include_dirs=[thrift_dir])
-    ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
-                         include_dirs=[thrift_dir])
-    beeswax = load(os.path.join(thrift_dir, 'beeswax.thrift'),
-                   include_dirs=[thrift_dir])
-    sys.modules[ExecStats.__name__] = ExecStats
-    sys.modules[Status.__name__] = Status
-    sys.modules[ImpalaService.__name__] = ImpalaService
-    sys.modules[beeswax.__name__] = beeswax
-    from ExecStats import TExecStats
-    from Status import TStatus, TStatusCode
-    from ImpalaService import ImpalaService
-    import beeswax as BeeswaxService
+from impala._thrift_api.beeswax import (
+    TSocket, TBufferedTransport, TTransportException, TBinaryProtocol,
+    TApplicationException, BeeswaxService, ImpalaService, TStatus, TStatusCode,
+    TExecStats, ThriftClient)
 
 
 class RpcStatus:
@@ -233,9 +194,11 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
     transport.open()
     protocol = TBinaryProtocol(transport)
     if six.PY2:
-        service = ImpalaService.Client(protocol)
+        # ThriftClient == ImpalaService.Client
+        service = ThriftClient(protocol)
     elif six.PY3:
-        service = TClient(ImpalaService, protocol)
+        # ThriftClient == TClient
+        service = ThriftClient(ImpalaService, protocol)
     return service
     # We get a TApplicationException if the transport is valid, but the RPC
     # does not exist.
@@ -253,7 +216,7 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
         return TBufferedTransport(sock)
     
     import sasl
-    from thrift_sasl import TSaslClientTransport
+    from impala.thrift_sasl import TSaslClientTransport
 
     def sasl_factory():
         sasl_client = sasl.Client()

@@ -23,17 +23,7 @@ import os
 from impala.dbapi.interface import Connection, Cursor, _bind_parameters
 from impala._rpc import beeswax as rpc
 from impala.error import NotSupportedError, ProgrammingError, OperationalError
-if six.PY2:
-    from impala._thrift_gen.beeswax.BeeswaxService import QueryState
-elif six.PY3:
-    # dynamically load the thrift modules
-    from thriftpy import load
-    thrift_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                              'thrift')
-    beeswax = load(os.path.join(thrift_dir, 'beeswax.thrift'),
-                   include_dirs=[thrift_dir])
-    sys.modules[beeswax.__name__] = beeswax
-    from beeswax import QueryState
+from impala._thrift_api.beeswax import QueryState
 
 
 class BeeswaxConnection(Connection):

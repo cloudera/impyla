@@ -27,17 +27,20 @@ def readme():
         return ip.read()
 
 
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+
 # Apache Thrift does not yet support Python 3 (see THRIFT-1857).  We use
 # thriftpy as a stopgap replacement
 reqs = ['six']
 packages = find_packages(exclude=['impala._thrift_gen',
                                   'impala._thrift_gen.*'])
-if sys.version_info[0] == 2:
+if PY2:
     apache_thrift_pkgs = find_packages(include=['impala._thrift_gen',
                                                 'impala._thrift_gen.*'])
-    reqs.append('thrift')
     packages.extend(apache_thrift_pkgs)
-elif sys.version_info[0] == 3:
+    reqs.append('thrift')
+elif PY3:
     reqs.append('thriftpy')
 
 

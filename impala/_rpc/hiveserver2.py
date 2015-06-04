@@ -35,60 +35,15 @@ from decimal import Decimal
 from six.moves import range
 
 from impala.error import HiveServer2Error
-
-if six.PY2:
-    # import Apache Thrift code
-    from thrift.transport.TSocket import TSocket
-    from thrift.transport.TTransport import (
-        TBufferedTransport, TTransportException)
-    from thrift.protocol.TBinaryProtocol import (
-        TBinaryProtocolAccelerated as TBinaryProtocol)
-
-    from impala._thrift_gen.TCLIService.ttypes import (
-        TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
-        TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
-        TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
-        TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
-        TGetOperationStatusReq, TOperationState, TCancelOperationReq,
-        TCloseOperationReq, TGetLogReq, TProtocolVersion)
-    from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
-        TGetRuntimeProfileReq, TGetExecSummaryReq)
-    from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
-    from impala._thrift_gen.ExecStats.ttypes import TExecStats
-elif six.PY3:
-    # import thriftpy code
-    from thriftpy import load
-    from thriftpy.thrift import TClient
-    # TODO: reenable cython
-    # from thriftpy.protocol import TBinaryProtocol
-    from thriftpy.protocol.binary import TBinaryProtocol
-    from thriftpy.transport import TSocket, TTransportException
-    # TODO: reenable cython
-    # from thriftpy.transport import TBufferedTransport
-    from thriftpy.transport.buffered import TBufferedTransport
-
-    # dynamically load the thrift modules
-    thrift_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                              'thrift')
-    ExecStats = load(os.path.join(thrift_dir, 'ExecStats.thrift'),
-                     include_dirs=[thrift_dir])
-    TCLIService = load(os.path.join(thrift_dir, 'TCLIService.thrift'),
-                       include_dirs=[thrift_dir])
-    ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
-                         include_dirs=[thrift_dir])
-    sys.modules[ExecStats.__name__] = ExecStats
-    sys.modules[TCLIService.__name__] = TCLIService
-    sys.modules[ImpalaService.__name__] = ImpalaService
-    from ExecStats import TExecStats
-    from TCLIService import (
-        TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
-        TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
-        TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
-        TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
-        TGetOperationStatusReq, TOperationState, TCancelOperationReq,
-        TCloseOperationReq, TGetLogReq, TProtocolVersion)
-    from ImpalaService import (
-        TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service)
+from impala._thrift_api.hiveserver2 import (
+    TSocket, TBufferedTransport, TTransportException, TBinaryProtocol,
+    TOpenSessionReq, TFetchResultsReq, TCloseSessionReq, TExecuteStatementReq,
+    TGetInfoReq, TGetInfoType, TTypeId, TFetchOrientation,
+    TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq, TGetSchemasReq,
+    TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq, TOperationState,
+    TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion,
+    TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service,
+    TExecStats, ThriftClient)
 
 
 # mapping between the schema types (based on
@@ -163,11 +118,7 @@ def retry(func):
         # get the thrift transport
         if 'service' in kwargs:
             transport = kwargs['service']._iprot.trans
-        elif (six.PY2 and len(args) > 0 and
-                isinstance(args[0], ImpalaHiveServer2Service.Client)):
-            transport = args[0]._iprot.trans
-        elif (six.PY3 and len(args) > 0 and
-                isinstance(args[0], TClient)):
+        elif len(args) > 0 and isinstance(args[0], ThriftClient):
             transport = args[0]._iprot.trans
         else:
             raise HiveServer2Error(
@@ -245,9 +196,11 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
     transport.open()
     protocol = TBinaryProtocol(transport)
     if six.PY2:
-        service = ImpalaHiveServer2Service.Client(protocol)
+        # ThriftClient == ImpalaHiveServer2Service.Client
+        service = ThriftClient(protocol)
     elif six.PY3:
-        service = TClient(ImpalaHiveServer2Service, protocol)
+        # ThriftClient == TClient
+        service = ThriftClient(ImpalaHiveServer2Service, protocol)
     return service
 
 

@@ -23,17 +23,7 @@ import getpass
 from impala.dbapi.interface import Connection, Cursor, _bind_parameters
 from impala._rpc import hiveserver2 as rpc
 from impala.error import NotSupportedError, OperationalError, ProgrammingError
-if six.PY2:
-    from impala._thrift_gen.TCLIService.ttypes import TProtocolVersion
-elif six.PY3:
-    # dynamically load the thrift modules
-    from thriftpy import load
-    thrift_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                              'thrift')
-    TCLIService = load(os.path.join(thrift_dir, 'TCLIService.thrift'),
-                       include_dirs=[thrift_dir])
-    sys.modules[TCLIService.__name__] = TCLIService
-    from TCLIService import TProtocolVersion
+from impala._thrift_api.hiveserver2 import TProtocolVersion
 
 
 class HiveServer2Connection(Connection):
