@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import re
+import six
 from six import reraise
+from six.moves import range
 
 from impala.util import _escape
 from impala.error import (Error, Warning, InterfaceError, DatabaseError,
@@ -138,8 +142,12 @@ class Cursor(object):
     def __iter__(self):
         raise NotImplementedError
 
-    def next(self):
+    def __next__(self):
         raise NotImplementedError
+
+    def next(self):
+        # for py2 compat
+        return self.__next__()
 
     def ping(self):
         raise NotImplementedError
@@ -205,7 +213,7 @@ def _bind_parameters_list(operation, parameters):
     for value in parameters:
         if value is None:
             string_parameters.append('NULL')
-        elif isinstance(value, basestring):
+        elif isinstance(value, six.string_types):
             string_parameters.append("'" + _escape(value) + "'")
         else:
             string_parameters.append(str(value))
@@ -215,10 +223,10 @@ def _bind_parameters_list(operation, parameters):
 
 def _bind_parameters_dict(operation, parameters):
     string_parameters = {}
-    for (name, value) in parameters.iteritems():
+    for (name, value) in six.iteritems(parameters):
         if value is None:
             string_parameters[name] = 'NULL'
-        elif isinstance(value, basestring):
+        elif isinstance(value, six.string_types):
             string_parameters[name] = "'" + _escape(value) + "'"
         else:
             string_parameters[name] = str(value)

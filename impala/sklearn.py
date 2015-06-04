@@ -12,15 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import struct
+import six
+from six.moves import range
 
 import numpy as np
 from sklearn.base import BaseEstimator
 
 from impala.blob import BlobStore
 from impala.util import (create_view_from_query, drop_view)
+
 
 # TO CREATE A NEW ESTIMATOR:
 #
@@ -46,9 +49,9 @@ class ImpalaEstimator(BaseEstimator):
 
     def _iterate_estimator(self, ic, model_store, prev_key, next_key,
                            bdf, label_column):
-        if not isinstance(prev_key, basestring):
+        if not isinstance(prev_key, six.string_types):
             raise ValueError("prev_key must be string type")
-        if not isinstance(next_key, basestring):
+        if not isinstance(next_key, six.string_types):
             raise ValueError("next_key must be string type")
         if prev_key not in model_store:
             raise ValueError(
@@ -110,7 +113,7 @@ class ImpalaEstimator(BaseEstimator):
         """
         model_store = BlobStore(ic)
         model_store.send('0', None)
-        for i in xrange(self.n_iter):
+        for i in range(self.n_iter):
             epoch = i + 1
             self.partial_fit(ic, model_store, bdf, label_column, epoch)
 
@@ -130,7 +133,7 @@ class LogisticRegression(ImpalaEstimator):
         return ', '.join([str(self.step_size), str(self.mu)])
 
     def _decode_coef(self, coef_string):
-        num_values = len(coef_string) / struct.calcsize("d")
+        num_values = len(coef_string) // struct.calcsize("d")
         values = struct.unpack("%id" % num_values, coef_string)
         return np.asarray(list(values))
 
@@ -150,6 +153,6 @@ class SVM(ImpalaEstimator):
         return ', '.join([str(self.step_size), str(self.mu)])
 
     def _decode_coef(self, coef_string):
-        num_values = len(coef_string) / struct.calcsize("d")
+        num_values = len(coef_string) // struct.calcsize("d")
         values = struct.unpack("%id" % num_values, coef_string)
         return np.asarray(list(values))

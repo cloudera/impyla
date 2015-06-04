@@ -12,12 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
+import six
+from six.moves import range
+
 
 # utilities
 
 def _to_TableName(table):
     """Convert string table name ([foo.]bar) into a TableName object."""
-    if not isinstance(table, basestring):
+    if not isinstance(table, six.string_types):
         raise ValueError("`table` must be a string")
     if table == '':
         raise ValueError("`table` must not be the empty string")
@@ -146,12 +151,12 @@ class JoinTableRef(TableRef):
             self._on = on
         elif isinstance(on, Literal):
             self._on = BinaryExpr('=', on, on)
-        elif isinstance(on, basestring):
+        elif isinstance(on, six.string_types):
             le = Literal('%s.%s' % (left.name, on))
             re = Literal('%s.%s' % (right.name, on))
             self._on = BinaryExpr('=', le, re)
         elif isinstance(on, (list, tuple)):
-            if not all([isinstance(x, basestring) for x in on]):
+            if not all([isinstance(x, six.string_types) for x in on]):
                 raise ValueError(
                     "if on is a list/tuple, must only contain strings")
             exprs = []
@@ -279,11 +284,11 @@ class QueryStmt(SQLNodeMixin):
         for elt in obj:
             if isinstance(elt, SelectItem):
                 select_list.append(elt)
-            elif isinstance(elt, basestring):
+            elif isinstance(elt, six.string_types):
                 select_list.append(SelectItem(expr=Literal(elt)))
             elif isinstance(elt, Expr):
                 select_list.append(SelectItem(expr=elt))
-            elif isinstance(elt, (int, long)):
+            elif isinstance(elt, six.integer_types):
                 select_list.append(self.select_list[elt])
             elif isinstance(elt, slice):
                 # slices are relative to the query_ast select_list
@@ -295,25 +300,25 @@ class QueryStmt(SQLNodeMixin):
                     continue
                 col_strings = [s.name for s in self.select_list]
                 # get start index
-                if isinstance(elt.start, basestring):
+                if isinstance(elt.start, six.string_types):
                     start = col_strings.index(elt.start)
-                elif isinstance(elt.start, (int, long)):
+                elif isinstance(elt.start, six.integer_types):
                     start = elt.start
                 elif elt.start is None:
                     start = 0
                 else:
                     raise ValueError("slice.start must be string/int/long")
                 # get stop index
-                if isinstance(elt.stop, basestring):
+                if isinstance(elt.stop, six.string_types):
                     stop = col_strings.index(elt.stop)
-                elif isinstance(elt.stop, (int, long)):
+                elif isinstance(elt.stop, six.integer_types):
                     stop = elt.stop
                 elif elt.stop is None:
                     stop = len(self.select_list)
                 else:
                     raise ValueError("slice.stop must be string/int/long")
                 # get step value
-                if isinstance(elt.step, (int, long)):
+                if isinstance(elt.step, six.integer_types):
                     step = elt.step
                 elif step is None:
                     step = 1
@@ -330,18 +335,18 @@ class QueryStmt(SQLNodeMixin):
         # this fn does not currently make use of self, but his here for
         # organizational convenience
         # string gets wrapped in Literal
-        if isinstance(obj, (int, long)):
+        if isinstance(obj, six.integer_types):
             return (LimitElement(1, obj), None)
         if isinstance(obj, Expr):
             return (None, obj)
         if isinstance(obj, slice):
             if obj.step != 1 and obj.step is not None:
                 raise ValueError("slices can only have a step size of 1")
-            if (not isinstance(obj.start, (int, long)) or
-                    not isinstance(obj.stop, (int, long))):
+            if (not isinstance(obj.start, six.integer_types) or
+                    not isinstance(obj.stop, six.integer_types)):
                 raise ValueError("slice stop and start must be int/long")
             return (LimitElement(obj.stop - obj.start, obj.start), None)
-        if isinstance(obj, basestring):
+        if isinstance(obj, six.string_types):
             return (None, Literal(obj))
         raise ValueError("row indexer must be int/long/slice/Expr")
 

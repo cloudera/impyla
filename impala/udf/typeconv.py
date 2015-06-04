@@ -17,6 +17,8 @@
 from __future__ import absolute_import
 
 import itertools
+from six.moves import range
+from six.moves import zip
 
 from numba import types as ntypes
 

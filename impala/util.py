@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import string
 import random
+import six
 
 
 def as_pandas(cursor):
@@ -87,7 +88,7 @@ def _escape(s):
 def _py_to_sql_string(value):
     if value is None:
         return 'NULL'
-    elif isinstance(value, basestring):
+    elif isinstance(value, six.string_types):
         return "'" + _escape(value) + "'"
     else:
         return str(value)

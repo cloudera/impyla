@@ -14,14 +14,14 @@
 
 """Impala exception classes.  Also implements PEP 249."""
 
-import exceptions
+from __future__ import absolute_import
 
 
-class Error(exceptions.StandardError):
+class Error(Exception):
     pass
 
 
-class Warning(exceptions.StandardError):
+class Warning(Exception):
     pass
 
 

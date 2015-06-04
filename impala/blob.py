@@ -31,6 +31,8 @@ would be to store model parameters as binary data for UDFs.
 
 from __future__ import absolute_import
 
+import six
+
 from impala.util import (_py_to_sql_string, _get_table_schema_hack,
                          _gen_safe_random_table_name)
 
@@ -70,7 +72,7 @@ class BlobStore(object):
             raise ValueError("second col of blob store must be 'value STRING'")
 
     def __getitem__(self, key):
-        if not isinstance(key, basestring):
+        if not isinstance(key, six.string_types):
             raise ValueError("key must be a string")
         # TODO: I should make sure to escape single quotes here
         self._ic._cursor.execute(
@@ -102,9 +104,9 @@ class BlobStore(object):
                 "%s is not unique. Blob store in illegal state." % key)
 
     def send(self, key, value, decode_fn=lambda x: x, safe=False):
-        if not isinstance(key, basestring):
+        if not isinstance(key, six.string_types):
             raise ValueError("key must be a string")
-        if not isinstance(value, basestring) and value is not None:
+        if not isinstance(value, six.string_types) and value is not None:
             raise ValueError(
                 "value must be string-type (possibly binary) or None")
 
@@ -120,7 +122,7 @@ class BlobStore(object):
                    _py_to_sql_string(decoded_value)))
 
     def put(self, key, expr, from_, safe=False):
-        if not isinstance(key, basestring):
+        if not isinstance(key, six.string_types):
             raise ValueError("key must be string")
 
         if safe and key in self:
@@ -139,7 +141,7 @@ class BlobStore(object):
         table_name is the name of a table or view.
         """
 
-        if not isinstance(key, basestring):
+        if not isinstance(key, six.string_types):
             raise ValueError("key must be string")
 
         from_with_side_data = """

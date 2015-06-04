@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import getpass
 import time
+import sys
+import six
+import os
 
 from impala.dbapi.interface import Connection, Cursor, _bind_parameters
 from impala._rpc import beeswax as rpc
 from impala.error import NotSupportedError, ProgrammingError, OperationalError
-from impala._thrift_gen.beeswax.BeeswaxService import QueryState
+from impala._thrift_api.beeswax import QueryState
 
 
 class BeeswaxConnection(Connection):
@@ -212,7 +217,7 @@ class BeeswaxCursor(Cursor):
         if not self.has_result_set:
             raise ProgrammingError("Tried to fetch but no results.")
         try:
-            return self.next()
+            return next(self)
         except StopIteration:
             return None
 
@@ -226,7 +231,7 @@ class BeeswaxCursor(Cursor):
         i = 0
         while i < size:
             try:
-                local_buffer.append(self.next())
+                local_buffer.append(next(self))
                 i += 1
             except StopIteration:
                 break
@@ -250,7 +255,7 @@ class BeeswaxCursor(Cursor):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         if not self.has_result_set:
             raise ProgrammingError(
                 "Trying to fetch results on an operation with no results.")

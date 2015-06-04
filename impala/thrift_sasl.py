@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements. See the NOTICE file
 # distributed with this work for additional information
@@ -20,19 +17,45 @@
 #
 """ SASL transports for Thrift. """
 
-# Copied from the Impala repo
+# Initially copied from the Impala repo
+
+from __future__ import absolute_import
 
 import sys
-
-from cStringIO import StringIO
-from thrift.transport import TTransport
-from thrift.transport.TTransport import *
-from thrift.protocol import TBinaryProtocol
-try:
-  import saslwrapper as sasl
-except ImportError:
-  import sasl
 import struct
+
+import sasl
+
+
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+
+
+if PY2:
+  from cStringIO import StringIO
+  from thrift.transport.TTransport import (
+    TTransportException, TTransportBase, CReadableTransport)
+if PY3:
+  # TODO: consider contributing this to thriftpy instead
+  class CReadableTransport(object):
+    @property
+    def cstringio_buf(self):
+      pass
+    def cstringio_refill(self, partialread, reqlen):
+      pass
+
+  # TODO: make this more explicit for maintainability sake
+  from io import BytesIO as StringIO
+  from thriftpy.transport import readall, TTransportException, TTransportBase
+
+
+if PY2:
+  six_is_open = lambda trans: trans.isOpen()
+  six_read_all = lambda trans, sz: trans.readAll(sz)
+elif PY3:
+  six_is_open = lambda trans: trans.is_open()
+  six_read_all = lambda trans, sz: readall(trans.read, sz)
+
 
 class TSaslClientTransport(TTransportBase, CReadableTransport):
   START = 1
@@ -57,10 +80,13 @@ class TSaslClientTransport(TTransportBase, CReadableTransport):
     self.encode = None
 
   def isOpen(self):
-    return self._trans.isOpen()
+    return six_is_open(self._trans)
+
+  def is_open(self):
+    return self.isOpen()
 
   def open(self):
-    if not self._trans.isOpen():
+    if not six_is_open(self._trans):
       self._trans.open()
 
     if self.sasl is not None:
@@ -98,10 +124,10 @@ class TSaslClientTransport(TTransportBase, CReadableTransport):
     self._trans.flush()
 
   def _recv_sasl_message(self):
-    header = self._trans.readAll(5)
+    header = six_read_all(self._trans, 5)
     status, length = struct.unpack(">BI", header)
     if length > 0:
-      payload = self._trans.readAll(length)
+      payload = six_read_all(self._trans, length)
     else:
       payload = ""
     return status, payload
@@ -156,27 +182,27 @@ class TSaslClientTransport(TTransportBase, CReadableTransport):
 
   def read(self, sz):
     ret = self.__rbuf.read(sz)
-    if len(ret) != 0:
+    if len(ret) == sz:
       return ret
 
     self._read_frame()
-    return self.__rbuf.read(sz)
+    return ret + self.__rbuf.read(sz - len(ret))
 
   def _read_frame(self):
-    header = self._trans.readAll(4)
+    header = six_read_all(self._trans, 4)
     (length,) = struct.unpack(">I", header)
     if self.encode:
       # If the frames are encoded (i.e. you're using a QOP of auth-int or
       # auth-conf), then make sure to include the header in the bytes you send to
       # sasl.decode()
-      encoded = header + self._trans.readAll(length)
+      encoded = header + six_read_all(self._trans, length)
       success, decoded = self.sasl.decode(encoded)
       if not success:
         raise TTransportException(type=TTransportException.UNKNOWN,
                                   message=self.sasl.getError())
     else:
       # If the frames are not encoded, just pass it through
-      decoded = self._trans.readAll(length)
+      decoded = six_read_all(self._trans, length)
     self.__rbuf = StringIO(decoded)
 
   def close(self):

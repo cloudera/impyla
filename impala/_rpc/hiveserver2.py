@@ -22,28 +22,29 @@
 # 2. the Impala shell:
 #       Impala/shell/original_impala_shell.py
 
+from __future__ import absolute_import, division
+
 import datetime
 import socket
 import operator
+import os
 import re
+import six
+import sys
 from decimal import Decimal
-
-from thrift.transport.TSocket import TSocket
-from thrift.transport.TTransport import TBufferedTransport, TTransportException
-from thrift.protocol.TBinaryProtocol import (
-    TBinaryProtocolAccelerated as TBinaryProtocol)
+from six.moves import range
 
 from impala.error import HiveServer2Error
-from impala._thrift_gen.TCLIService.ttypes import (
+from impala._thrift_api.hiveserver2 import (
+    TSocket, TBufferedTransport, TTransportException, TBinaryProtocol,
     TOpenSessionReq, TFetchResultsReq, TCloseSessionReq, TExecuteStatementReq,
     TGetInfoReq, TGetInfoType, TTypeId, TFetchOrientation,
     TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq, TGetSchemasReq,
     TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq, TOperationState,
-    TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion)
-from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
-    TGetRuntimeProfileReq, TGetExecSummaryReq)
-from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
-from impala._thrift_gen.ExecStats.ttypes import TExecStats
+    TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion,
+    TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service,
+    TExecStats, ThriftClient)
+
 
 # mapping between the schema types (based on
 # com.cloudera.impala.catalog.PrimitiveType) and TColumnValue (in returned
@@ -117,8 +118,7 @@ def retry(func):
         # get the thrift transport
         if 'service' in kwargs:
             transport = kwargs['service']._iprot.trans
-        elif (len(args) > 0 and
-                  isinstance(args[0], ImpalaHiveServer2Service.Client)):
+        elif len(args) > 0 and isinstance(args[0], ThriftClient):
             transport = args[0]._iprot.trans
         else:
             raise HiveServer2Error(
@@ -127,7 +127,9 @@ def retry(func):
         tries_left = 3
         while tries_left > 0:
             try:
-                if not transport.isOpen():
+                if six.PY2 and not transport.isOpen():
+                    transport.open()
+                elif six.PY3 and not transport.is_open():
                     transport.open()
                 return func(*args, **kwargs)
             except socket.error:
@@ -160,11 +162,8 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
     # based on the Impala shell impl
     if not use_ldap and not use_kerberos:
         return TBufferedTransport(sock)
-    try:
-        import saslwrapper as sasl
-    except ImportError:
-        import sasl
 
+    import sasl
     from impala.thrift_sasl import TSaslClientTransport
 
     def sasl_factory():
@@ -188,12 +187,20 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
                       use_ldap=False, ldap_user=None, ldap_password=None,
                       use_kerberos=False, kerberos_service_name='impala'):
     sock = _get_socket(host, port, use_ssl, ca_cert)
-    sock.setTimeout(timeout * 1000.)
+    if six.PY2:
+        sock.setTimeout(timeout * 1000.)
+    elif six.PY3:
+        sock.set_timeout(timeout * 1000.)
     transport = _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
                                use_kerberos, kerberos_service_name)
     transport.open()
     protocol = TBinaryProtocol(transport)
-    service = ImpalaHiveServer2Service.Client(protocol)
+    if six.PY2:
+        # ThriftClient == ImpalaHiveServer2Service.Client
+        service = ThriftClient(protocol)
+    elif six.PY3:
+        # ThriftClient == TClient
+        service = ThriftClient(ImpalaHiveServer2Service, protocol)
     return service
 
 
@@ -282,15 +289,15 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
         num_cols = len(tcols)
         num_rows = len(tcols[0].values)
         rows = []
-        for i in xrange(num_rows):
+        for i in range(num_rows):
             row = []
-            for j in xrange(num_cols):
+            for j in range(num_cols):
                 type_ = schema[j][1]
                 values = tcols[j].values
                 nulls = tcols[j].nulls
-                # i / 8 is the byte, i % 8 is position in the byte; get the int
+                # i // 8 is the byte, i % 8 is position in the byte; get the int
                 # repr and pull out the bit at the corresponding pos
-                is_null = ord(nulls[i / 8]) & (1 << (i % 8))
+                is_null = ord(nulls[i // 8]) & (1 << (i % 8))
                 if is_null:
                     row.append(None)
                 elif type_ == 'TIMESTAMP':
@@ -570,7 +577,7 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
         first_child_output = []
         idx = build_summary_table(summary, idx, False, indent_level,
                                   first_child_output)
-        for child_idx in xrange(1, node.num_children):
+        for child_idx in range(1, node.num_children):
             # All other children are indented (we only have 0, 1 or 2 children
             # for every exec node at the moment)
             idx = build_summary_table(summary, idx, False, indent_level + 1,

@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 import sys
+from six.moves import range
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,6 +24,7 @@ import sklearn.preprocessing
 
 import impala.dbapi
 import impala.sklearn
+
 
 rows = 10000
 cols = 2
@@ -57,9 +61,9 @@ cursor = conn.cursor(user='root')
 cursor.execute("CREATE DATABASE IF NOT EXISTS test_class")
 cursor.execute("USE test_class")
 cursor.execute("CREATE TABLE test_logr (%s, label BOOLEAN)" %
-               ', '.join(['feat%i DOUBLE' % i for i in xrange(cols)]))
+               ', '.join(['feat%i DOUBLE' % i for i in range(cols)]))
 data_strings = []
-for i in xrange(rows):
+for i in range(rows):
     row_string = '(' + ', '.join([str(val) for val in data[i, :-1]]) + ', %s' % ('true' if data[i, -1] > 0 else 'false') + ')'
     data_strings.append(row_string)
     if (i + 1) % 1000 == 0:

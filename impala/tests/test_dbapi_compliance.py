@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
 import sys
+from six.moves import zip
 
 if sys.version_info[:2] <= (2, 6):
     import unittest2 as unittest
@@ -31,13 +32,14 @@ from impala.util import _random_id
 if 'IMPALA_HOST' not in os.environ:
     raise ValueError("Please set IMPALA_HOST env variable")
 if 'IMPALA_PORT' not in os.environ:
-    print >>sys.stderr, ("Using default Impala HiveServer2 port of 21050, or "
-                         "set IMPALA_PORT env variable")
+    print(("Using default Impala HiveServer2 port of 21050, or "
+           "set IMPALA_PORT env variable"), file=sys.stderr)
 if 'IMPALA_PROTOCOL' not in os.environ:
-    print >>sys.stderr, ("Using default Impala protocol of 'hiveserver2', or "
-                         "set IMPALA_PROTOCOL env variable")
+    print(("Using default Impala protocol of 'hiveserver2', or "
+           "set IMPALA_PROTOCOL env variable"), file=sys.stderr)
 if 'USE_KERBEROS' not in os.environ:
-    print >>sys.stderr, ("Set USE_KERBEROS=True if you want to use Kerberos")
+    print(("Set USE_KERBEROS=True if you want to use Kerberos"),
+          file=sys.stderr)
 host = os.environ['IMPALA_HOST']
 port = int(os.environ.get('IMPALA_PORT', 21050))
 protocol = os.environ.get('IMPALA_PROTOCOL', 'hiveserver2')

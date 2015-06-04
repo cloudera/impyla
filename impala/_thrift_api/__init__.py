@@ -1,4 +1,4 @@
-# Copyright 2014 Cloudera Inc.
+# Copyright 2015 Cloudera Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,4 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
+# This package is here to clean up references to thrift, because we're using
+# thriftpy for Py3 at the moment.  This should all be temporary, as Apache
+# Thrift gains Py3 compatibility.

@@ -12,17 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from impala.error import RPCError, QueryStateError, DisconnectedError
-from impala._thrift_gen.beeswax import BeeswaxService
-from impala._thrift_gen.ImpalaService import ImpalaService
-from impala._thrift_gen.Status.ttypes import TStatus, TStatusCode
-from impala._thrift_gen.ExecStats.ttypes import TExecStats
+from __future__ import absolute_import, print_function
 
-from thrift.transport.TSocket import TSocket
-from thrift.transport.TTransport import TBufferedTransport, TTransportException
-from thrift.protocol.TBinaryProtocol import (
-    TBinaryProtocolAccelerated as TBinaryProtocol)
-from thrift.Thrift import TApplicationException
+import os
+import sys
+import six
+from six.moves import map
+from six.moves import range
+
+from impala.error import RPCError, QueryStateError, DisconnectedError
+from impala._thrift_api.beeswax import (
+    TSocket, TBufferedTransport, TTransportException, TBinaryProtocol,
+    TApplicationException, BeeswaxService, ImpalaService, TStatus, TStatusCode,
+    TExecStats, ThriftClient)
 
 
 class RpcStatus:
@@ -32,7 +34,7 @@ class RpcStatus:
 
 
 def __options_to_string_list(set_query_options):
-    return ["%s=%s" % (k, v) for (k, v) in set_query_options.iteritems()]
+    return ["%s=%s" % (k, v) for (k, v) in six.iteritems(set_query_options)]
 
 
 def build_default_query_options_dict(service):
@@ -158,7 +160,7 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
         first_child_output = []
         idx = build_summary_table(summary, idx, False, indent_level,
                                   first_child_output)
-        for child_idx in xrange(1, node.num_children):
+        for child_idx in range(1, node.num_children):
             # All other children are indented (we only have 0, 1 or 2 children
             # for every exec node at the moment)
             idx = build_summary_table(summary, idx, False, indent_level + 1,
@@ -183,12 +185,20 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
                       use_ldap=False, ldap_user=None, ldap_password=None,
                       use_kerberos=False, kerberos_service_name='impala'):
     sock = _get_socket(host, port, use_ssl, ca_cert)
-    sock.setTimeout(timeout * 1000.)
+    if six.PY2:
+        sock.setTimeout(timeout * 1000.)
+    elif six.PY3:
+        sock.set_timeout(timeout * 1000.)
     transport = _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
                                use_kerberos, kerberos_service_name)
     transport.open()
     protocol = TBinaryProtocol(transport)
-    service = ImpalaService.Client(protocol)
+    if six.PY2:
+        # ThriftClient == ImpalaService.Client
+        service = ThriftClient(protocol)
+    elif six.PY3:
+        # ThriftClient == TClient
+        service = ThriftClient(ImpalaService, protocol)
     return service
     # We get a TApplicationException if the transport is valid, but the RPC
     # does not exist.
@@ -204,11 +214,9 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
     # based on the Impala shell impl
     if not use_ldap and not use_kerberos:
         return TBufferedTransport(sock)
-    try:
-        import saslwrapper as sasl
-    except ImportError:
-        import sasl
-    from thrift_sasl import TSaslClientTransport
+    
+    import sasl
+    from impala.thrift_sasl import TSaslClientTransport
 
     def sasl_factory():
         sasl_client = sasl.Client()
@@ -286,7 +294,7 @@ def close_insert(service, last_query_handle):
     if status != RpcStatus.OK:
         raise RPCError()
 
-    num_rows = sum([int(k) for k in insert_result.rows_appended.values()])
+    num_rows = sum([int(k) for k in list(insert_result.rows_appended.values())])
     return num_rows
 
 
@@ -349,7 +357,7 @@ def __do_rpc(rpc):
         # operation was a success.
         if ret is not None and isinstance(ret, TStatus):
             if ret.status_code != TStatusCode.OK:
-                print(ret.error_msgs)
+                print((ret.error_msgs))
                 if ret.error_msgs:
                     raise RPCError('RPC Error: %s' % '\n'.join(ret.error_msgs))
                 status = RpcStatus.ERROR

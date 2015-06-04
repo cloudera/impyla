@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
+import sys
+
 import ez_setup
 ez_setup.use_setuptools()
 
@@ -23,6 +27,23 @@ def readme():
         return ip.read()
 
 
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+
+# Apache Thrift does not yet support Python 3 (see THRIFT-1857).  We use
+# thriftpy as a stopgap replacement
+reqs = ['six']
+packages = find_packages(exclude=['impala._thrift_gen',
+                                  'impala._thrift_gen.*'])
+if PY2:
+    apache_thrift_pkgs = find_packages(include=['impala._thrift_gen',
+                                                'impala._thrift_gen.*'])
+    packages.extend(apache_thrift_pkgs)
+    reqs.append('thrift')
+elif PY3:
+    reqs.append('thriftpy')
+
+
 setup(
     name='impyla',
     version='0.10.0.dev0',
@@ -31,13 +52,15 @@ setup(
     author='Uri Laserson',
     author_email='laserson@cloudera.com',
     url='https://github.com/cloudera/impyla',
-    packages=find_packages(),
+    packages=packages,
+    install_package_data=True,
     package_data={
         'impala.udf': ['precompiled/impyla.bc'],
-        'impala.tests': ['data/iris.data']
+        'impala.tests': ['data/iris.data'],
+        'impala.thrift': ['*.thrift']
     },
     scripts=['bin/register-impala-udfs.py'],
-    install_requires=['six', 'thrift'],
+    install_requires=reqs,
     keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark pydata '
               'pandas distributed db api pep 249'),
     license='Apache License, Version 2.0',
