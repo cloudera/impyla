@@ -46,7 +46,7 @@ elif PY3:
 
 setup(
     name='impyla',
-    version='0.10.0',
+    version='0.11.0.dev0',
     description='Python client for the Impala distributed query engine',
     long_description=readme(),
     author='Uri Laserson',
@@ -67,7 +67,9 @@ setup(
     classifiers=[
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4'
     ],
     entry_points={
         'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect']},
