@@ -13,23 +13,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# THIS SCRIPT IS NOT SAFE FOR CONCURRENT RUNNING
+
 # Check for necessary environment variables
 : ${IMPALA_HOST:?"IMPALA_HOST is unset"}
 : ${IMPALA_PROTOCOL:?"IMPALA_PROTOCOL is unset"}
 : ${IMPALA_PORT:?"IMPALA_PORT is unset"}
+: ${PYTHON_VERSION:?"PYTHON_VERSION is unset"}
+
+TMP_DIR=/tmp/impyla-dbapi/$BUILD_NUMBER
+mkdir -p $TMP_DIR
+
+function cleanup {
+    rm -rf $TMP_DIR
+}
+trap cleanup EXIT
+
+# Build requested Python version
+cd $TMP_DIR
+wget https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz
+tar -xzf Python-$PYTHON_VERSION.tgz
+cd Python-$PYTHON_VERSION
+./configure --prefix=$TMP_DIR
+make && make altinstall
+
+PY_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
+PY_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
+PY_BIN_DIR=$TMP_DIR/bin
+PY_EXEC=$PY_BIN_DIR/python$PY_MAJOR.$PY_MINOR
+
+$PY_EXEC --version
+which $PY_EXEC
+
+# Install pip and virtualenv
+curl https://bootstrap.pypa.io/get-pip.py | $PY_EXEC
+$PY_BIN_DIR/pip install virtualenv
 
 # Set up virtualenv and install prereqs
-VENV_NAME=$JOB_NAME-pyvenv-$BUILD_NUMBER
-cd /tmp && virtualenv $VENV_NAME && source $VENV_NAME/bin/activate
+cd $TMP_DIR
+VENV_NAME=impyla-dbapi-pyvenv-$BUILD_NUMBER
+$PY_BIN_DIR/virtualenv -p $PY_EXEC $VENV_NAME
+source $VENV_NAME/bin/activate
 pip install pytest
-pip install thrift
-pip install unittest2
+if [ "$PY_MAJOR" -eq "2" -a "$PY_MINOR" -eq "6" ]; then
+    pip install unittest2  # for Python 2.6
+fi
 
 # Build impyla
-cd $WORKSPACE && python setup.py install
+cd $WORKSPACE && pip install .
 
 # Run PEP 249 testing suite
-cd /tmp && py.test --dbapi-compliance $WORKSPACE/impala/tests/test_dbapi_compliance.py
-
-# Cleanup virtualenv
-deactivate && rm -rf /tmp/$VENV_NAME
+cd $TMP_DIR && py.test --pyargs impala.tests.test_dbapi_compliance
