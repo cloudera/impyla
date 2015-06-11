@@ -38,7 +38,7 @@ Impala (powered by [Numba][numba]/[LLVM][llvm])
 
 Required for DB API connectivity:
 
-* `python2.6` or `python2.7`
+* Python 2.6+ or 3.3+
 
 * `six`
 
