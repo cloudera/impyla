@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+set -x
+
 # Check for necessary environment variables
 : ${IMPALA_HOST:?"IMPALA_HOST is unset"}
 : ${IMPALA_PROTOCOL:?"IMPALA_PROTOCOL is unset"}
