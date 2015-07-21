@@ -297,7 +297,13 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                 nulls = tcols[j].nulls
                 # i // 8 is the byte, i % 8 is position in the byte; get the int
                 # repr and pull out the bit at the corresponding pos
-                is_null = ord(nulls[i // 8]) & (1 << (i % 8))
+                is_null = False
+                # Ref HUE-2722, HiveServer2 sometimes does not add not put trailing '\x00'.
+                if len(values) != len(nulls):
+                    nulls = nulls + ('\x00' * (len(values) - len(nulls)))
+                # Hive encodes nulls differently than Impala (\x00 vs \x00\x00 ...)
+                if not re.match('^(\x00)+$', nulls):
+                  is_null = ord(nulls[i // 8]) & (1 << (i % 8))
                 if is_null:
                     row.append(None)
                 elif type_ == 'TIMESTAMP':
