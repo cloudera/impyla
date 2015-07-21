@@ -36,61 +36,43 @@ function cleanup {
 }
 trap cleanup EXIT
 
+cd $TMP_DIR
+
 # checkout impyla if necessary
 # this is necessary when run via SSH on a kerberized node
 if [ -z "$WORKSPACE" ]; then
     : ${GIT_URL:?"GIT_URL is unset"}
     : ${GIT_BRANCH:?"GIT_BRANCH is unset"}
-    cd $TMP_DIR
     git clone $GIT_URL
-    cd impyla
-    git checkout origin/$GIT_BRANCH
-    WORKSPACE=$TMP_DIR/impyla
+    pushd impyla && git checkout origin/$GIT_BRANCH && popd
+    IMPYLA_HOME=$TMP_DIR/impyla
+else
+    # WORKSPACE is set, so I must be on a Jenkins slave
+    IMPYLA_HOME=$WORKSPACE
 fi
 
-# Build requested Python version
-cd $TMP_DIR
-wget https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz
-tar -xzf Python-$PYTHON_VERSION.tgz
-cd Python-$PYTHON_VERSION
-./configure --prefix=$TMP_DIR
-make && make altinstall
+# Setup Python
+curl https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh > miniconda.sh
+bash miniconda.sh -b -p $TMP_DIR/miniconda
+export PATH="$TMP_DIR/miniconda/bin:$PATH"
+conda update -y -q conda
+conda info -a
 
-PY_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
-PY_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
-PY_BIN_DIR=$TMP_DIR/bin
-PY_EXEC=$PY_BIN_DIR/python$PY_MAJOR.$PY_MINOR
+# Install impyla and deps into new environment
+CONDA_ENV_NAME=pyenv-impyla-dbapi-test
+conda create -y -q -n $CONDA_ENV_NAME python=$PYTHON_VERSION
+source activate $CONDA_ENV_NAME
+pip install unittest2 pytest
+# build impyla
+pip install $IMPYLA_HOME
 
-$PY_EXEC --version
-which $PY_EXEC
+python --version
+which python
 
-# Install pip and virtualenv
-curl https://bootstrap.pypa.io/get-pip.py | $PY_EXEC
-$PY_BIN_DIR/pip install virtualenv
-
-# Set up virtualenv and install prereqs
-cd $TMP_DIR
-VENV_NAME=impyla-dbapi-pyvenv
-$PY_BIN_DIR/virtualenv -p $PY_EXEC $VENV_NAME
-source $VENV_NAME/bin/activate
-pip install pytest
-if [ "$PY_MAJOR" -eq "2" -a "$PY_MINOR" -le "6" ]; then
-    pip install unittest2  # for Python <= 2.6
-fi
 if [ $USE_KERBEROS = "True" ]; then
     pip install git+https://github.com/laserson/python-sasl.git@cython
-fi
-
-# Build impyla
-cd $WORKSPACE && pip install .
-
-# Authenticate if using kerberos
-
-if [ $USE_KERBEROS = "True" ]; then
-    kinit -l 12h -kt /cdep/keytabs/systest.keytab systest
+    kinit -l 4h -kt /cdep/keytabs/systest.keytab systest
 fi
 
 # Run PEP 249 testing suite
-cd $TMP_DIR && py.test --pyargs impala.tests.test_dbapi_compliance
-
-deactivate
+py.test --pyargs impala.tests.test_dbapi_compliance
