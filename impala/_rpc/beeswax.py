@@ -215,19 +215,11 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
     if not use_ldap and not use_kerberos:
         return TBufferedTransport(sock)
     
-    import sasl
+    from impala.puresasl_wrapper import WrappedSASLClient
     from impala.thrift_sasl import TSaslClientTransport
 
     def sasl_factory():
-        sasl_client = sasl.Client()
-        sasl_client.setAttr("host", host)
-        if use_ldap:
-            sasl_client.setAttr("username", ldap_user)
-            sasl_client.setAttr("password", ldap_password)
-        else:
-            sasl_client.setAttr("service", kerberos_service_name)
-        sasl_client.init()
-        return sasl_client
+        return WrappedSASLClient(host, username=ldap_user, password=ldap_password, service=kerberos_service_name)
 
     if use_kerberos:
         return TSaslClientTransport(sasl_factory, "GSSAPI", sock)

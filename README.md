@@ -61,7 +61,7 @@ Required for `BigDataFrame`:
 
 Required for Kerberos support:
 
-* `python-sasl` (for Python 3 support, requires laserson/python-sasl@cython)
+* `pure-sasl`
 
 Required for utilizing automated shipping/registering of code/UDFs/BDFs/etc:
 
