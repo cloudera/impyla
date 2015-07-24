@@ -24,8 +24,6 @@ from __future__ import absolute_import
 import sys
 import struct
 
-#import sasl
-
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
