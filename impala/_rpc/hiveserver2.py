@@ -362,7 +362,7 @@ def database_exists(service, session_handle, hs2_protocol_version, db_name):
                             hs2_protocol_version=hs2_protocol_version)
     exists = False
     for result in results:
-        if result[0] == db_name:
+        if result[0].lower() == db_name.lower():
             exists = True
     close_operation(service, operation_handle)
     return exists
@@ -391,7 +391,7 @@ def table_exists(service, session_handle, hs2_protocol_version, table_name,
                             hs2_protocol_version=hs2_protocol_version)
     exists = False
     for result in results:
-        if result[2] == table_name:
+        if result[2].lower() == table_name.lower():
             exists = True
     close_operation(service, operation_handle)
     return exists
