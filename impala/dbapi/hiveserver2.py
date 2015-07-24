@@ -94,6 +94,10 @@ class HiveServer2Cursor(Cursor):
     @property
     def description(self):
         # PEP 249
+        if self._description is None and self.has_result_set:
+            schema = rpc.get_result_schema(self.service,
+                                           self._last_operation_handle)
+            self._description = schema
         return self._description
 
     @property
@@ -144,6 +148,11 @@ class HiveServer2Cursor(Cursor):
 
     def execute(self, operation, parameters=None, configuration=None):
         # PEP 249
+        self.execute_async(operation, parameters=parameters,
+                configuration=configuration)
+        self._wait_to_finish()  # make execute synchronous
+
+    def execute_async(self, operation, parameters=None, configuration=None):
         def op():
             if parameters:
                 self._last_operation_string = _bind_parameters(operation,
@@ -154,19 +163,14 @@ class HiveServer2Cursor(Cursor):
                 self.service, self.session_handle, self._last_operation_string,
                 configuration)
 
-        self._execute_sync(op)
+        self._execute_async(op)
 
-    def _execute_sync(self, operation_fn):
+    def _execute_async(self, operation_fn):
         # operation_fn should set self._last_operation_string and
         # self._last_operation_handle
         self._reset_state()
         operation_fn()
         self._last_operation_active = True
-        self._wait_to_finish()  # make execute synchronous
-        if self.has_result_set:
-            schema = rpc.get_result_schema(self.service,
-                                           self._last_operation_handle)
-            self._description = schema
 
     def _reset_state(self):
         self._buffer = []
@@ -182,14 +186,32 @@ class HiveServer2Cursor(Cursor):
         while True:
             operation_state = rpc.get_operation_status(
                 self.service, self._last_operation_handle)
-            if operation_state == 'ERROR_STATE':
+            if self._op_state_is_error(operation_state):
                 raise OperationalError("Operation is in ERROR_STATE")
-            if operation_state in ['FINISHED_STATE', 'CANCELED_STATE',
-                                   'CLOSED_STATE', 'UKNOWN_STATE']:
+            if not self._op_state_is_executing(operation_state):
                 break
-            # I'm in INITIALIZED_STATE or RUNNING_STATE or PENDING_STATE
-            # so hang out
             time.sleep(self._get_sleep_interval(loop_start))
+
+    def execution_failed(self):
+        if self._last_operation_handle is None:
+            raise ProgrammingError("Operation state is not available")
+        operation_state = rpc.get_operation_status(
+            self.service, self._last_operation_handle)
+        return self._op_state_is_error(operation_state)
+
+    def _op_state_is_error(self, operation_state):
+        return operation_state == 'ERROR_STATE'
+
+    def is_executing(self):
+        if self._last_operation_handle is None:
+            raise ProgrammingError("Operation state is not available")
+        operation_state = rpc.get_operation_status(
+            self.service, self._last_operation_handle)
+        return self._op_state_is_executing(operation_state)
+
+    def _op_state_is_executing(self, operation_state):
+        return operation_state in (
+                'PENDING_STATE', 'INITIALIZED_STATE', 'RUNNING_STATE')
 
     def _get_sleep_interval(self, start_time):
         """Returns a step function of time to sleep in seconds before polling
