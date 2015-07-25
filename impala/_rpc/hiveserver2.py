@@ -164,7 +164,7 @@ def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
         return TBufferedTransport(sock)
 
     import sasl
-    from impala.thrift_sasl import TSaslClientTransport
+    from thrift_sasl import TSaslClientTransport
 
     def sasl_factory():
         sasl_client = sasl.Client()

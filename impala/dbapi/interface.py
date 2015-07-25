@@ -52,7 +52,7 @@ class Connection(object):
 
     def kerberized(self):
         # returns bool whether underlying service is kerberized or not
-        from impala.thrift_sasl import TSaslClientTransport
+        from thrift_sasl import TSaslClientTransport
         if isinstance(self.service._iprot.trans, TSaslClientTransport):
             if self.service._iprot.trans.mechanism == 'GSSAPI':
                 return True
