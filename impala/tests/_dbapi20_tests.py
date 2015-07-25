@@ -446,6 +446,62 @@ class DatabaseAPI20Test(unittest.TestCase):
             'incorrectly'
             )
 
+    def _get_number_of_files(self, cur, table_name):
+        cur.execute("SHOW TABLE STATS %s" % table_name)
+        col_names = [d[0] for d in cur.description]
+        num_files_idx = col_names.index("#Files")
+        num_files = cur.fetchone()[num_files_idx]
+        return num_files
+
+    def test_executemany_single_query(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL1(cur)
+            table_name = "%sbooze" % self.table_prefix
+            num_files_before = self._get_number_of_files(cur, table_name)
+
+            largs = [ ("Cooper's",) , ("Boag's",) ]
+            margs = [ {'beer': "Cooper's"}, {'beer': "Boag's"} ]
+            if self.driver.paramstyle == 'qmark':
+                cur.executemany(
+                    'insert into %sbooze values (?)' % self.table_prefix,
+                    largs, single_query_insert=True
+                    )
+            elif self.driver.paramstyle == 'numeric':
+                cur.executemany(
+                    'insert into %sbooze values (:1)' % self.table_prefix,
+                    largs, single_query_insert=True
+                    )
+            elif self.driver.paramstyle == 'named':
+                cur.executemany(
+                    'insert into %sbooze values (:beer)' % self.table_prefix,
+                    margs, single_query_insert=True
+                    )
+            elif self.driver.paramstyle == 'format':
+                cur.executemany(
+                    'insert into %sbooze values (%%s)' % self.table_prefix,
+                    largs, single_query_insert=True
+                    )
+            elif self.driver.paramstyle == 'pyformat':
+                cur.executemany(
+                    'insert into %sbooze values (%%(beer)s)' % (
+                        self.table_prefix
+                        ),
+                    margs, single_query_insert=True
+                    )
+            else:
+                self.fail('Unknown paramstyle')
+
+            num_files_after = self._get_number_of_files(cur, table_name)
+            self.assertEqual(num_files_after, num_files_before + 1,
+                'cursor.executemany(..., single_query_insert=True) should '
+                'produce only one file (produced %d)' %
+                (num_files_after - num_files_before))
+            
+        finally:
+            con.close()
+
     def test_executemany(self):
         con = self._connect()
         try:

@@ -20,7 +20,7 @@ import six
 import time
 import getpass
 
-from impala.dbapi.interface import Connection, Cursor, _bind_parameters
+from impala.dbapi.interface import Connection, Cursor, _bind_parameters, RE_INSERT_VALUES
 from impala._rpc import hiveserver2 as rpc
 from impala.error import NotSupportedError, OperationalError, ProgrammingError
 from impala._thrift_api.hiveserver2 import TProtocolVersion
@@ -201,13 +201,46 @@ class HiveServer2Cursor(Cursor):
             return 0.5
         return 1.0
 
-    def executemany(self, operation, seq_of_parameters):
+    def _exec_single_query_insert(self, operation, seq_of_parameters):
+        """
+        INSERT...VALUES is available in Hive starting from 0.14, multiple row
+        inserts are NOT supported though.
+
+        INSERT...VALUES is available in Impala and multiple row inserts are
+        supported.
+
+        If we observe "INSERT INTO ... (...) VALUES (...)", build one big INSERT
+        query.
+        See Cloudera's notes on INSERT...VALUES here:
+        http://www.cloudera.com/content/cloudera/en/documentation/cloudera-impala/v2-0-x/topics/impala_insert.html#values_unique_1
+        """
+        match = RE_INSERT_VALUES.match(operation)
+        if match and seq_of_parameters and len(seq_of_parameters) > 1:
+            query_left = match.group(1)
+            values = match.group(2)
+
+            def op():
+                bound_params = map(
+                    lambda params: _bind_parameters(values, params),
+                    seq_of_parameters)
+                self._last_operation_string = query_left + ", ".join(bound_params)
+                self._last_operation_handle = rpc.execute_statement(
+                    self.service, self.session_handle, self._last_operation_string,
+                    None)
+
+            self._execute_sync(op)
+            return True
+        return False
+
+    def executemany(self, operation, seq_of_parameters, single_query_insert=False):
         # PEP 249
-        for parameters in seq_of_parameters:
-            self.execute(operation, parameters)
-            if self.has_result_set:
-                raise ProgrammingError("Operations that have result sets are "
-                                       "not allowed with executemany.")
+        if not single_query_insert or \
+           not self._exec_single_query_insert(operation, seq_of_parameters):
+            for parameters in seq_of_parameters:
+                self.execute(operation, parameters)
+                if self.has_result_set:
+                    raise ProgrammingError("Operations that have result sets are "
+                                           "not allowed with executemany.")
 
     def fetchone(self):
         # PEP 249
