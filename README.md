@@ -45,6 +45,8 @@ Required for DB API connectivity:
 * `thrift>=0.8` (Python package only; no need for code-gen) for Python 2, or
 `thriftpy` for Python 3
 
+* `thrift_sasl`
+
 Required for UDFs:
 
 * `numba<=0.13.4` (which has a few requirements, like LLVM)
@@ -62,8 +64,6 @@ Required for `BigDataFrame`:
 Required for Kerberos support:
 
 * `python-sasl` (for Python 3 support, requires laserson/python-sasl@cython)
-
-* `thrift_sasl`
 
 Required for utilizing automated shipping/registering of code/UDFs/BDFs/etc:
 

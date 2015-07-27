@@ -28,6 +28,7 @@ cd /tmp && virtualenv $VENV_NAME && source $VENV_NAME/bin/activate
 pip install pytest
 pip install thrift
 pip install sasl
+pip install thrift_sasl
 pip install unittest2
 pip install sqlalchemy
 pip install numpy
