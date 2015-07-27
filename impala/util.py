@@ -15,9 +15,28 @@
 from __future__ import absolute_import
 
 import warnings
+import logging
 import string
 import random
 import six
+
+
+try:
+    from logging import NullHandler
+except ImportError:
+    # py 2.6 compat
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+
+
+def get_logger_and_init_null(logger_name):
+    logger = logging.getLogger(logger_name)
+    logger.addHandler(NullHandler())
+    return logger
+
+
+log = get_logger_and_init_null(__name__)
 
 
 def as_pandas(cursor):
@@ -83,6 +102,7 @@ def _escape(s):
     e = e.replace('\r', '\\r')
     e = e.replace("'", "\\'")
     e = e.replace('"', '\\"')
+    log.debug('%s => %s', s, e)
     return e
 
 

@@ -35,6 +35,7 @@ from decimal import Decimal
 from six.moves import range
 
 from impala.error import HiveServer2Error
+from impala.util import get_logger_and_init_null
 from impala._thrift_api import (
     get_socket, get_transport, TTransportException, TBinaryProtocol)
 from impala._thrift_api.hiveserver2 import (
@@ -45,6 +46,9 @@ from impala._thrift_api.hiveserver2 import (
     TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion,
     TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service,
     TExecStats, ThriftClient)
+
+
+log = get_logger_and_init_null(__name__)
 
 
 # mapping between the schema types (based on
@@ -88,6 +92,7 @@ _TIMESTAMP_PATTERN = re.compile(r'(\d+-\d+-\d+ \d+:\d+:\d+(\.\d{,6})?)')
 
 
 def _parse_timestamp(value):
+    input_value = value
     if value:
         match = _TIMESTAMP_PATTERN.match(value)
         if match:
@@ -103,6 +108,7 @@ def _parse_timestamp(value):
                 'Cannot convert "{}" into a datetime'.format(value))
     else:
         value = None
+    log.debug('%s => %s', input_value, value)
     return value
 
 
@@ -128,17 +134,25 @@ def retry(func):
         tries_left = 3
         while tries_left > 0:
             try:
+                log.debug('Attempting to open transport (tries_left=%s)',
+                          tries_left)
                 if six.PY2 and not transport.isOpen():
                     transport.open()
                 elif six.PY3 and not transport.is_open():
                     transport.open()
+                log.debug('Transport opened')
                 return func(*args, **kwargs)
             except socket.error:
+                log.exception('Failed to open transport (tries_left=%s)',
+                              tries_left)
                 pass
             except TTransportException:
+                log.exception('Failed to open transport (tries_left=%s)',
+                              tries_left)
                 pass
             except Exception:
                 raise
+            log.debug('Closing transport (tries_left=%s)', tries_left)
             transport.close()
             tries_left -= 1
         raise
@@ -149,6 +163,8 @@ def retry(func):
 def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
                       user=None, password=None, kerberos_service_name='impala',
                       auth_mechanism=None):
+    log.info('Connecting to HiveServer2 %s:%s with %s authentication '
+             'mechanism', host, port, auth_mechanism)
     sock = get_socket(host, port, use_ssl, ca_cert)
     if six.PY2:
         sock.setTimeout(timeout * 1000.)
@@ -164,14 +180,18 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
     elif six.PY3:
         # ThriftClient == TClient
         service = ThriftClient(ImpalaHiveServer2Service, protocol)
+    log.debug('sock=%s transport=%s protocol=%s service=%s', sock, transport,
+              protocol, service)
     return service
 
 
 def close_service(service):
+    log.debug('close_service: service=%s', service)
     service._iprot.trans.close()
 
 
 def reconnect(service):
+    log.debug('reconnect: service=%s', service)
     service._iprot.trans.close()
     service._iprot.trans.open()
 
@@ -181,7 +201,9 @@ def open_session(service, user, configuration=None):
     req = TOpenSessionReq(
         client_protocol=TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6,
         username=user, configuration=configuration)
+    log.debug('open_session: req=%s', req)
     resp = service.OpenSession(req)
+    log.debug('open_session: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     return (resp.sessionHandle, resp.configuration, resp.serverProtocolVersion)
 
@@ -189,7 +211,9 @@ def open_session(service, user, configuration=None):
 @retry
 def close_session(service, session_handle):
     req = TCloseSessionReq(sessionHandle=session_handle)
+    log.debug('close_session: req=%s', req)
     resp = service.CloseSession(req)
+    log.debug('close_session: resp=%s', resp)
     err_if_rpc_not_ok(resp)
 
 
@@ -199,7 +223,9 @@ def execute_statement(service, session_handle, statement, configuration=None,
     req = TExecuteStatementReq(sessionHandle=session_handle,
                                statement=statement, confOverlay=configuration,
                                runAsync=async)
+    log.debug('execute_statement: req=%s', req)
     resp = service.ExecuteStatement(req)
+    log.debug('execute_statement: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     return resp.operationHandle
 
@@ -207,9 +233,12 @@ def execute_statement(service, session_handle, statement, configuration=None,
 @retry
 def get_result_schema(service, operation_handle):
     if not operation_handle.hasResultSet:
+        log.debug('get_result_schema: operation_handle.hasResultSet=False')
         return None
     req = TGetResultSetMetadataReq(operationHandle=operation_handle)
+    log.debug('get_result_schema: req=%s', req)
     resp = service.GetResultSetMetadata(req)
+    log.debug('get_result_schema: resp=%s', resp)
     err_if_rpc_not_ok(resp)
 
     schema = []
@@ -226,6 +255,7 @@ def get_result_schema(service, operation_handle):
         else:
             schema.append((name, type_, None, None, None, None, None))
 
+    log.debug('get_result_schema: schema=%s', schema)
 
     return schema
 
@@ -234,6 +264,7 @@ def get_result_schema(service, operation_handle):
 def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                   max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
     if not operation_handle.hasResultSet:
+        log.debug('fetch_results: operation_handle.hasResultSet=False')
         return None
 
     # the schema is necessary to pull the proper values (i.e., coalesce)
@@ -243,6 +274,9 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
     req = TFetchResultsReq(operationHandle=operation_handle,
                            orientation=orientation,
                            maxRows=max_rows)
+    log.debug('fetch_results: hs2_protocol_version=%s max_rows=%s '
+              'orientation=%s req=%s', hs2_protocol_version, max_rows,
+              orientation, req)
     resp = service.FetchResults(req)
     err_if_rpc_not_ok(resp)
 
@@ -251,6 +285,8 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                  for (i, col) in enumerate(resp.results.columns)]
         num_cols = len(tcols)
         num_rows = len(tcols[0].values)
+        log.debug('fetch_results: COLUMNAR num_cols=%s num_rows=%s tcols=%s', num_cols,
+                  num_rows, tcols)
         rows = []
         for i in range(num_rows):
             row = []
@@ -279,6 +315,7 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                     row.append(values[i])
             rows.append(tuple(row))
     elif hs2_protocol_version in _pre_columnar_protocols:
+        log.debug('fetch_results: ROWS num-rows=%s', len(resp.results.rows))
         rows = []
         for trow in resp.results.rows:
             row = []
@@ -294,9 +331,8 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
             rows.append(tuple(row))
     else:
         raise HiveServer2Error(
-            ("Got HiveServer2 version %s. " %
-                TProtocolVersion._VALUES_TO_NAMES[hs2_protocol_version]) +
-            "Expected V1 - V6")
+            "Got HiveServer2 version {0}; expected V1 - V6".format(
+                TProtocolVersion._VALUES_TO_NAMES[hs2_protocol_version]))
     return rows
 
 
@@ -308,7 +344,9 @@ def get_current_database(service, session_handle):
 @retry
 def get_databases(service, session_handle):
     req = TGetSchemasReq(sessionHandle=session_handle, schemaName='.*')
+    log.debug('get_databases: req=%s', req)
     resp = service.GetSchemas(req)
+    log.debug('get_databases: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     return resp.operationHandle
 
@@ -316,7 +354,9 @@ def get_databases(service, session_handle):
 @retry
 def database_exists(service, session_handle, hs2_protocol_version, db_name):
     req = TGetSchemasReq(sessionHandle=session_handle, schemaName=db_name)
+    log.debug('database_exists: req=%s', req)
     resp = service.GetSchemas(req)
+    log.debug('database_exists: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     operation_handle = resp.operationHandle
     # this only fetches default max_rows, but there should only be one row
@@ -335,7 +375,9 @@ def database_exists(service, session_handle, hs2_protocol_version, db_name):
 def get_tables(service, session_handle, database_name='.*'):
     req = TGetTablesReq(sessionHandle=session_handle, schemaName=database_name,
                         tableName='.*')
+    log.debug('get_tables: req=%s', req)
     resp = service.GetTables(req)
+    log.debug('get_tables: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     return resp.operationHandle
 
@@ -345,7 +387,9 @@ def table_exists(service, session_handle, hs2_protocol_version, table_name,
                  database_name='.*'):
     req = TGetTablesReq(sessionHandle=session_handle, schemaName=database_name,
                         tableName=table_name)
+    log.debug('table_exists: req=%s', req)
     resp = service.GetTables(req)
+    log.debug('table_exists: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     operation_handle = resp.operationHandle
     # this only fetches default max_rows, but there should only be one row
@@ -365,7 +409,9 @@ def get_table_schema(service, session_handle, table_name, database_name='.*'):
     req = TGetColumnsReq(sessionHandle=session_handle,
                          schemaName=database_name, tableName=table_name,
                          columnName='.*')
+    log.debug('get_table_schema: req=%s', req)
     resp = service.GetColumns(req)
+    log.debug('get_table_schema: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     return resp.operationHandle
 
@@ -376,7 +422,9 @@ def get_functions(service, session_handle, database_name='.*'):
     req = TGetFunctionsReq(sessionHandle=session_handle,
                            schemaName=database_name,
                            functionName='.*')
+    log.debug('get_functions: req=%s', req)
     resp = service.GetFunctions(req)
+    log.debug('get_functions: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     return resp.operationHandle
 
@@ -384,7 +432,9 @@ def get_functions(service, session_handle, database_name='.*'):
 @retry
 def get_operation_status(service, operation_handle):
     req = TGetOperationStatusReq(operationHandle=operation_handle)
+    log.debug('get_operation_status: req=%s', req)
     resp = service.GetOperationStatus(req)
+    log.debug('get_operation_status: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     return TOperationState._VALUES_TO_NAMES[resp.operationState]
 
@@ -392,21 +442,27 @@ def get_operation_status(service, operation_handle):
 @retry
 def cancel_operation(service, operation_handle):
     req = TCancelOperationReq(operationHandle=operation_handle)
+    log.debug('cancel_operation: req=%s', req)
     resp = service.CancelOperation(req)
+    log.debug('cancel_operation: resp=%s', resp)
     err_if_rpc_not_ok(resp)
 
 
 @retry
 def close_operation(service, operation_handle):
     req = TCloseOperationReq(operationHandle=operation_handle)
+    log.debug('close_operation: req=%s', req)
     resp = service.CloseOperation(req)
+    log.debug('close_operation: resp=%s', resp)
     err_if_rpc_not_ok(resp)
 
 
 @retry
 def get_log(service, operation_handle):
     req = TGetLogReq(operationHandle=operation_handle)
+    log.debug('get_log: req=%s', req)
     resp = service.GetLog(req)
+    log.debug('get_log: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     return resp.log
 
@@ -414,14 +470,17 @@ def get_log(service, operation_handle):
 def ping(service, session_handle):
     req = TGetInfoReq(sessionHandle=session_handle,
                       infoType=TGetInfoType.CLI_SERVER_NAME)
+    log.debug('ping: req=%s', req)
     try:
         resp = service.GetInfo(req)
     except TTransportException:
+        log.exception('ping: failed')
         return False
-
+    log.debug('ping: resp=%s', resp)
     try:
         err_if_rpc_not_ok(resp)
     except HiveServer2Error:
+        log.exception('ping: failed')
         return False
     return True
 
@@ -429,7 +488,9 @@ def ping(service, session_handle):
 def get_profile(service, operation_handle, session_handle):
     req = TGetRuntimeProfileReq(operationHandle=operation_handle,
                                 sessionHandle=session_handle)
+    log.debug('get_profile: req=%s', req)
     resp = service.GetRuntimeProfile(req)
+    log.debug('get_profile: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     return resp.profile
 
@@ -437,7 +498,9 @@ def get_profile(service, operation_handle, session_handle):
 def get_summary(service, operation_handle, session_handle):
     req = TGetExecSummaryReq(operationHandle=operation_handle,
                              sessionHandle=session_handle)
+    log.debug('get_summary: req=%s', req)
     resp = service.GetExecSummary(req)
+    log.debug('get_summary: resp=%s', resp)
     err_if_rpc_not_ok(resp)
     return resp.summary
 

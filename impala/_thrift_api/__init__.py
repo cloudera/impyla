@@ -21,6 +21,11 @@ import sys
 import six
 import getpass
 
+from impala.util import get_logger_and_init_null
+
+
+log = get_logger_and_init_null(__name__)
+
 
 if six.PY2:
     # import Apache Thrift code
@@ -47,6 +52,9 @@ if six.PY3:
 
 def get_socket(host, port, use_ssl, ca_cert):
     # based on the Impala shell impl
+    log.debug('get_socket: host=%s port=%s use_ssl=%s ca_cert=%s',
+              host, port, use_ssl, ca_cert)
+
     if use_ssl:
         from thrift.transport.TSSLSocket import TSSLSocket
         if ca_cert is None:
@@ -66,6 +74,10 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
     - 'PLAIN'  - returns a SASL transport with the PLAIN mechanism
     - 'GSSAPI' - returns a SASL transport with the GSSAPI mechanism
     """
+    log.debug('get_transport: socket=%s host=%s kerberos_service_name=%s '
+              'auth_mechanism=%s user=%s password=fuggetaboutit', socket, host,
+              kerberos_service_name, auth_mechanism, user)
+
     if auth_mechanism == 'NOSASL':
         return TBufferedTransport(socket)
 
@@ -73,12 +85,14 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
     if auth_mechanism in ['LDAP', 'PLAIN']:
         if user is None:
             user = getpass.getuser()
+            log.debug('get_transport: user=%s', user)
         if password is None:
             if auth_mechanism == 'LDAP':
                 password = ''
             else:
                 # PLAIN always requires a password for HS2.
                 password = 'password'
+            log.debug('get_transport: password=%s', password)
 
     # Initializes a sasl client
     import sasl

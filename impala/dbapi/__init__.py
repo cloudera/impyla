@@ -27,8 +27,6 @@ from impala.dbapi.beeswax import BeeswaxConnection
 from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           InternalError, OperationalError, ProgrammingError,
                           IntegrityError, DataError, NotSupportedError)
-
-
 from impala.util import warn_deprecate_hs2, warn_deprecate
 
 
@@ -45,7 +43,6 @@ def connect(host='localhost', port=21050, protocol='hiveserver2', database=None,
             auth_mechanism='NOSASL', user=None, password=None,
             kerberos_service_name='impala', use_ldap=None, ldap_user=None,
             ldap_password=None, use_kerberos=None):
-
     if use_kerberos is not None:
         warn_deprecate('use_kerberos', 'auth_mechanism="GSSAPI"')
         if use_kerberos:

@@ -20,10 +20,14 @@ import six
 import time
 import getpass
 
+from impala.util import get_logger_and_init_null
 from impala.dbapi.interface import Connection, Cursor, _bind_parameters
 from impala._rpc import hiveserver2 as rpc
 from impala.error import NotSupportedError, OperationalError, ProgrammingError
 from impala._thrift_api.hiveserver2 import TProtocolVersion
+
+
+log = get_logger_and_init_null(__name__)
 
 
 class HiveServer2Connection(Connection):
@@ -33,12 +37,15 @@ class HiveServer2Connection(Connection):
     # it's instantiated with an alive TCLIService.Client
 
     def __init__(self, service, default_db=None):
+        log.debug('HiveServer2Connection(service=%s, default_db=%s)', service,
+                  default_db)
         self.service = service
         self.default_db = default_db
 
     def close(self):
         """Close the session and the Thrift transport."""
         # PEP 249
+        log.info('Closing HS2 connection')
         rpc.close_service(self.service)
 
     def commit(self):
@@ -53,14 +60,17 @@ class HiveServer2Connection(Connection):
 
     def cursor(self, session_handle=None, user=None, configuration=None):
         # PEP 249
+        log.info('Getting a cursor (Impala session)')
         if user is None:
             user = getpass.getuser()
         if session_handle is None:
+            log.debug('.cursor(): getting new session_handle')
             (session_handle, default_config, hs2_protocol_version) = (
                 rpc.open_session(self.service, user, configuration))
         cursor = HiveServer2Cursor(
             self.service, session_handle, default_config, hs2_protocol_version)
         if self.default_db is not None:
+            log.info('Using database %s as default', self.default_db)
             cursor.execute('USE %s' % self.default_db)
         return cursor
 
@@ -76,6 +86,9 @@ class HiveServer2Cursor(Cursor):
     def __init__(self, service, session_handle, default_config=None,
                  hs2_protocol_version=(
                      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6)):
+        log.debug('HiveServer2Cursor(service=%s, session_handle=%s, '
+                  'default_config=%s, hs2_protocol_version=%s)', service,
+                  session_handle, default_config, hs2_protocol_version)
         self.service = service
         self.session_handle = session_handle
         self.default_config = default_config
@@ -95,6 +108,7 @@ class HiveServer2Cursor(Cursor):
     def description(self):
         # PEP 249
         if self._description is None and self.has_result_set:
+            log.debug('description=None has_result_set=True => getting schema')
             schema = rpc.get_result_schema(self.service,
                                            self._last_operation_handle)
             self._description = schema
@@ -115,6 +129,7 @@ class HiveServer2Cursor(Cursor):
 
     def set_arraysize(self, arraysize):
         # PEP 249
+        log.debug('set_arraysize: arraysize=%s', arraysize)
         self._buffersize = arraysize
 
     arraysize = property(get_arraysize, set_arraysize)
@@ -135,24 +150,30 @@ class HiveServer2Cursor(Cursor):
 
     def close(self):
         # PEP 249
+        log.info('Closing HiveServer2Cursor')
         rpc.close_session(self.service, self.session_handle)
 
     def cancel_operation(self):
         if self._last_operation_active:
+            log.info('Canceling active operation')
             rpc.cancel_operation(self.service, self._last_operation_handle)
             self._reset_state()
 
     def close_operation(self):
         if self._last_operation_active:
+            log.info('Closing active operation')
             self._reset_state()
 
     def execute(self, operation, parameters=None, configuration=None):
         # PEP 249
         self.execute_async(operation, parameters=parameters,
                            configuration=configuration)
+        log.info('Waiting for query to finish')
         self._wait_to_finish()  # make execute synchronous
+        log.info('Query finished')
 
     def execute_async(self, operation, parameters=None, configuration=None):
+        log.info('Executing query %s', operation)
         def op():
             if parameters:
                 self._last_operation_string = _bind_parameters(operation,
@@ -165,14 +186,25 @@ class HiveServer2Cursor(Cursor):
 
         self._execute_async(op)
 
+    def _debug_log_state(self):
+        log.debug(
+            '_execute_async: self._buffer=%s self._description=%s '
+            'self._last_operation_active=%s self._last_operation_handle=%s',
+            self._buffer, self._description, self._last_operation_active,
+            self._last_operation_handle)
+
     def _execute_async(self, operation_fn):
         # operation_fn should set self._last_operation_string and
         # self._last_operation_handle
+        self._debug_log_state()
         self._reset_state()
+        self._debug_log_state()
         operation_fn()
         self._last_operation_active = True
+        self._debug_log_state()
 
     def _reset_state(self):
+        log.debug('_reset_state: Resetting cursor state')
         self._buffer = []
         self._description = None
         if self._last_operation_active:
@@ -186,6 +218,8 @@ class HiveServer2Cursor(Cursor):
         while True:
             operation_state = rpc.get_operation_status(
                 self.service, self._last_operation_handle)
+            log.debug('_wait_to_finish: waited %s seconds so far',
+                      time.time() - loop_start)
             if self._op_state_is_error(operation_state):
                 raise OperationalError("Operation is in ERROR_STATE")
             if not self._op_state_is_executing(operation_state):
@@ -225,6 +259,7 @@ class HiveServer2Cursor(Cursor):
 
     def executemany(self, operation, seq_of_parameters):
         # PEP 249
+        log.info('Attempting to execute %s queries', len(seq_of_parameters))
         for parameters in seq_of_parameters:
             self.execute(operation, parameters)
             if self.has_result_set:
@@ -235,6 +270,7 @@ class HiveServer2Cursor(Cursor):
         # PEP 249
         if not self.has_result_set:
             raise ProgrammingError("Tried to fetch but no results.")
+        log.info('Fetching a single row')
         try:
             return next(self)
         except StopIteration:
@@ -246,6 +282,7 @@ class HiveServer2Cursor(Cursor):
             raise ProgrammingError("Tried to fetch but no results.")
         if size is None:
             size = self.arraysize
+        log.info('Fetching up to %s result rows', size)
         local_buffer = []
         i = 0
         while i < size:
@@ -258,6 +295,7 @@ class HiveServer2Cursor(Cursor):
 
     def fetchall(self):
         # PEP 249
+        log.info('Fetching all result rows')
         try:
             return list(self)
         except StopIteration:
@@ -279,16 +317,21 @@ class HiveServer2Cursor(Cursor):
             raise ProgrammingError(
                 "Trying to fetch results on an operation with no results.")
         if len(self._buffer) > 0:
+            log.debug('__next__: popping row out of buffer')
             return self._buffer.pop(0)
         elif self._last_operation_active:
             # self._buffer is empty here and op is active: try to pull more
             # rows
+            log.debug('__next__: buffer empty and op is active => fetching '
+                      'more rows')
             rows = rpc.fetch_results(self.service, self._last_operation_handle,
                                      self.hs2_protocol_version,
                                      self.description, self.buffersize)
             self._buffer.extend(rows)
             if len(self._buffer) == 0:
+                log.debug('__next__: no more rows to fetch')
                 raise StopIteration
+            log.debug('__next__: popping row out of buffer')
             return self._buffer.pop(0)
         else:
             # buffer is already empty
@@ -297,6 +340,7 @@ class HiveServer2Cursor(Cursor):
     def ping(self):
         """Checks connection to server by requesting some info from the
         server."""
+        log.info('Pinging the impalad')
         return rpc.ping(self.service, self.session_handle)
 
     def get_log(self):
