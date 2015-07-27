@@ -27,6 +27,7 @@ from impala.dbapi.beeswax import BeeswaxConnection
 from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           InternalError, OperationalError, ProgrammingError,
                           IntegrityError, DataError, NotSupportedError)
+from impala.util import warn_deprecate_hs2
 
 # PEP 249 module globals
 apilevel = '2.0'
@@ -40,6 +41,7 @@ def connect(host='localhost', port=21050, protocol='hiveserver2',
             use_kerberos=False, kerberos_service_name='impala'):
     # PEP 249
     if protocol.lower() == 'beeswax':
+        warn_deprecate_hs2()
         service = connect_to_beeswax(
             host, port, timeout, use_ssl, ca_cert, use_ldap, ldap_user,
             ldap_password, use_kerberos, kerberos_service_name)

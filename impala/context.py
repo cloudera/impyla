@@ -16,8 +16,11 @@ from __future__ import absolute_import
 
 from six import reraise
 
-from impala.util import _random_id
+from impala.util import _random_id, warn_deprecate_ibis
 from impala.dbapi import connect
+
+
+warn_deprecate_ibis('ImpalaContext')
 
 
 class ImpalaContext(object):

@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 
+import warnings
 import string
 import random
 import six
@@ -92,3 +93,19 @@ def _py_to_sql_string(value):
         return "'" + _escape(value) + "'"
     else:
         return str(value)
+
+
+# Logging-related utils
+
+
+def warn_deprecate_hs2():
+    msg = ("Beeswax support in impyla is now deprecated and will be removed "
+           "in a future release; please switch to using HiveServer2.")
+    warnings.warn(msg, Warning)
+
+
+def warn_deprecate_ibis(functionality='This'):
+    msg = ("{0} functionality in impyla is now deprecated and will be removed "
+           "in a future release; please see the Ibis project instead: "
+           "http://ibis-project.org/".format(functionality))
+    warnings.warn(msg, Warning)

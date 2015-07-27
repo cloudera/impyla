@@ -23,8 +23,12 @@ import llvm.core as lc
 from numba import sigutils
 from numba.compiler import compile_extra, Flags
 
+from impala.util import warn_deprecate_ibis
 from impala.udf.target import ImpalaTargetContext
 from impala.udf.typing import impala_typing_context
+
+
+warn_deprecate_ibis("impyla's numba-compiled UDF")
 
 
 # functionality to compile Python UDFs into Impala-executable IR

@@ -24,6 +24,7 @@ from sqlalchemy.sql.compiler import IdentifierPreparer, GenericTypeCompiler
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
                               DECIMAL, Integer, Float, String)
 
+
 registry.register('impala', 'impala.sqlalchemy', 'ImpalaDialect')
 
 

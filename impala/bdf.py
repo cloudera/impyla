@@ -30,12 +30,14 @@ import pandas as pd
 from impala.context import ImpalaContext
 
 from impala.util import (as_pandas, _random_id, _py_to_sql_string,
-                         _get_table_schema_hack)
+                         _get_table_schema_hack, warn_deprecate_ibis)
 from impala._sql_model import (_to_TableName, BaseTableRef, JoinTableRef,
                                SelectItem, SelectStmt, UnionStmt, Literal,
                                InlineView, TableName, Expr, _create_table,
                                _create_table_as_select, LimitElement)
 
+
+warn_deprecate_ibis('BigDataFrame')
 
 
 # utilities

@@ -34,7 +34,10 @@ from __future__ import absolute_import
 import six
 
 from impala.util import (_py_to_sql_string, _get_table_schema_hack,
-                         _gen_safe_random_table_name)
+                         _gen_safe_random_table_name, warn_deprecate_ibis)
+
+
+warn_deprecate_ibis('BlobStore')
 
 
 class BlobStore(object):

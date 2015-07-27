@@ -22,7 +22,10 @@ import numpy as np
 from sklearn.base import BaseEstimator
 
 from impala.blob import BlobStore
-from impala.util import (create_view_from_query, drop_view)
+from impala.util import create_view_from_query, drop_view, warn_deprecate_ibis
+
+
+warn_deprecate_ibis('impyla sklearn')
 
 
 # TO CREATE A NEW ESTIMATOR:
