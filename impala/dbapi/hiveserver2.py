@@ -203,26 +203,26 @@ class HiveServer2Cursor(Cursor):
 
     def _exec_single_query_insert(self, operation, seq_of_parameters):
         """
-        INSERT...VALUES is available in Hive starting from 0.14, multiple row
-        inserts are NOT supported though.
+        Builds and executes one big INSERT...VALUES statement instead of sending
+        sequency of one-row inserts.
+        Assumes that `operation` is INSERT...VALUES statement.
+        Returns `True` if operation was executed and `False` otherwise.
 
         INSERT...VALUES is available in Impala and multiple row inserts are
         supported.
-
-        If we observe "INSERT INTO ... (...) VALUES (...)", build one big INSERT
-        query.
-        See Cloudera's notes on INSERT...VALUES here:
-        http://www.cloudera.com/content/cloudera/en/documentation/cloudera-impala/v2-0-x/topics/impala_insert.html#values_unique_1
         """
         match = RE_INSERT_VALUES.match(operation)
         if match and seq_of_parameters and len(seq_of_parameters) > 1:
-            query_left = match.group(1)
-            values = match.group(2)
+            # Split "INSERT...VALUES (...)" query into
+            query_left = match.group(1)  # "INSERT...VALUES"
+            values = match.group(2)      # "(...)"
 
             def op():
+                # Bind each row's parameters to `values` [ "(...)" ]
                 bound_params = map(
                     lambda params: _bind_parameters(values, params),
                     seq_of_parameters)
+                # Build "big" query: "INSERT...VALUES (...), (...), (...), ..."
                 self._last_operation_string = query_left + ", ".join(bound_params)
                 self._last_operation_handle = rpc.execute_statement(
                     self.service, self.session_handle, self._last_operation_string,
@@ -234,6 +234,9 @@ class HiveServer2Cursor(Cursor):
 
     def executemany(self, operation, seq_of_parameters, single_query_insert=False):
         # PEP 249
+
+        # If condition above holds, we either don't want to build single insert
+        # query or were not able to build it.
         if not single_query_insert or \
            not self._exec_single_query_insert(operation, seq_of_parameters):
             for parameters in seq_of_parameters:
