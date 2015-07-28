@@ -27,7 +27,7 @@ from impala.dbapi.beeswax import BeeswaxConnection
 from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           InternalError, OperationalError, ProgrammingError,
                           IntegrityError, DataError, NotSupportedError)
-from impala.util import warn_deprecate_hs2
+from impala.util import warn_deprecate_hs2, warn_deprecate
 
 
 AUTH_MECHANISMS = ['NOSASL', 'PLAIN', 'GSSAPI', 'LDAP']
@@ -38,43 +38,53 @@ apilevel = '2.0'
 threadsafety = 1  # Threads may share the module, but not connections
 paramstyle = 'pyformat'
 
-def connect(host='localhost', port=21050, protocol='hiveserver2',
-            database=None, timeout=45, use_ssl=False, ca_cert=None,
-            use_ldap=False, ldap_user=None, ldap_password=None,
-            use_kerberos=False, kerberos_service_name='impala',
-            auth_mechanism=None):
+def connect(host='localhost', port=21050, protocol='hiveserver2', database=None,
+            use_ldap=None, ldap_user=None, ldap_password=None,  # deprecated
+            use_kerberos=None,  # deprecated
+            auth_mechanism=None, **kwargs):
 
-    # Supported authentication mechanisms
-    if use_kerberos:
-        if auth_mechanism and auth_mechanism.upper() != 'GSSAPI':
-            raise InterfaceError("Kerberos requires authentication mechanism 'GSSAPI'")
-        else:
-            auth_mechanism = 'GSSAPI'
-
-    if use_ldap:
-        if auth_mechanism and auth_mechanism.upper() != 'LDAP':
-            raise InterfaceError("LDAP requires authentication mechanism 'LDAP'")
-        else:
-            auth_mechanism = 'LDAP'
-
-    # If not specified, authentication mechanism defaults to NOSASL
-    if not auth_mechanism:
+    if auth_mechanism:
+        auth_mechanism = auth_mechanism.upper()
+    else:  # 'NOSASL' is default
         auth_mechanism = 'NOSASL'
 
-    if auth_mechanism.upper() not in AUTH_MECHANISMS:
-        raise NotSupportedError('Unsupported authentication mechanism: %s' % mechanism)
+    if auth_mechanism not in AUTH_MECHANISMS:
+        raise NotSupportedError(
+            'Unsupported authentication mechanism: {0}'.format(auth_mechanism))
+
+    if use_kerberos is not None:
+        warn_deprecate('use_kerberos', 'auth_mechanism="GSSAPI"')
+        if use_kerberos:
+            if auth_mechanism != 'GSSAPI':
+                raise InterfaceError("Kerberos requires authentication mechanism 'GSSAPI'")
+            else:
+                auth_mechanism = 'GSSAPI'
+
+    if use_ldap is not None:
+        warn_deprecate('use_ldap', 'auth_mechanism="LDAP"')
+        if use_ldap:
+            if auth_mechanism != 'LDAP':
+                raise InterfaceError("LDAP requires authentication mechanism 'LDAP'")
+            else:
+                auth_mechanism = 'LDAP'
+
+    if ldap_user is not None:
+        warn_deprecate('ldap_user', 'user')
+        kwargs['user'] = ldap_user
+
+    if ldap_password is not None:
+        warn_deprecate('ldap_password', 'password')
+        kwargs['password'] = ldap_password
 
     # PEP 249
     if protocol.lower() == 'beeswax':
         warn_deprecate_hs2()
         service = connect_to_beeswax(
-            host, port, timeout, use_ssl, ca_cert, ldap_user,
-            ldap_password, kerberos_service_name, auth_mechanism)
+            host=host, port=port, auth_mechanism=auth_mechanism, **kwargs)
         return BeeswaxConnection(service, default_db=database)
     elif protocol.lower() == 'hiveserver2':
         service = connect_to_hiveserver2(
-            host, port, timeout, use_ssl, ca_cert, ldap_user,
-            ldap_password, kerberos_service_name, auth_mechanism)
+            host=host, port=port, auth_mechanism=auth_mechanism, **kwargs)
         return HiveServer2Connection(service, default_db=database)
     else:
         raise NotSupportedError(
