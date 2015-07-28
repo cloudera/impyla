@@ -15,8 +15,8 @@
 #
 # Thrift utility functions
 
-from thrift.transport.TSocket import TSocket
-from thrift.transport.TTransport import TBufferedTransport
+from impala._thrift_api import (TSocket, TBufferedTransport)
+
 import getpass
 import sasl
 
