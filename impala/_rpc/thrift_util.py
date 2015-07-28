@@ -36,9 +36,9 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism="NOSASL",
                   user=None, password=None):
     """Creates a new Thrift Transport using the specified auth_mechanism.
     Supported auth_mechanisms are:
-    - None or NOSASL - returns simple buffered transport (default)
-    - PLAIN  - returns a SASL transport with the PLAIN mechanism
-    - GSSAPI - returns a SASL transport with the GSSAPI mechanism
+    - None or 'NOSASL' - returns simple buffered transport (default)
+    - 'PLAIN'  - returns a SASL transport with the PLAIN mechanism
+    - 'GSSAPI' - returns a SASL transport with the GSSAPI mechanism
     """
     if not auth_mechanism or auth_mechanism.upper() == "NOSASL":
         return TBufferedTransport(socket)

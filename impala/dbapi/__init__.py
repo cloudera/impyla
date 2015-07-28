@@ -29,6 +29,10 @@ from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           IntegrityError, DataError, NotSupportedError)
 from impala.util import warn_deprecate_hs2
 
+
+AUTH_MECHANISMS = ['NOSASL', 'PLAIN', 'GSSAPI', 'LDAP']
+
+
 # PEP 249 module globals
 apilevel = '2.0'
 threadsafety = 1  # Threads may share the module, but not connections
@@ -41,23 +45,23 @@ def connect(host='localhost', port=21050, protocol='hiveserver2',
             auth_mechanism=None):
 
     # Supported authentication mechanisms
-    auth_mechanisms = ['NOSASL', 'PLAIN', 'GSSAPI', 'LDAP']
     if use_kerberos:
         if auth_mechanism and auth_mechanism.upper() != 'GSSAPI':
-            raise ValueError("Kerberos requires authentication mechanism 'GSSAPI'")
+            raise InterfaceError("Kerberos requires authentication mechanism 'GSSAPI'")
         else:
             auth_mechanism = 'GSSAPI'
 
     if use_ldap:
         if auth_mechanism and auth_mechanism.upper() != 'LDAP':
-            raise ValueError("LDAP requires authentication mechanism 'LDAP'")
+            raise InterfaceError("LDAP requires authentication mechanism 'LDAP'")
         else:
             auth_mechanism = 'LDAP'
 
     # If not specified, authentication mechanism defaults to NOSASL
-    if not auth_mechanism: auth_mechanism = 'NOSASL'
+    if not auth_mechanism:
+        auth_mechanism = 'NOSASL'
 
-    if auth_mechanism.upper() not in auth_mechanisms:
+    if auth_mechanism.upper() not in AUTH_MECHANISMS:
         raise NotSupportedError('Unsupported authentication mechanism: %s' % mechanism)
 
     # PEP 249
