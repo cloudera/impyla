@@ -16,7 +16,6 @@ import os
 import sys
 import six
 
-from impala._thrift_api import *
 
 if six.PY2:
     # import HS2 codegen objects

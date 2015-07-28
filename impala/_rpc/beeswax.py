@@ -21,11 +21,11 @@ from six.moves import map
 from six.moves import range
 
 from impala.error import RPCError, QueryStateError, DisconnectedError
-from impala._rpc.thrift_util import (get_socket, get_transport)
-from impala._thrift_api.beeswax import (
-    TTransportException, TBinaryProtocol,
-    TApplicationException, BeeswaxService, ImpalaService, TStatus, TStatusCode,
-    TExecStats, ThriftClient)
+from impala._thrift_api import (get_socket, get_transport, TTransportException,
+                                TBinaryProtocol)
+from impala._thrift_api.beeswax import (TApplicationException, BeeswaxService,
+                                        ImpalaService, TStatus, TStatusCode,
+                                        TExecStats, ThriftClient)
 
 
 class RpcStatus:
@@ -179,7 +179,7 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
     elif six.PY3:
         sock.set_timeout(timeout * 1000.)
     transport = get_transport(sock, host, kerberos_service_name, auth_mechanism,
-        user, password)
+                              user, password)
     transport.open()
     protocol = TBinaryProtocol(transport)
     if six.PY2:

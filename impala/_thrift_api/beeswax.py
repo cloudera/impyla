@@ -16,7 +16,6 @@ import os
 import sys
 import six
 
-from impala._thrift_api import *
 
 if six.PY2:
     from thrift.Thrift import TApplicationException

@@ -113,7 +113,7 @@ def warn_deprecate_ibis(functionality='This'):
 
 def warn_deprecate(functionality='This', alternative=None):
     msg = ("{0} functionality in impyla is now deprecated and will be removed "
-           "in a future release;".format(functionality))
+           "in a future release".format(functionality))
     if alternative:
-        msg += "Please use {0} instead.".format(alternative)
+        msg += "; Please use {0} instead.".format(alternative)
     warnings.warn(msg, Warning)

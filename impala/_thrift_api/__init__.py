@@ -15,6 +15,7 @@
 # This package is here to clean up references to thrift, because we're using
 # thriftpy for Py3 at the moment.  This should all be temporary, as Apache
 # Thrift gains Py3 compatibility.
+import getpass
 
 import os
 import sys
@@ -55,3 +56,53 @@ if six.PY3:
     # import objects
     from ExecStats import TExecStats
     ThriftClient = TClient
+
+
+def get_socket(host, port, use_ssl, ca_cert):
+    # based on the Impala shell impl
+    if use_ssl:
+        from thrift.transport.TSSLSocket import TSSLSocket
+        if ca_cert is None:
+            return TSSLSocket(host, port, validate=False)
+        else:
+            return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
+    else:
+        return TSocket(host, port)
+
+
+def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
+                  user=None, password=None):
+    """
+    Creates a new Thrift Transport using the specified auth_mechanism.
+    Supported auth_mechanisms are:
+    - None or 'NOSASL' - returns simple buffered transport (default)
+    - 'PLAIN'  - returns a SASL transport with the PLAIN mechanism
+    - 'GSSAPI' - returns a SASL transport with the GSSAPI mechanism
+    """
+    if auth_mechanism == 'NOSASL':
+        return TBufferedTransport(socket)
+
+    # Set defaults for PLAIN SASL / LDAP connections.
+    if auth_mechanism in ['LDAP', 'PLAIN']:
+        if user is None:
+            user = getpass.getuser()
+        if password is None:
+            if auth_mechanism == 'LDAP':
+                password = ''
+            else:
+                # PLAIN always requires a password for HS2.
+                password = 'password'
+
+    # Initializes a sasl client
+    import sasl
+    from thrift_sasl import TSaslClientTransport
+    def sasl_factory():
+        sasl_client = sasl.Client()
+        sasl_client.setAttr('host', host)
+        sasl_client.setAttr('service', kerberos_service_name)
+        if auth_mechanism.upper() in ['PLAIN', 'LDAP']:
+            sasl_client.setAttr('username', user)
+            sasl_client.setAttr('password', password)
+        sasl_client.init()
+        return sasl_client
+    return TSaslClientTransport(sasl_factory, auth_mechanism, socket)
