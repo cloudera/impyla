@@ -34,22 +34,43 @@ apilevel = '2.0'
 threadsafety = 1  # Threads may share the module, but not connections
 paramstyle = 'pyformat'
 
-
 def connect(host='localhost', port=21050, protocol='hiveserver2',
             database=None, timeout=45, use_ssl=False, ca_cert=None,
             use_ldap=False, ldap_user=None, ldap_password=None,
-            use_kerberos=False, kerberos_service_name='impala'):
+            use_kerberos=False, kerberos_service_name='impala',
+            auth_mechanism=None):
+
+    # Supported authentication mechanisms
+    auth_mechanisms = ['NOSASL', 'PLAIN', 'GSSAPI', 'LDAP']
+    if use_kerberos:
+        if auth_mechanism and auth_mechanism.upper() != 'GSSAPI':
+            raise ValueError("Kerberos requires authentication mechanism 'GSSAPI'")
+        else:
+            auth_mechanism = 'GSSAPI'
+
+    if use_ldap:
+        if auth_mechanism and auth_mechanism.upper() != 'LDAP':
+            raise ValueError("LDAP requires authentication mechanism 'LDAP'")
+        else:
+            auth_mechanism = 'LDAP'
+
+    # If not specified, authentication mechanism defaults to NOSASL
+    if not auth_mechanism: auth_mechanism = 'NOSASL'
+
+    if auth_mechanism.upper() not in auth_mechanisms:
+        raise NotSupportedError('Unsupported authentication mechanism: %s' % mechanism)
+
     # PEP 249
     if protocol.lower() == 'beeswax':
         warn_deprecate_hs2()
         service = connect_to_beeswax(
-            host, port, timeout, use_ssl, ca_cert, use_ldap, ldap_user,
-            ldap_password, use_kerberos, kerberos_service_name)
+            host, port, timeout, use_ssl, ca_cert, ldap_user,
+            ldap_password, kerberos_service_name, auth_mechanism)
         return BeeswaxConnection(service, default_db=database)
     elif protocol.lower() == 'hiveserver2':
         service = connect_to_hiveserver2(
-            host, port, timeout, use_ssl, ca_cert, use_ldap, ldap_user,
-            ldap_password, use_kerberos, kerberos_service_name)
+            host, port, timeout, use_ssl, ca_cert, ldap_user,
+            ldap_password, kerberos_service_name, auth_mechanism)
         return HiveServer2Connection(service, default_db=database)
     else:
         raise NotSupportedError(

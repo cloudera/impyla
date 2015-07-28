@@ -21,8 +21,9 @@ from six.moves import map
 from six.moves import range
 
 from impala.error import RPCError, QueryStateError, DisconnectedError
+from impala._rpc import thrift_util
 from impala._thrift_api.beeswax import (
-    TSocket, TBufferedTransport, TTransportException, TBinaryProtocol,
+    TTransportException, TBinaryProtocol,
     TApplicationException, BeeswaxService, ImpalaService, TStatus, TStatusCode,
     TExecStats, ThriftClient)
 
@@ -169,28 +170,16 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     return idx
 
 
-def _get_socket(host, port, use_ssl, ca_cert):
-    # based on the Impala shell impl
-    if use_ssl:
-        from thrift.transport.TSSLSocket import TSSLSocket
-        if ca_cert is None:
-            return TSSLSocket(host, port, validate=False)
-        else:
-            return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
-    else:
-        return TSocket(host, port)
-
-
 def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
-                      use_ldap=False, ldap_user=None, ldap_password=None,
-                      use_kerberos=False, kerberos_service_name='impala'):
-    sock = _get_socket(host, port, use_ssl, ca_cert)
+                      username=None, password=None, kerberos_service_name='impala',
+                      auth_mechanism=None):
+    sock = thrift_util.get_socket(host, port, use_ssl, ca_cert)
     if six.PY2:
         sock.setTimeout(timeout * 1000.)
     elif six.PY3:
         sock.set_timeout(timeout * 1000.)
-    transport = _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
-                               use_kerberos, kerberos_service_name)
+    transport = thrift_util.get_transport(sock, host, kerberos_service_name, auth_mechanism,
+        username, password)
     transport.open()
     protocol = TBinaryProtocol(transport)
     if six.PY2:
@@ -207,32 +196,6 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
 def ping(service):
     result = service.PingImpalaService()
     return result.version
-
-
-def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
-                   use_kerberos, kerberos_service_name):
-    # based on the Impala shell impl
-    if not use_ldap and not use_kerberos:
-        return TBufferedTransport(sock)
-    
-    import sasl
-    from thrift_sasl import TSaslClientTransport
-
-    def sasl_factory():
-        sasl_client = sasl.Client()
-        sasl_client.setAttr("host", host)
-        if use_ldap:
-            sasl_client.setAttr("username", ldap_user)
-            sasl_client.setAttr("password", ldap_password)
-        else:
-            sasl_client.setAttr("service", kerberos_service_name)
-        sasl_client.init()
-        return sasl_client
-
-    if use_kerberos:
-        return TSaslClientTransport(sasl_factory, "GSSAPI", sock)
-    else:
-        return TSaslClientTransport(sasl_factory, "PLAIN", sock)
 
 
 def close_service(service):
