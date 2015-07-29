@@ -34,6 +34,8 @@ if six.PY2:
 
 
 if six.PY3:
+    from impala._thrift_api import load, thrift_dir, ImpalaService
+
     # dynamically load the HS2 modules
     TCLIService = load(os.path.join(thrift_dir, 'TCLIService.thrift'),
                        include_dirs=[thrift_dir])

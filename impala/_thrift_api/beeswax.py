@@ -18,6 +18,7 @@ import six
 
 
 if six.PY2:
+    # import Apache Thrift code
     from thrift.Thrift import TApplicationException
 
     # import beeswax codegen objects
@@ -30,6 +31,9 @@ if six.PY2:
 
 
 if six.PY3:
+    from impala._thrift_api import load, thrift_dir, ImpalaService
+
+    # import thriftpy code
     from thriftpy.thrift import TApplicationException
 
     # dynamically load the beeswax modules
