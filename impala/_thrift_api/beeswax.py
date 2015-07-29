@@ -31,21 +31,29 @@ if six.PY2:
 
 
 if six.PY3:
-    from impala._thrift_api import load, thrift_dir, ImpalaService
-
     # import thriftpy code
-    from thriftpy.thrift import TApplicationException
+    from thriftpy import load
+    from thriftpy.thrift import TClient, TApplicationException
 
     # dynamically load the beeswax modules
+    from impala._thrift_api import thrift_dir
+    ExecStats = load(os.path.join(thrift_dir, 'ExecStats.thrift'),
+                     include_dirs=[thrift_dir])
     Status = load(os.path.join(thrift_dir, 'Status.thrift'),
                   include_dirs=[thrift_dir])
+    ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
+                         include_dirs=[thrift_dir])
     beeswax = load(os.path.join(thrift_dir, 'beeswax.thrift'),
                    include_dirs=[thrift_dir])
+    sys.modules[ExecStats.__name__] = ExecStats
     sys.modules[Status.__name__] = Status
+    sys.modules[ImpalaService.__name__] = ImpalaService
     sys.modules[beeswax.__name__] = beeswax
 
     # import the beeswax objects
+    from ExecStats import TExecStats
     from Status import TStatus, TStatusCode
     from ImpalaService import ImpalaService
     from beeswax import QueryState
     import beeswax as BeeswaxService
+    ThriftClient = TClient

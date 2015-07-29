@@ -34,12 +34,21 @@ if six.PY2:
 
 
 if six.PY3:
-    from impala._thrift_api import load, thrift_dir, ImpalaService
+    # import thriftpy code
+    from thriftpy import load
+    from thriftpy.thrift import TClient
 
     # dynamically load the HS2 modules
+    from impala._thrift_api import thrift_dir
+    ExecStats = load(os.path.join(thrift_dir, 'ExecStats.thrift'),
+                     include_dirs=[thrift_dir])
     TCLIService = load(os.path.join(thrift_dir, 'TCLIService.thrift'),
                        include_dirs=[thrift_dir])
+    ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
+                         include_dirs=[thrift_dir])
+    sys.modules[ExecStats.__name__] = ExecStats
     sys.modules[TCLIService.__name__] = TCLIService
+    sys.modules[ImpalaService.__name__] = ImpalaService
 
     # import the HS2 objects
     from TCLIService import (
@@ -51,3 +60,5 @@ if six.PY3:
         TCloseOperationReq, TGetLogReq, TProtocolVersion)
     from ImpalaService import (
         TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service)
+    from ExecStats import TExecStats
+    ThriftClient = TClient

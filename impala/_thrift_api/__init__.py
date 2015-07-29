@@ -15,11 +15,11 @@
 # This package is here to clean up references to thrift, because we're using
 # thriftpy for Py3 at the moment.  This should all be temporary, as Apache
 # Thrift gains Py3 compatibility.
-import getpass
 
 import os
 import sys
 import six
+import getpass
 
 
 if six.PY2:
@@ -33,8 +33,6 @@ if six.PY2:
 
 if six.PY3:
     # import thriftpy code
-    from thriftpy import load
-    from thriftpy.thrift import TClient
     # TODO: reenable cython
     # from thriftpy.protocol import TBinaryProtocol
     from thriftpy.protocol.binary import TBinaryProtocol
@@ -42,20 +40,8 @@ if six.PY3:
     # TODO: reenable cython
     # from thriftpy.transport import TBufferedTransport
     from thriftpy.transport.buffered import TBufferedTransport
-
-    # dynamically load modules
     thrift_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                               'thrift')
-    ExecStats = load(os.path.join(thrift_dir, 'ExecStats.thrift'),
-                     include_dirs=[thrift_dir])
-    ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
-                         include_dirs=[thrift_dir])
-    sys.modules[ExecStats.__name__] = ExecStats
-    sys.modules[ImpalaService.__name__] = ImpalaService
-
-    # import objects
-    from ExecStats import TExecStats
-    ThriftClient = TClient
 
 
 def get_socket(host, port, use_ssl, ca_cert):
