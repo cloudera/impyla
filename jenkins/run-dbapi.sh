@@ -51,6 +51,15 @@ else
     IMPYLA_HOME=$WORKSPACE
 fi
 
+# pull in PR if necessary
+if [ -n "$GITHUB_PR" ]; then
+    pushd $IMPYLA_HOME
+    git clean -d -f
+    git fetch origin pull/$GITHUB_PR/head:pr_$GITHUB_PR
+    git checkout pr_$GITHUB_PR
+    popd
+fi
+
 # Setup Python
 curl https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh > miniconda.sh
 bash miniconda.sh -b -p $TMP_DIR/miniconda
