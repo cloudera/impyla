@@ -21,11 +21,11 @@ from six.moves import map
 from six.moves import range
 
 from impala.error import RPCError, QueryStateError, DisconnectedError
-from impala._thrift_api import (get_socket, get_transport, TTransportException,
-                                TBinaryProtocol)
-from impala._thrift_api.beeswax import (TApplicationException, BeeswaxService,
-                                        ImpalaService, TStatus, TStatusCode,
-                                        TExecStats, ThriftClient)
+from impala._thrift_api import (
+    get_socket, get_transport, TTransportException, TBinaryProtocol)
+from impala._thrift_api.beeswax import (
+    TApplicationException, BeeswaxService, ImpalaService, TStatus, TStatusCode,
+    TExecStats, ThriftClient)
 
 
 class RpcStatus:

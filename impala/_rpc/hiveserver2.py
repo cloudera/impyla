@@ -35,8 +35,8 @@ from decimal import Decimal
 from six.moves import range
 
 from impala.error import HiveServer2Error
-from impala._thrift_api import (get_socket, get_transport, TTransportException,
-                                TBinaryProtocol)
+from impala._thrift_api import (
+    get_socket, get_transport, TTransportException, TBinaryProtocol)
 from impala._thrift_api.hiveserver2 import (
     TOpenSessionReq, TFetchResultsReq, TCloseSessionReq, TExecuteStatementReq,
     TGetInfoReq, TGetInfoType, TTypeId, TFetchOrientation,
