@@ -321,7 +321,8 @@ class HiveServer2Cursor(Cursor):
             self._last_operation_handle = rpc.get_databases(self.service,
                                                             self
                                                             .session_handle)
-        self._execute_sync(op)
+        self._execute_async(op)
+        self._wait_to_finish()
 
     def database_exists(self, db_name):
         return rpc.database_exists(self.service, self.session_handle,
@@ -336,7 +337,8 @@ class HiveServer2Cursor(Cursor):
             self._last_operation_handle = rpc.get_tables(self.service,
                                                          self.session_handle,
                                                          database_name)
-        self._execute_sync(op)
+        self._execute_async(op)
+        self._wait_to_finish()
 
     def table_exists(self, table_name, database_name=None):
         if database_name is None:
@@ -354,7 +356,8 @@ class HiveServer2Cursor(Cursor):
             self._last_operation_handle = rpc.get_table_schema(
                 self.service, self.session_handle, table_name, database_name)
 
-        self._execute_sync(op)
+        self._execute_async(op)
+        self._wait_to_finish()
         results = self.fetchall()
         if len(results) == 0:
             # TODO: the error raised here should be different
@@ -381,4 +384,5 @@ class HiveServer2Cursor(Cursor):
             self._last_operation_handle = rpc.get_functions(
                 self.service, self.session_handle, database_name)
 
-        self._execute_sync(op)
+        self._execute_async(op)
+        self._wait_to_finish()
