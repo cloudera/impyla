@@ -27,6 +27,7 @@ from impala.error import (Error, Warning, InterfaceError, DatabaseError,
 
 RE_INSERT_VALUES = re.compile(r"(.*\binsert\b.*\bvalues\b\s*)(\(.*\))\s*;?\s*", flags=re.IGNORECASE)
 
+
 class Connection(object):
     # PEP 249
     # Connection objects are associated with a TCLIService.Client thrift

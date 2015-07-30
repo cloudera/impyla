@@ -464,34 +464,27 @@ class DatabaseAPI20Test(unittest.TestCase):
             largs = [ ("Cooper's",) , ("Boag's",) ]
             margs = [ {'beer': "Cooper's"}, {'beer': "Boag's"} ]
             if self.driver.paramstyle == 'qmark':
-                cur.executemany(
-                    'insert into %sbooze values (?)' % self.table_prefix,
-                    largs, single_query_insert=True
-                    )
+                value_placeholder = '?'
+                args = largs
             elif self.driver.paramstyle == 'numeric':
-                cur.executemany(
-                    'insert into %sbooze values (:1)' % self.table_prefix,
-                    largs, single_query_insert=True
-                    )
+                value_placeholder = ':1'
+                args = largs
             elif self.driver.paramstyle == 'named':
-                cur.executemany(
-                    'insert into %sbooze values (:beer)' % self.table_prefix,
-                    margs, single_query_insert=True
-                    )
+                value_placeholder = ':beer'
+                args = margs
             elif self.driver.paramstyle == 'format':
-                cur.executemany(
-                    'insert into %sbooze values (%%s)' % self.table_prefix,
-                    largs, single_query_insert=True
-                    )
+                value_placeholder = '%s'
+                args = largs
             elif self.driver.paramstyle == 'pyformat':
-                cur.executemany(
-                    'insert into %sbooze values (%%(beer)s)' % (
-                        self.table_prefix
-                        ),
-                    margs, single_query_insert=True
-                    )
+                value_placeholder = '%(beer)s'
+                args = margs
             else:
                 self.fail('Unknown paramstyle')
+
+            cur.executemany(
+                'insert into {0}booze values ({1})'.format(self.table_prefix,
+                                                           value_placeholder),
+                args, rewrite_as_bulk_insert=True)
 
             num_files_after = self._get_number_of_files(cur, table_name)
             self.assertEqual(num_files_after, num_files_before + 1,

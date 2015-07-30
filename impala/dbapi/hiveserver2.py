@@ -201,10 +201,10 @@ class HiveServer2Cursor(Cursor):
             return 0.5
         return 1.0
 
-    def _exec_single_query_insert(self, operation, seq_of_parameters):
+    def _rewrite_as_bulk_insert(self, operation, seq_of_parameters):
         """
         Builds and executes one big INSERT...VALUES statement instead of sending
-        sequency of one-row inserts.
+        sequence of one-row inserts.
         Assumes that `operation` is INSERT...VALUES statement.
         Returns `True` if operation was executed and `False` otherwise.
 
@@ -219,31 +219,47 @@ class HiveServer2Cursor(Cursor):
 
             def op():
                 # Bind each row's parameters to `values` [ "(...)" ]
-                bound_params = map(
-                    lambda params: _bind_parameters(values, params),
-                    seq_of_parameters)
+                bound_params = [_bind_parameters(values, params)
+                                for params in seq_of_parameters]
                 # Build "big" query: "INSERT...VALUES (...), (...), (...), ..."
-                self._last_operation_string = query_left + ", ".join(bound_params)
+                self._last_operation_string = query_left + \
+                                              ", ".join(bound_params)
                 self._last_operation_handle = rpc.execute_statement(
-                    self.service, self.session_handle, self._last_operation_string,
-                    None)
+                    self.service, self.session_handle,
+                    self._last_operation_string, None)
 
             self._execute_sync(op)
             return True
-        return False
+        return None
 
-    def executemany(self, operation, seq_of_parameters, single_query_insert=False):
+    def executemany(self, operation, seq_of_parameters,
+                    rewrite_as_bulk_insert=False):
+        """
+        Prepare a database `operation` (query or command) and then execute it
+        against all parameter sequences or mappings found in the sequence
+        `seq_of_parameters`.
+
+        Parameters
+        ----------
+        operation : string
+            Query or command
+        seq_of_parameters : iterable
+            Sequence of parameters
+        rewrite_as_bulk_insert : bool
+            Rewrite INSERT...VALUES flag
+        """
         # PEP 249
+        single_query = None
+        if rewrite_as_bulk_insert:
+            single_query = self._rewrite_as_bulk_insert(operation,
+                                                        seq_of_parameters)
 
-        # If condition above holds, we either don't want to build single insert
-        # query or were not able to build it.
-        if not single_query_insert or \
-           not self._exec_single_query_insert(operation, seq_of_parameters):
+        if not single_query:
             for parameters in seq_of_parameters:
                 self.execute(operation, parameters)
                 if self.has_result_set:
-                    raise ProgrammingError("Operations that have result sets are "
-                                           "not allowed with executemany.")
+                    raise ProgrammingError("Operations that have result sets "
+                                           "are not allowed with executemany.")
 
     def fetchone(self):
         # PEP 249
