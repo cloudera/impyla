@@ -109,3 +109,11 @@ def warn_deprecate_ibis(functionality='This'):
            "in a future release; please see the Ibis project instead: "
            "http://ibis-project.org/".format(functionality))
     warnings.warn(msg, Warning)
+
+
+def warn_deprecate(functionality='This', alternative=None):
+    msg = ("{0} functionality in impyla is now deprecated and will be removed "
+           "in a future release".format(functionality))
+    if alternative:
+        msg += "; Please use {0} instead.".format(alternative)
+    warnings.warn(msg, Warning)

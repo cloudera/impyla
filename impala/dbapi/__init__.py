@@ -27,29 +27,68 @@ from impala.dbapi.beeswax import BeeswaxConnection
 from impala.error import (Error, Warning, InterfaceError, DatabaseError,
                           InternalError, OperationalError, ProgrammingError,
                           IntegrityError, DataError, NotSupportedError)
-from impala.util import warn_deprecate_hs2
+
+
+from impala.util import warn_deprecate_hs2, warn_deprecate
+
+
+AUTH_MECHANISMS = ['NOSASL', 'PLAIN', 'GSSAPI', 'LDAP']
+
 
 # PEP 249 module globals
 apilevel = '2.0'
 threadsafety = 1  # Threads may share the module, but not connections
 paramstyle = 'pyformat'
 
+def connect(host='localhost', port=21050, protocol='hiveserver2', database=None,
+            timeout=45, use_ssl=False, ca_cert=None,
+            auth_mechanism='NOSASL', user=None, password=None,
+            kerberos_service_name='impala', use_ldap=None, ldap_user=None,
+            ldap_password=None, use_kerberos=None):
 
-def connect(host='localhost', port=21050, protocol='hiveserver2',
-            database=None, timeout=45, use_ssl=False, ca_cert=None,
-            use_ldap=False, ldap_user=None, ldap_password=None,
-            use_kerberos=False, kerberos_service_name='impala'):
+    if use_kerberos is not None:
+        warn_deprecate('use_kerberos', 'auth_mechanism="GSSAPI"')
+        if use_kerberos:
+            auth_mechanism = 'GSSAPI'
+
+    if use_ldap is not None:
+        warn_deprecate('use_ldap', 'auth_mechanism="LDAP"')
+        if use_ldap:
+            auth_mechanism = 'LDAP'
+
+    if auth_mechanism:
+        auth_mechanism = auth_mechanism.upper()
+    else:
+        auth_mechanism = 'NOSASL'
+
+    if auth_mechanism not in AUTH_MECHANISMS:
+        raise NotSupportedError(
+            'Unsupported authentication mechanism: {0}'.format(auth_mechanism))
+
+    if ldap_user is not None:
+        warn_deprecate('ldap_user', 'user')
+        user = ldap_user
+
+    if ldap_password is not None:
+        warn_deprecate('ldap_password', 'password')
+        password = ldap_password
+
     # PEP 249
     if protocol.lower() == 'beeswax':
         warn_deprecate_hs2()
-        service = connect_to_beeswax(
-            host, port, timeout, use_ssl, ca_cert, use_ldap, ldap_user,
-            ldap_password, use_kerberos, kerberos_service_name)
+        service = connect_to_beeswax(host=host, port=port, timeout=timeout,
+                                     use_ssl=use_ssl, ca_cert=ca_cert,
+                                     user=user, password=password,
+                                     kerberos_service_name=kerberos_service_name,
+                                     auth_mechanism=auth_mechanism)
         return BeeswaxConnection(service, default_db=database)
     elif protocol.lower() == 'hiveserver2':
-        service = connect_to_hiveserver2(
-            host, port, timeout, use_ssl, ca_cert, use_ldap, ldap_user,
-            ldap_password, use_kerberos, kerberos_service_name)
+        service = connect_to_hiveserver2(host=host, port=port, timeout=timeout,
+                                         use_ssl=use_ssl, ca_cert=ca_cert,
+                                         user=user, password=password,
+                                         kerberos_service_name=
+                                             kerberos_service_name,
+                                         auth_mechanism=auth_mechanism)
         return HiveServer2Connection(service, default_db=database)
     else:
         raise NotSupportedError(
