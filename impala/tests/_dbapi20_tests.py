@@ -446,6 +446,55 @@ class DatabaseAPI20Test(unittest.TestCase):
             'incorrectly'
             )
 
+    def _get_number_of_files(self, cur, table_name):
+        cur.execute("SHOW TABLE STATS %s" % table_name)
+        col_names = [d[0] for d in cur.description]
+        num_files_idx = col_names.index("#Files")
+        num_files = cur.fetchone()[num_files_idx]
+        return num_files
+
+    def test_executemany_single_query(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL1(cur)
+            table_name = "%sbooze" % self.table_prefix
+            num_files_before = self._get_number_of_files(cur, table_name)
+
+            largs = [ ("Cooper's",) , ("Boag's",) ]
+            margs = [ {'beer': "Cooper's"}, {'beer': "Boag's"} ]
+            if self.driver.paramstyle == 'qmark':
+                value_placeholder = '?'
+                args = largs
+            elif self.driver.paramstyle == 'numeric':
+                value_placeholder = ':1'
+                args = largs
+            elif self.driver.paramstyle == 'named':
+                value_placeholder = ':beer'
+                args = margs
+            elif self.driver.paramstyle == 'format':
+                value_placeholder = '%s'
+                args = largs
+            elif self.driver.paramstyle == 'pyformat':
+                value_placeholder = '%(beer)s'
+                args = margs
+            else:
+                self.fail('Unknown paramstyle')
+
+            cur.executemany(
+                'insert into {0}booze values ({1})'.format(self.table_prefix,
+                                                           value_placeholder),
+                args, rewrite_as_bulk_insert=True)
+
+            num_files_after = self._get_number_of_files(cur, table_name)
+            self.assertEqual(num_files_after, num_files_before + 1,
+                'cursor.executemany(..., single_query_insert=True) should '
+                'produce only one file (produced %d)' %
+                (num_files_after - num_files_before))
+            
+        finally:
+            con.close()
+
     def test_executemany(self):
         con = self._connect()
         try:
