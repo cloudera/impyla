@@ -35,8 +35,9 @@ from decimal import Decimal
 from six.moves import range
 
 from impala.error import HiveServer2Error
+from impala._thrift_api import (
+    get_socket, get_transport, TTransportException, TBinaryProtocol)
 from impala._thrift_api.hiveserver2 import (
-    TSocket, TBufferedTransport, TTransportException, TBinaryProtocol,
     TOpenSessionReq, TFetchResultsReq, TCloseSessionReq, TExecuteStatementReq,
     TGetInfoReq, TGetInfoType, TTypeId, TFetchOrientation,
     TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq, TGetSchemasReq,
@@ -145,54 +146,16 @@ def retry(func):
     return wrapper
 
 
-def _get_socket(host, port, use_ssl, ca_cert):
-    # based on the Impala shell impl
-    if use_ssl:
-        from thrift.transport.TSSLSocket import TSSLSocket
-        if ca_cert is None:
-            return TSSLSocket(host, port, validate=False)
-        else:
-            return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
-    else:
-        return TSocket(host, port)
-
-
-def _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
-                   use_kerberos, kerberos_service_name):
-    # based on the Impala shell impl
-    if not use_ldap and not use_kerberos:
-        return TBufferedTransport(sock)
-
-    import sasl
-    from thrift_sasl import TSaslClientTransport
-
-    def sasl_factory():
-        sasl_client = sasl.Client()
-        sasl_client.setAttr("host", host)
-        if use_ldap:
-            sasl_client.setAttr("username", ldap_user)
-            sasl_client.setAttr("password", ldap_password)
-        else:
-            sasl_client.setAttr("service", kerberos_service_name)
-        sasl_client.init()
-        return sasl_client
-
-    if use_kerberos:
-        return TSaslClientTransport(sasl_factory, "GSSAPI", sock)
-    else:
-        return TSaslClientTransport(sasl_factory, "PLAIN", sock)
-
-
 def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
-                      use_ldap=False, ldap_user=None, ldap_password=None,
-                      use_kerberos=False, kerberos_service_name='impala'):
-    sock = _get_socket(host, port, use_ssl, ca_cert)
+                      user=None, password=None, kerberos_service_name='impala',
+                      auth_mechanism=None):
+    sock = get_socket(host, port, use_ssl, ca_cert)
     if six.PY2:
         sock.setTimeout(timeout * 1000.)
     elif six.PY3:
         sock.set_timeout(timeout * 1000.)
-    transport = _get_transport(sock, host, use_ldap, ldap_user, ldap_password,
-                               use_kerberos, kerberos_service_name)
+    transport = get_transport(sock, host, kerberos_service_name, auth_mechanism,
+                              user, password)
     transport.open()
     protocol = TBinaryProtocol(transport)
     if six.PY2:
