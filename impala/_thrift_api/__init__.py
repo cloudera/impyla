@@ -35,6 +35,7 @@ if six.PY3:
     # import thriftpy code
     # TODO: reenable cython
     # from thriftpy.protocol import TBinaryProtocol
+    from thriftpy import load
     from thriftpy.protocol.binary import TBinaryProtocol
     from thriftpy.transport import TSocket, TTransportException
     # TODO: reenable cython
