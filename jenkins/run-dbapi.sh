@@ -52,7 +52,7 @@ else
 fi
 
 # pull in PR if necessary
-if [ -n "$GITHUB_PR" ]; then
+if [ -z "$WORKSPACE" -a -n "$GITHUB_PR" ]; then
     pushd $IMPYLA_HOME
     git clean -d -f
     git fetch origin pull/$GITHUB_PR/head:pr_$GITHUB_PR
