@@ -27,10 +27,8 @@ from __future__ import absolute_import, division
 import datetime
 import socket
 import operator
-import os
 import re
 import six
-import sys
 from decimal import Decimal
 from six.moves import range
 
@@ -154,8 +152,8 @@ def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
         sock.setTimeout(timeout * 1000.)
     elif six.PY3:
         sock.set_timeout(timeout * 1000.)
-    transport = get_transport(sock, host, kerberos_service_name, auth_mechanism,
-                              user, password)
+    transport = get_transport(sock, host, kerberos_service_name,
+                              auth_mechanism, user, password)
     transport.open()
     protocol = TBinaryProtocol(transport)
     if six.PY2:
@@ -226,8 +224,44 @@ def get_result_schema(service, operation_handle):
         else:
             schema.append((name, type_, None, None, None, None, None))
 
-
     return schema
+
+
+_re_nulls = re.compile(b'^(\x00)+$')
+
+
+if six.PY3:
+
+    def _get_null(values, nulls, i):
+        if not isinstance(nulls, bytes):
+            nulls = nulls.encode('utf8')
+
+        # i // 8 is the byte, i % 8 is position in the byte; get the
+        # int repr and pull out the bit at the corresponding pos
+        is_null = False
+        # Ref HUE-2722, HiveServer2 sometimes does not add not put
+        # trailing '\x00'.
+        if len(values) != len(nulls):
+            nulls = nulls + (b'\x00' * (len(values) - len(nulls)))
+        # Hive encodes nulls differently than Impala
+        # (\x00 vs \x00\x00 ...)
+        if not _re_nulls.match(nulls):
+            is_null = bool(nulls[i // 8]) & (1 << (i % 8))
+        return is_null
+else:
+    def _get_null(values, nulls, i):
+        # i // 8 is the byte, i % 8 is position in the byte; get the
+        # int repr and pull out the bit at the corresponding pos
+        is_null = False
+        # Ref HUE-2722, HiveServer2 sometimes does not add not put
+        # trailing '\x00'.
+        if len(values) != len(nulls):
+            nulls = nulls + (b'\x00' * (len(values) - len(nulls)))
+        # Hive encodes nulls differently than Impala
+        # (\x00 vs \x00\x00 ...)
+        if not _re_nulls.match(nulls):
+            is_null = ord(nulls[i // 8]) & (1 << (i % 8))
+        return is_null
 
 
 @retry
@@ -257,18 +291,8 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
             for j in range(num_cols):
                 type_ = schema[j][1]
                 values = tcols[j].values
-                nulls = tcols[j].nulls
-                # i // 8 is the byte, i % 8 is position in the byte; get the
-                # int repr and pull out the bit at the corresponding pos
-                is_null = False
-                # Ref HUE-2722, HiveServer2 sometimes does not add not put
-                # trailing '\x00'.
-                if len(values) != len(nulls):
-                    nulls = nulls + ('\x00' * (len(values) - len(nulls)))
-                # Hive encodes nulls differently than Impala
-                # (\x00 vs \x00\x00 ...)
-                if not re.match('^(\x00)+$', nulls):
-                    is_null = ord(nulls[i // 8]) & (1 << (i % 8))
+                is_null = _get_null(values, tcols[j].nulls, i)
+
                 if is_null:
                     row.append(None)
                 elif type_ == 'TIMESTAMP':
