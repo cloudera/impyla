@@ -246,7 +246,7 @@ if six.PY3:
         # Hive encodes nulls differently than Impala
         # (\x00 vs \x00\x00 ...)
         if not _re_nulls.match(nulls):
-            is_null = bool(nulls[i // 8]) & (1 << (i % 8))
+            is_null = bool(nulls[i // 8] & (1 << (i % 8)))
         return is_null
 else:
     def _get_null(values, nulls, i):
