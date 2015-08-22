@@ -292,8 +292,8 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                 type_ = schema[j][1]
                 values = tcols[j].values
                 nulls = tcols[j].nulls
-                if six.PY3:
-                    # thriftpy sometimes returns bytes sometimes unicode
+                if six.PY3 and isinstance(nulls, str):
+                    # thriftpy sometimes returns unicode instead of bytes
                     nulls = nulls.encode('utf-8')
                 # i // 8 is the byte, i % 8 is position in the byte; get the
                 # int repr and pull out the bit at the corresponding pos
