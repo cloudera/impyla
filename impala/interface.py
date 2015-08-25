@@ -173,6 +173,7 @@ class Cursor(object):
         if exc_type is not None:
             reraise(exc_type, exc_val, exc_tb)
 
+
 def _replace_numeric_markers(operation, string_parameters):
     """
     Replaces qname and numeric markers in the given operation, from
@@ -190,15 +191,15 @@ def _replace_numeric_markers(operation, string_parameters):
                                           1)
             qmark_index += 1
         else:
-            raise ProgrammingError("Incorrect number of bindings "+
-                "supplied. The current statement uses "
-                "%d or more, and there are %d supplied." %
-                (qmark_index+1, param_count))
+            raise ProgrammingError("Incorrect number of bindings "
+                                   "supplied. The current statement uses "
+                                   "%d or more, and there are %d supplied." %
+                                   (qmark_index+1, param_count))
     if qmark_index != 0 and qmark_index != param_count:
-        raise ProgrammingError("Incorrect number of bindings "+
-            "supplied. The current statement uses "
-            "%d or more, and there are %d supplied." %
-            (qmark_index+1, param_count))
+        raise ProgrammingError("Incorrect number of bindings "
+                               "supplied. The current statement uses "
+                               "%d or more, and there are %d supplied." %
+                               (qmark_index+1, param_count))
 
     # replace numbered parameters
     # Go through them backwards so smaller numbers don't replace
@@ -207,6 +208,7 @@ def _replace_numeric_markers(operation, string_parameters):
         operation = operation.replace(':' + str(index),
                                       string_parameters[index-1])
     return operation
+
 
 def _bind_parameters_list(operation, parameters):
     string_parameters = []
@@ -220,6 +222,7 @@ def _bind_parameters_list(operation, parameters):
 
     # replace qmark and numeric parameters
     return _replace_numeric_markers(operation, string_parameters)
+
 
 def _bind_parameters_dict(operation, parameters):
     string_parameters = {}
@@ -237,6 +240,7 @@ def _bind_parameters_dict(operation, parameters):
     # replace pyformat parameters
     return operation % string_parameters
 
+
 def _bind_parameters(operation, parameters):
     # If parameters is a list, assume either qmark or numeric
     # format. If not, assume either named or pyformat parameters
@@ -245,5 +249,5 @@ def _bind_parameters(operation, parameters):
     elif isinstance(parameters, dict):
         return _bind_parameters_dict(operation, parameters)
     else:
-        raise ProgrammingError("Query parameters argument should be a "+
+        raise ProgrammingError("Query parameters argument should be a "
                                "list, tuple, or dict object")
