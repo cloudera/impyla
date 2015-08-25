@@ -455,8 +455,6 @@ class HiveServer2Cursor(Cursor):
 # 2. the Impala shell:
 #       Impala/shell/original_impala_shell.py
 
-log = get_logger_and_init_null(__name__)
-
 
 # mapping between the schema types (based on
 # com.cloudera.impala.catalog.PrimitiveType) and TColumnValue (in returned
