@@ -81,7 +81,7 @@ class ImpalaContext(object):
             hdfs_client = self.hdfs_client()
             try:
                 # generates an exception if file doesn't exist
-                _ = hdfs_client.status(self._temp_dir)
+                hdfs_client.status(self._temp_dir)
                 hdfs_client.delete(self._temp_dir, recursive=True)
             except HdfsError:
                 pass

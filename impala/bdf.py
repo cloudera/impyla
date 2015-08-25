@@ -275,8 +275,8 @@ class BigDataFrame(object):
         #     unique_values[col] = self._cursor.fetchall()
 
     def _store(self, path=None, table_name=None, file_format='TEXTFILE',
-              field_terminator='\t', line_terminator='\n', escape_char='\\',
-              overwrite=False):
+               field_terminator='\t', line_terminator='\n', escape_char='\\',
+               overwrite=False):
         if overwrite:
             self._cursor.execute(
                 "DROP TABLE IF EXISTS %s" % table_name.to_sql())
@@ -291,7 +291,9 @@ class BigDataFrame(object):
     def store(self, path=None, table=None, file_format='TEXTFILE',
               field_terminator='\t', line_terminator='\n', escape_char='\\',
               overwrite=False):
-        """Materialize the results and stores them in HFDS. Functions as an EXTERNAL table.
+        """
+        Materialize the results and stores them in HFDS. Functions as an
+        EXTERNAL table.
 
         Implemented through a `CREATE TABLE AS SELECT`.
         """
@@ -301,21 +303,28 @@ class BigDataFrame(object):
         if path is None:
             path = os.path.join(self._temp_dir, temp_table)
         table_name = _to_TableName(table)
-        return self._store(path=path, table_name=table_name, file_format=file_format, field_terminator=field_terminator,
-                    line_terminator=line_terminator, escape_char=escape_char, overwrite=overwrite)
+        return self._store(path=path, table_name=table_name,
+                           file_format=file_format,
+                           field_terminator=field_terminator,
+                           line_terminator=line_terminator,
+                           escape_char=escape_char, overwrite=overwrite)
 
-
-
-    def store_managed(self, table, file_format='PARQUET', field_terminator='\t', line_terminator='\n', escape_char='\\',
-              overwrite=False):
-        """Materialize the results and stores them in HDFS as an impala managed table.
+    def store_managed(self, table, file_format='PARQUET',
+                      field_terminator='\t', line_terminator='\n',
+                      escape_char='\\',
+                      overwrite=False):
+        """
+        Materialize the results and stores them in HDFS as an impala managed
+        table.
 
         Implemented through a `CREATE TABLE AS SELECT`.
         """
         table_name = _to_TableName(table)
-        return self._store(path=None, table_name=table_name, file_format=file_format, field_terminator=field_terminator,
-            line_terminator=line_terminator, escape_char=escape_char, overwrite=overwrite)
-
+        return self._store(path=None, table_name=table_name,
+                           file_format=file_format,
+                           field_terminator=field_terminator,
+                           line_terminator=line_terminator,
+                           escape_char=escape_char, overwrite=overwrite)
 
     def save_view(self, name, overwrite=False):
         """Create a named view representing this BDF for later reference"""

@@ -1,4 +1,4 @@
-# Copyright 2013 Cloudera Inc.
+# Copyright 2014 Cloudera Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,28 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implements all necessary Impala HiveServer 2 RPC functionality."""
+from __future__ import absolute_import
 
-# This work builds off of:
-# 1. the Hue interface:
-#       hue/apps/beeswax/src/beeswax/server/dbms.py
-#       hue/apps/beeswax/src/beeswax/server/hive_server2_lib.py
-#       hue/desktop/core/src/desktop/lib/thrift_util.py
-# 2. the Impala shell:
-#       Impala/shell/original_impala_shell.py
+import six
+import time
+import getpass
 
-from __future__ import absolute_import, division
+from impala.util import get_logger_and_init_null
+from impala.interface import Connection, Cursor, _bind_parameters
+from impala.error import NotSupportedError, OperationalError, ProgrammingError
 
 import datetime
 import socket
 import operator
 import re
-import six
 from decimal import Decimal
 from six.moves import range
 
 from impala.error import HiveServer2Error
-from impala.util import get_logger_and_init_null
 from impala._thrift_api import (
     get_socket, get_transport, TTransportException, TBinaryProtocol)
 from impala._thrift_api.hiveserver2 import (
@@ -45,6 +41,419 @@ from impala._thrift_api.hiveserver2 import (
     TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service,
     TExecStats, ThriftClient)
 
+
+log = get_logger_and_init_null(__name__)
+
+
+class HiveServer2Connection(Connection):
+    # PEP 249
+    # HiveServer2Connection objects are associated with a TCLIService.Client
+    # thrift service
+    # it's instantiated with an alive TCLIService.Client
+
+    def __init__(self, service, default_db=None):
+        log.debug('HiveServer2Connection(service=%s, default_db=%s)', service,
+                  default_db)
+        self.service = service
+        self.default_db = default_db
+
+    def close(self):
+        """Close the session and the Thrift transport."""
+        # PEP 249
+        log.info('Closing HS2 connection')
+        close_service(self.service)
+
+    def commit(self):
+        """Impala doesn't support transactions; does nothing."""
+        # PEP 249
+        pass
+
+    def rollback(self):
+        """Impala doesn't support transactions; raises NotSupportedError"""
+        # PEP 249
+        raise NotSupportedError
+
+    def cursor(self, session_handle=None, user=None, configuration=None):
+        # PEP 249
+        log.info('Getting a cursor (Impala session)')
+        if user is None:
+            user = getpass.getuser()
+        if session_handle is None:
+            log.debug('.cursor(): getting new session_handle')
+            (session_handle, default_config, hs2_protocol_version) = (
+                open_session(self.service, user, configuration))
+        cursor = HiveServer2Cursor(
+            self.service, session_handle, default_config, hs2_protocol_version)
+        if self.default_db is not None:
+            log.info('Using database %s as default', self.default_db)
+            cursor.execute('USE %s' % self.default_db)
+        return cursor
+
+    def reconnect(self):
+        reconnect(self.service)
+
+
+class HiveServer2Cursor(Cursor):
+    # PEP 249
+    # HiveServer2Cursor objects are associated with a Session
+    # they are instantiated with alive session_handles
+
+    def __init__(self, service, session_handle, default_config=None,
+                 hs2_protocol_version=(
+                     TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6)):
+        log.debug('HiveServer2Cursor(service=%s, session_handle=%s, '
+                  'default_config=%s, hs2_protocol_version=%s)', service,
+                  session_handle, default_config, hs2_protocol_version)
+        self.service = service
+        self.session_handle = session_handle
+        self.default_config = default_config
+        self.hs2_protocol_version = hs2_protocol_version
+
+        self._last_operation_string = None
+        self._last_operation_handle = None
+        self._last_operation_active = False
+        self._buffersize = None
+        self._buffer = []
+
+        # initial values, per PEP 249
+        self._description = None
+        self._rowcount = -1
+
+    @property
+    def description(self):
+        # PEP 249
+        if self._description is None and self.has_result_set:
+            log.debug('description=None has_result_set=True => getting schema')
+            schema = get_result_schema(self.service,
+                                       self._last_operation_handle)
+            self._description = schema
+        return self._description
+
+    @property
+    def rowcount(self):
+        # PEP 249
+        return self._rowcount
+
+    @property
+    def query_string(self):
+        return self._last_operation_string
+
+    def get_arraysize(self):
+        # PEP 249
+        return self._buffersize if self._buffersize else 1
+
+    def set_arraysize(self, arraysize):
+        # PEP 249
+        log.debug('set_arraysize: arraysize=%s', arraysize)
+        self._buffersize = arraysize
+
+    arraysize = property(get_arraysize, set_arraysize)
+
+    @property
+    def buffersize(self):
+        # this is for internal use.  it provides an alternate default value for
+        # the size of the buffer, so that calling .next() will read multiple
+        # rows into a buffer if arraysize hasn't been set.  (otherwise, we'd
+        # get an unbuffered impl because the PEP 249 default value of arraysize
+        # is 1)
+        return self._buffersize if self._buffersize else 1024
+
+    @property
+    def has_result_set(self):
+        return (self._last_operation_handle is not None and
+                self._last_operation_handle.hasResultSet)
+
+    def close(self):
+        # PEP 249
+        log.info('Closing HiveServer2Cursor')
+        close_session(self.service, self.session_handle)
+
+    def cancel_operation(self):
+        if self._last_operation_active:
+            log.info('Canceling active operation')
+            cancel_operation(self.service, self._last_operation_handle)
+            self._reset_state()
+
+    def close_operation(self):
+        if self._last_operation_active:
+            log.info('Closing active operation')
+            self._reset_state()
+
+    def execute(self, operation, parameters=None, configuration=None):
+        # PEP 249
+        self.execute_async(operation, parameters=parameters,
+                           configuration=configuration)
+        log.info('Waiting for query to finish')
+        self._wait_to_finish()  # make execute synchronous
+        log.info('Query finished')
+
+    def execute_async(self, operation, parameters=None, configuration=None):
+        log.info('Executing query %s', operation)
+
+        def op():
+            if parameters:
+                self._last_operation_string = _bind_parameters(operation,
+                                                               parameters)
+            else:
+                self._last_operation_string = operation
+            self._last_operation_handle = execute_statement(
+                self.service, self.session_handle, self._last_operation_string,
+                configuration)
+
+        self._execute_async(op)
+
+    def _debug_log_state(self):
+        log.debug(
+            '_execute_async: self._buffer=%s self._description=%s '
+            'self._last_operation_active=%s self._last_operation_handle=%s',
+            self._buffer, self._description, self._last_operation_active,
+            self._last_operation_handle)
+
+    def _execute_async(self, operation_fn):
+        # operation_fn should set self._last_operation_string and
+        # self._last_operation_handle
+        self._debug_log_state()
+        self._reset_state()
+        self._debug_log_state()
+        operation_fn()
+        self._last_operation_active = True
+        self._debug_log_state()
+
+    def _reset_state(self):
+        log.debug('_reset_state: Resetting cursor state')
+        self._buffer = []
+        self._description = None
+        if self._last_operation_active:
+            self._last_operation_active = False
+            close_operation(self.service, self._last_operation_handle)
+        self._last_operation_string = None
+        self._last_operation_handle = None
+
+    def _wait_to_finish(self):
+        loop_start = time.time()
+        while True:
+            operation_state = get_operation_status(
+                self.service, self._last_operation_handle)
+            log.debug('_wait_to_finish: waited %s seconds so far',
+                      time.time() - loop_start)
+            if self._op_state_is_error(operation_state):
+                raise OperationalError("Operation is in ERROR_STATE")
+            if not self._op_state_is_executing(operation_state):
+                break
+            time.sleep(self._get_sleep_interval(loop_start))
+
+    def execution_failed(self):
+        if self._last_operation_handle is None:
+            raise ProgrammingError("Operation state is not available")
+        operation_state = get_operation_status(
+            self.service, self._last_operation_handle)
+        return self._op_state_is_error(operation_state)
+
+    def _op_state_is_error(self, operation_state):
+        return operation_state == 'ERROR_STATE'
+
+    def is_executing(self):
+        if self._last_operation_handle is None:
+            raise ProgrammingError("Operation state is not available")
+        operation_state = get_operation_status(
+            self.service, self._last_operation_handle)
+        return self._op_state_is_executing(operation_state)
+
+    def _op_state_is_executing(self, operation_state):
+        return operation_state in (
+            'PENDING_STATE', 'INITIALIZED_STATE', 'RUNNING_STATE')
+
+    def _get_sleep_interval(self, start_time):
+        """Returns a step function of time to sleep in seconds before polling
+        again. Maximum sleep is 1s, minimum is 0.1s"""
+        elapsed = time.time() - start_time
+        if elapsed < 10.0:
+            return 0.1
+        elif elapsed < 60.0:
+            return 0.5
+        return 1.0
+
+    def executemany(self, operation, seq_of_parameters):
+        # PEP 249
+        log.info('Attempting to execute %s queries', len(seq_of_parameters))
+        for parameters in seq_of_parameters:
+            self.execute(operation, parameters)
+            if self.has_result_set:
+                raise ProgrammingError("Operations that have result sets are "
+                                       "not allowed with executemany.")
+
+    def fetchone(self):
+        # PEP 249
+        if not self.has_result_set:
+            raise ProgrammingError("Tried to fetch but no results.")
+        log.info('Fetching a single row')
+        try:
+            return next(self)
+        except StopIteration:
+            return None
+
+    def fetchmany(self, size=None):
+        # PEP 249
+        if not self.has_result_set:
+            raise ProgrammingError("Tried to fetch but no results.")
+        if size is None:
+            size = self.arraysize
+        log.info('Fetching up to %s result rows', size)
+        local_buffer = []
+        i = 0
+        while i < size:
+            try:
+                local_buffer.append(next(self))
+                i += 1
+            except StopIteration:
+                break
+        return local_buffer
+
+    def fetchall(self):
+        # PEP 249
+        log.info('Fetching all result rows')
+        try:
+            return list(self)
+        except StopIteration:
+            return []
+
+    def setinputsizes(self, sizes):
+        # PEP 249
+        pass
+
+    def setoutputsize(self, size, column=None):
+        # PEP 249
+        pass
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if not self.has_result_set:
+            raise ProgrammingError(
+                "Trying to fetch results on an operation with no results.")
+        if len(self._buffer) > 0:
+            log.debug('__next__: popping row out of buffer')
+            return self._buffer.pop(0)
+        elif self._last_operation_active:
+            # self._buffer is empty here and op is active: try to pull more
+            # rows
+            log.debug('__next__: buffer empty and op is active => fetching '
+                      'more rows')
+            rows = fetch_results(self.service, self._last_operation_handle,
+                                 self.hs2_protocol_version, self.description,
+                                 self.buffersize)
+            self._buffer.extend(rows)
+            if len(self._buffer) == 0:
+                log.debug('__next__: no more rows to fetch')
+                raise StopIteration
+            log.debug('__next__: popping row out of buffer')
+            return self._buffer.pop(0)
+        else:
+            # buffer is already empty
+            raise StopIteration
+
+    def ping(self):
+        """Checks connection to server by requesting some info from the
+        server."""
+        log.info('Pinging the impalad')
+        return ping(self.service, self.session_handle)
+
+    def get_log(self):
+        return get_log(self.service, self._last_operation_handle)
+
+    def get_profile(self):
+        return get_profile(
+            self.service, self._last_operation_handle, self.session_handle)
+
+    def get_summary(self):
+        return get_summary(
+            self.service, self._last_operation_handle, self.session_handle)
+
+    def build_summary_table(self, summary, output, idx=0,
+                            is_fragment_root=False, indent_level=0):
+        return build_summary_table(
+            summary, idx, is_fragment_root, indent_level, output)
+
+    def get_databases(self):
+        def op():
+            self._last_operation_string = "RPC_GET_DATABASES"
+            self._last_operation_handle = get_databases(self.service,
+                                                        self.session_handle)
+        self._execute_async(op)
+        self._wait_to_finish()
+
+    def database_exists(self, db_name):
+        return database_exists(self.service, self.session_handle,
+                               self.hs2_protocol_version, db_name)
+
+    def get_tables(self, database_name=None):
+        if database_name is None:
+            database_name = '.*'
+
+        def op():
+            self._last_operation_string = "RPC_GET_TABLES"
+            self._last_operation_handle = get_tables(self.service,
+                                                     self.session_handle,
+                                                     database_name)
+        self._execute_async(op)
+        self._wait_to_finish()
+
+    def table_exists(self, table_name, database_name=None):
+        if database_name is None:
+            database_name = '.*'
+        return table_exists(self.service, self.session_handle,
+                            self.hs2_protocol_version, table_name,
+                            database_name)
+
+    def get_table_schema(self, table_name, database_name=None):
+        if database_name is None:
+            database_name = '.*'
+
+        def op():
+            self._last_operation_string = "RPC_DESCRIBE_TABLE"
+            self._last_operation_handle = get_table_schema(
+                self.service, self.session_handle, table_name, database_name)
+
+        self._execute_async(op)
+        self._wait_to_finish()
+        results = self.fetchall()
+        if len(results) == 0:
+            # TODO: the error raised here should be different
+            raise OperationalError(
+                "no schema results for table %s.%s" % (
+                    database_name, table_name))
+        # check that results are derived from a unique table
+        tables = set()
+        for col in results:
+            tables.add((col[1], col[2]))
+        if len(tables) > 1:
+            # TODO: the error raised here should be different
+            raise ProgrammingError(
+                "db: %s, table: %s is not unique" % (
+                    database_name, table_name))
+        return [(r[3], r[5]) for r in results]
+
+    def get_functions(self, database_name=None):
+        if database_name is None:
+            database_name = '.*'
+
+        def op():
+            self._last_operation_string = "RPC_GET_FUNCTIONS"
+            self._last_operation_handle = get_functions(
+                self.service, self.session_handle, database_name)
+
+        self._execute_async(op)
+        self._wait_to_finish()
+
+
+# This work builds off of:
+# 1. the Hue interface:
+#       hue/apps/beeswax/src/beeswax/server/dbms.py
+#       hue/apps/beeswax/src/beeswax/server/hive_server2_lib.py
+#       hue/desktop/core/src/desktop/lib/thrift_util.py
+# 2. the Impala shell:
+#       Impala/shell/original_impala_shell.py
 
 log = get_logger_and_init_null(__name__)
 
@@ -158,9 +567,9 @@ def retry(func):
     return wrapper
 
 
-def connect_to_impala(host, port, timeout=45, use_ssl=False, ca_cert=None,
-                      user=None, password=None, kerberos_service_name='impala',
-                      auth_mechanism=None):
+def connect(host, port, timeout=45, use_ssl=False, ca_cert=None,
+            user=None, password=None, kerberos_service_name='impala',
+            auth_mechanism=None):
     log.info('Connecting to HiveServer2 %s:%s with %s authentication '
              'mechanism', host, port, auth_mechanism)
     sock = get_socket(host, port, use_ssl, ca_cert)
@@ -283,8 +692,8 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                  for (i, col) in enumerate(resp.results.columns)]
         num_cols = len(tcols)
         num_rows = len(tcols[0].values)
-        log.debug('fetch_results: COLUMNAR num_cols=%s num_rows=%s tcols=%s', num_cols,
-                  num_rows, tcols)
+        log.debug('fetch_results: COLUMNAR num_cols=%s num_rows=%s tcols=%s',
+                  num_cols, num_rows, tcols)
         rows = []
         for i in range(num_rows):
             row = []
@@ -305,7 +714,8 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                 # Hive encodes nulls differently than Impala
                 # (\x00 vs \x00\x00 ...)
                 if not re.match(b'^(\x00)+$', nulls):
-                    is_null = bool(six.byte2int(nulls[(i // 8):]) & (1 << (i % 8)))
+                    is_null = bool(six.byte2int(nulls[(i // 8):]) &
+                                   (1 << (i % 8)))
                 if is_null:
                     row.append(None)
                 elif type_ == 'TIMESTAMP':
