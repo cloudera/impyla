@@ -18,6 +18,7 @@ import six
 import time
 import getpass
 
+from impala.compat import lzip, Decimal
 from impala.util import get_logger_and_init_null
 from impala.interface import Connection, Cursor, _bind_parameters
 from impala.error import NotSupportedError, OperationalError, ProgrammingError
@@ -26,7 +27,6 @@ import datetime
 import socket
 import operator
 import re
-from decimal import Decimal
 from six.moves import range
 
 from impala.error import HiveServer2Error
@@ -267,7 +267,11 @@ class HiveServer2Cursor(Cursor):
         """Returns a step function of time to sleep in seconds before polling
         again. Maximum sleep is 1s, minimum is 0.1s"""
         elapsed = time.time() - start_time
-        if elapsed < 10.0:
+        if elapsed < 0.05:
+            return 0.01
+        elif elapsed < 1.0:
+            return 0.05
+        elif elapsed < 10.0:
             return 0.1
         elif elapsed < 60.0:
             return 0.5
@@ -686,43 +690,56 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
     err_if_rpc_not_ok(resp)
 
     if hs2_protocol_version == TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6:
+        from bitarray import bitarray
+
         tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
                  for (i, col) in enumerate(resp.results.columns)]
         num_cols = len(tcols)
         num_rows = len(tcols[0].values)
         log.debug('fetch_results: COLUMNAR num_cols=%s num_rows=%s tcols=%s',
                   num_cols, num_rows, tcols)
-        rows = []
-        for i in range(num_rows):
-            row = []
-            for j in range(num_cols):
-                type_ = schema[j][1]
-                values = tcols[j].values
-                nulls = tcols[j].nulls
-                if six.PY3 and isinstance(nulls, str):
-                    # thriftpy sometimes returns unicode instead of bytes
-                    nulls = nulls.encode('utf-8')
-                # i // 8 is the byte, i % 8 is position in the byte; get the
-                # int repr and pull out the bit at the corresponding pos
-                is_null = False
+
+        column_data = []
+        for j in range(num_cols):
+            type_ = schema[j][1]
+            nulls = tcols[j].nulls
+            values = tcols[j].values
+
+            if six.PY3 and isinstance(nulls, str):
+                # thriftpy sometimes returns unicode instead of bytes
+                nulls = nulls.encode('utf-8')
+
+            # HACK: Hive hack; needs tests
+            # Hive encodes nulls differently than Impala
+            # (\x00 vs \x00\x00 ...)
+            if not re.match(b'^(\x00)+$', nulls):
+                is_null = bitarray(endian='little')
+                is_null.frombytes(nulls)
+
                 # Ref HUE-2722, HiveServer2 sometimes does not add not put
                 # trailing '\x00'.
                 if len(values) != len(nulls):
-                    nulls = nulls + (b'\x00' * (len(values) - len(nulls)))
-                # Hive encodes nulls differently than Impala
-                # (\x00 vs \x00\x00 ...)
-                if not re.match(b'^(\x00)+$', nulls):
-                    is_null = bool(six.byte2int(nulls[(i // 8):]) &
-                                   (1 << (i % 8)))
-                if is_null:
-                    row.append(None)
-                elif type_ == 'TIMESTAMP':
-                    row.append(_parse_timestamp(values[i]))
-                elif type_ == 'DECIMAL':
-                    row.append(Decimal(values[i]))
-                else:
-                    row.append(values[i])
-            rows.append(tuple(row))
+                    to_append = ((len(values) - len(nulls) + 7) // 8)
+                    is_null.frombytes(b'\x00' * to_append)
+            else:
+                is_null = bitarray(len(values))
+                is_null[:] = 0
+
+            if type_ == 'TIMESTAMP':
+                for i in range(num_rows):
+                    values[i] = (None if is_null[i] else
+                                 _parse_timestamp(values[i]))
+            elif type_ == 'DECIMAL':
+                for i in range(num_rows):
+                    values[i] = (None if is_null[i] else Decimal(values[i]))
+            else:
+                for i in range(num_rows):
+                    if is_null[i]:
+                        values[i] = None
+            column_data.append(values)
+
+        # TODO: enable columnar fetch
+        rows = lzip(*column_data)
     elif hs2_protocol_version in _pre_columnar_protocols:
         log.debug('fetch_results: ROWS num-rows=%s', len(resp.results.rows))
         rows = []

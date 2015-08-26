@@ -19,7 +19,7 @@ import sys
 import ez_setup
 ez_setup.use_setuptools()
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages  # noqa
 
 
 def readme():
@@ -32,7 +32,7 @@ PY3 = sys.version_info[0] == 3
 
 # Apache Thrift does not yet support Python 3 (see THRIFT-1857).  We use
 # thriftpy as a stopgap replacement
-reqs = ['six', 'thrift_sasl']
+reqs = ['six', 'thrift_sasl', 'bitarray']
 packages = find_packages(exclude=['impala._thrift_gen',
                                   'impala._thrift_gen.*'])
 if PY2:
