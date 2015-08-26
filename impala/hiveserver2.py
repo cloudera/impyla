@@ -17,17 +17,19 @@ from __future__ import absolute_import
 import six
 import time
 import getpass
+import datetime
+import socket
+import operator
+import re
+from six.moves import range
+from bitarray import bitarray
+
 
 from impala.compat import lzip, Decimal
 from impala.util import get_logger_and_init_null
 from impala.interface import Connection, Cursor, _bind_parameters
 from impala.error import NotSupportedError, OperationalError, ProgrammingError
 
-import datetime
-import socket
-import operator
-import re
-from six.moves import range
 
 from impala.error import HiveServer2Error
 from impala._thrift_api import (
@@ -690,8 +692,6 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
     err_if_rpc_not_ok(resp)
 
     if hs2_protocol_version == TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6:
-        from bitarray import bitarray
-
         tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
                  for (i, col) in enumerate(resp.results.columns)]
         num_cols = len(tcols)
@@ -705,25 +705,17 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
             nulls = tcols[j].nulls
             values = tcols[j].values
 
+            # thriftpy sometimes returns unicode instead of bytes
             if six.PY3 and isinstance(nulls, str):
-                # thriftpy sometimes returns unicode instead of bytes
                 nulls = nulls.encode('utf-8')
 
-            # HACK: Hive hack; needs tests
-            # Hive encodes nulls differently than Impala
-            # (\x00 vs \x00\x00 ...)
-            if not re.match(b'^(\x00)+$', nulls):
-                is_null = bitarray(endian='little')
-                is_null.frombytes(nulls)
+            is_null = bitarray(endian='little')
+            is_null.frombytes(nulls)
 
-                # Ref HUE-2722, HiveServer2 sometimes does not add not put
-                # trailing '\x00'.
-                if len(values) != len(nulls):
-                    to_append = ((len(values) - len(nulls) + 7) // 8)
-                    is_null.frombytes(b'\x00' * to_append)
-            else:
-                is_null = bitarray(len(values))
-                is_null[:] = 0
+            # Ref HUE-2722, HiveServer2 sometimes does not add trailing '\x00'
+            if len(values) > len(nulls):
+                to_append = ((len(values) - len(nulls) + 7) // 8)
+                is_null.frombytes(b'\x00' * to_append)
 
             if type_ == 'TIMESTAMP':
                 for i in range(num_rows):
