@@ -17,14 +17,15 @@ set -e
 set -x
 
 # Check for necessary environment variables
-: ${IMPALA_HOST:?"IMPALA_HOST is unset"}
-: ${IMPALA_PROTOCOL:?"IMPALA_PROTOCOL is unset"}
-: ${IMPALA_PORT:?"IMPALA_PORT is unset"}
+: ${IMPYLA_TEST_HOST:?"IMPYLA_TEST_HOST is unset"}
+: ${IMPYLA_TEST_PORT:?"IMPYLA_TEST_PORT is unset"}
+: ${IMPYLA_TEST_AUTH_MECH:?"IMPYLA_TEST_AUTH_MECH is unset"}
 : ${PYTHON_VERSION:?"PYTHON_VERSION is unset"}
-: ${USE_KERBEROS:?"USE_KERBEROS is unset"}
 # the following are set by jenkins and are only needed if WORKSPACE not set
 #   GIT_URL
 #   GIT_BRANCH
+# and for pulling in a pull request
+#   GITHUB_PR
 
 printenv
 
@@ -71,7 +72,7 @@ conda info -a
 CONDA_ENV_NAME=pyenv-impyla-dbapi-test
 conda create -y -q -n $CONDA_ENV_NAME python=$PYTHON_VERSION
 source activate $CONDA_ENV_NAME
-pip install unittest2 pytest
+pip install unittest2 sqlalchemy pytest
 # build impyla
 pip install $IMPYLA_HOME
 
@@ -80,7 +81,7 @@ which python
 
 python -c "from impala.tests.util import ImpylaTestEnv; print(ImpylaTestEnv())"
 
-if [ $USE_KERBEROS = "True" ]; then
+if [ $IMPYLA_TEST_AUTH_MECH != "NOSASL" ]; then
     pip install git+https://github.com/laserson/python-sasl.git@cython
     kinit -l 4h -kt /cdep/keytabs/systest.keytab systest
 fi
