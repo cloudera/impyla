@@ -14,16 +14,23 @@
 
 # flake8: noqa
 
+import sys
 import six
 
 if six.PY3:
     def lzip(*x):
         return list(zip(*x))
     from decimal import Decimal
-else:
+elif six.PY2:
     lzip = zip
 
     try:
         from cdecimal import Decimal
     except ImportError:
         from decimal import Decimal
+
+
+if sys.version_info[:2] <= (2, 6):
+    import unittest2 as unittest
+else:
+    import unittest

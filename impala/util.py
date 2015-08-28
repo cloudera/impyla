@@ -95,6 +95,25 @@ def drop_view(cursor, view_name):
     cursor.execute("DROP VIEW %s" % view_name)
 
 
+def force_drop_database(cursor, database):
+    cursor.execute('USE %s' % database)
+    cursor.execute('SHOW TABLES')
+    tables = [x[0] for x in cursor.fetchall()]
+    for table in tables:
+        cursor.execute('DROP TABLE IF EXISTS %s.%s' % (database, table))
+    cursor.execute('SHOW FUNCTIONS')
+    udfs = [x[1] for x in cursor.fetchall()]
+    for udf in udfs:
+        cursor.execute('DROP FUNCTION IF EXISTS %s.%s' % (database, udf))
+    cursor.execute('SHOW AGGREGATE FUNCTIONS')
+    udas = [x[1] for x in cursor.fetchall()]
+    for uda in udas:
+        cursor.execute('DROP AGGREGATE FUNCTION IF EXISTS %s.%s' % (
+                       database, uda))
+    cursor.execute('USE default')
+    cursor.execute('DROP DATABASE IF EXISTS %s' % database)
+
+
 def _escape(s):
     e = s
     e = e.replace('\\', '\\\\')
@@ -120,7 +139,8 @@ def _py_to_sql_string(value):
 
 def warn_deprecate_hs2():
     msg = ("Beeswax support in impyla is now deprecated and will be removed "
-           "in a future release; please switch to using HiveServer2.")
+           "in a future release (along with the 'protocol' argument); "
+           "please switch to using HiveServer2.")
     warnings.warn(msg, Warning)
 
 
@@ -128,6 +148,13 @@ def warn_deprecate_ibis(functionality='This'):
     msg = ("{0} functionality in impyla is now deprecated and will be removed "
            "in a future release; please see the Ibis project instead: "
            "http://ibis-project.org/".format(functionality))
+    warnings.warn(msg, Warning)
+
+
+def warn_deprecate_protocol():
+    msg = ("Specifying the protocol argument is now deprecated (because "
+           "HiveServer2 should always be preferred). It is no longer "
+           "necessary and will be removed in a future release.")
     warnings.warn(msg, Warning)
 
 

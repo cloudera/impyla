@@ -20,14 +20,12 @@ import six
 import time
 import datetime
 
-from impala.error import (Error,  # noqa
-                          Warning,
-                          InterfaceError,
-                          DatabaseError,
-                          InternalError,
-                          OperationalError, ProgrammingError,
-                          IntegrityError, DataError, NotSupportedError)
-from impala.util import warn_deprecate_hs2, warn_deprecate
+from impala.error import (  # noqa
+    Error, Warning, InterfaceError, DatabaseError, InternalError,
+    OperationalError, ProgrammingError, IntegrityError, DataError,
+    NotSupportedError)
+from impala.util import (
+    warn_deprecate_hs2, warn_deprecate, warn_deprecate_protocol)
 import impala.beeswax as beeswax
 import impala.hiveserver2 as hs2
 
@@ -41,7 +39,7 @@ threadsafety = 1  # Threads may share the module, but not connections
 paramstyle = 'pyformat'
 
 
-def connect(host='localhost', port=21050, protocol='hiveserver2',
+def connect(host='localhost', port=21050, protocol=None,
             database=None, timeout=45, use_ssl=False, ca_cert=None,
             auth_mechanism='NOSASL', user=None, password=None,
             kerberos_service_name='impala', use_ldap=None, ldap_user=None,
@@ -73,7 +71,15 @@ def connect(host='localhost', port=21050, protocol='hiveserver2',
         warn_deprecate('ldap_password', 'password')
         password = ldap_password
 
-    # PEP 249
+    if protocol is None or protocol.lower() == 'hiveserver2':
+        if protocol:
+            warn_deprecate_protocol()
+        service = hs2.connect(host=host, port=port,
+                              timeout=timeout, use_ssl=use_ssl,
+                              ca_cert=ca_cert, user=user, password=password,
+                              kerberos_service_name=kerberos_service_name,
+                              auth_mechanism=auth_mechanism)
+        return hs2.HiveServer2Connection(service, default_db=database)
     if protocol.lower() == 'beeswax':
         warn_deprecate_hs2()
         service = beeswax.connect(host=host, port=port, timeout=timeout,
@@ -82,16 +88,8 @@ def connect(host='localhost', port=21050, protocol='hiveserver2',
                                   kerberos_service_name=kerberos_service_name,
                                   auth_mechanism=auth_mechanism)
         return beeswax.BeeswaxConnection(service, default_db=database)
-    elif protocol.lower() == 'hiveserver2':
-        service = hs2.connect(host=host, port=port,
-                              timeout=timeout, use_ssl=use_ssl,
-                              ca_cert=ca_cert, user=user, password=password,
-                              kerberos_service_name=kerberos_service_name,
-                              auth_mechanism=auth_mechanism)
-        return hs2.HiveServer2Connection(service, default_db=database)
-    else:
-        raise NotSupportedError("The specified protocol '%s' is not supported."
-                                % protocol)
+    raise NotSupportedError("The specified protocol '%s' is not supported."
+                            % protocol)
 
 
 class _DBAPITypeObject(object):
@@ -123,15 +121,15 @@ Time = datetime.time
 Timestamp = datetime.datetime
 
 
-def DateFromTicks(ticks):
+def DateFromTicks(ticks):  # noqa
     return Date(*time.localtime(ticks)[:3])
 
 
-def TimeFromTicks(ticks):
+def TimeFromTicks(ticks):  # noqa
     return Time(*time.localtime(ticks)[3:6])
 
 
-def TimestampFromTicks(ticks):
+def TimestampFromTicks(ticks):  # noqa
     return Timestamp(*time.localtime(ticks)[:6])
 
 if six.PY3:

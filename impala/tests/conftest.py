@@ -14,156 +14,96 @@
 
 from __future__ import absolute_import
 
-import os
-import sys
-import pkgutil
-import getpass
+import logging
 
-from pytest import fixture, importorskip, skip
+from pytest import fixture, yield_fixture, skip
 
-# these are all environment variable-based; primarily for ImpalaContext
+from impala.dbapi import connect
+from impala.util import _random_id, force_drop_database
+from impala.tests.util import ImpylaTestEnv
+
+
+# set up some special cmd line options for test running
+
+
+def pytest_addoption(parser):
+    parser.addoption('--connect', action='store_true', default=False,
+                     help='Also run DB API 2.0 compliance tests')
+    parser.addoption('--log-info', action='store_true', default=False,
+                     help='Enable INFO logging')
+    parser.addoption('--log-debug', action='store_true', default=False,
+                     help='Enable DEBUG logging')
+
+
+def pytest_configure(config):
+    # if both --log-debug and --log-info are set, the DEBUG takes precedence
+    if config.getoption('log_debug'):
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.DEBUG)
+        root_logger.addHandler(logging.StreamHandler())
+    elif config.getoption('log_info'):
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.addHandler(logging.StreamHandler())
+
+
+def pytest_runtest_setup(item):
+    if (getattr(item.obj, 'connect', None) and
+            not item.config.getvalue('connect')):
+        skip('--connect not requested (for integration tests)')
+
+
+# testing fixtures
+
+
+ENV = ImpylaTestEnv()
 
 
 @fixture(scope='session')
 def host():
-    if 'IMPALA_HOST' in os.environ:
-        return os.environ['IMPALA_HOST']
-    else:
-        raise ValueError('IMPALA_HOST not set')
+    return ENV.host
 
 
 @fixture(scope='session')
 def port():
-    if 'IMPALA_PORT' in os.environ:
-        return int(os.environ['IMPALA_PORT'])
-    else:
-        sys.stderr.write(
-            "IMPALA_PORT not set; using default HiveServer2 port 21050")
-        return 21050
+    return ENV.port
 
 
 @fixture(scope='session')
-def protocol():
-    if 'IMPALA_PROTOCOL' in os.environ:
-        return os.environ['IMPALA_PROTOCOL']
-    else:
-        sys.stderr.write(
-            "IMPALA_PROTOCOL not set; using default 'hiveserver2'")
-        return 'hiveserver2'
+def auth_mech():
+    return ENV.auth_mech
 
 
 @fixture(scope='session')
-def use_kerberos():
-    if 'USE_KERBEROS' in os.environ:
-        return os.environ['USE_KERBEROS'].lower() == 'true'
-    else:
-        sys.stderr.write("USE_KERBEROS not set; using default 'False'")
-        return False
+def tmp_db():
+    return _random_id('tmp_impyla_')
 
 
-@fixture(scope='session')
-def nn_host():
-    if 'NAMENODE_HOST' in os.environ:
-        return os.environ['NAMENODE_HOST']
-    else:
-        sys.stderr.write("NAMENODE_HOST not set; using None")
-        return None
+@yield_fixture(scope='session')
+def con(host, port, auth_mech, tmp_db):
+    # create the temporary database
+    con = connect(host=host, port=port, auth_mechanism=auth_mech)
+    cur = con.cursor()
+    cur.execute('CREATE DATABASE {0}'.format(tmp_db))
+    cur.close()
+    con.close()
+
+    # create the actual fixture
+    con = connect(host=host, port=port, auth_mechanism=auth_mech,
+                  database=tmp_db)
+    yield con
+    con.close()
+
+    # cleanup the temporary database
+    con = connect(host=host, port=port, auth_mechanism=auth_mech)
+    cur = con.cursor()
+    force_drop_database(cur, tmp_db)
+    cur.close()
+    con.close()
 
 
-@fixture(scope='session')
-def webhdfs_port():
-    if 'WEBHDFS_PORT' in os.environ:
-        return os.environ['WEBHDFS_PORT']
-    else:
-        sys.stderr.write("WEBHDFS_PORT not set; using default 50070")
-        return 50070
-
-
-@fixture(scope='session')
-def hdfs_user():
-    if 'HDFS_USER' in os.environ:
-        return os.environ['HDFS_USER']
-    else:
-        user = getpass.getuser()
-        sys.stderr.write("HDFS_USER not set; using '%s'" % user)
-        return user
-
-
-@fixture(scope='session')
-def temp_hdfs_dir():
-    if 'TEMP_HDFS_DIR' in os.environ:
-        return os.environ['TEMP_HDFS_DIR']
-    else:
-        sys.stderr.write("TEMP_HDFS_DIR not set; using default in /tmp/...")
-        return None
-
-
-@fixture(scope='session')
-def temp_db():
-    if 'TEMP_DB' in os.environ:
-        return os.environ['TEMP_DB']
-    else:
-        sys.stderr.write(
-            "TEMP_DB not set; using default prefixed tmp_impyla...")
-        return None
-
-
-# main ImpalaContext fixture; pretty much everything else depends on this
-# somehow
-
-@fixture(scope='session')
-def ic(request, temp_hdfs_dir, temp_db, nn_host, webhdfs_port, hdfs_user, host,
-       port, protocol, use_kerberos):
-    """Provides an ImpalaContext"""
-    from impala.context import ImpalaContext
-
-    ctx = ImpalaContext(temp_dir=temp_hdfs_dir, temp_db=temp_db,
-                        nn_host=nn_host, webhdfs_port=webhdfs_port,
-                        hdfs_user=hdfs_user, host=host, port=port,
-                        protocol=protocol, use_kerberos=use_kerberos)
-
-    def fin():
-        ctx.close()
-
-    request.addfinalizer(fin)
-    return ctx
-
-
-@fixture(scope='session')
-def hdfs_client(ic):
-    hdfs = importorskip('hdfs')
-    if ic._nn_host is None:
-        skip("NAMENODE_HOST not set; skipping...")
-    return ic.hdfs_client()
-
-
-@fixture(scope='session')
-def cursor(ic):
-    """Provides a DB API 2.0 Cursor object"""
-    return ic._cursor
-
-
-@fixture(scope='session')
-def iris_data(ic):
-    cursor = ic._cursor
-    cursor.execute('USE %s' % ic._temp_db)
-    cursor.execute("CREATE TABLE iris_data (sepal_length DOUBLE, "
-                   "sepal_width DOUBLE, petal_length DOUBLE, "
-                   "petal_width DOUBLE, label STRING) ROW FORMAT DELIMITED "
-                   "FIELDS TERMINATED BY '\\t' STORED AS TEXTFILE")
-    raw_data = pkgutil.get_data('impala.tests', 'data/iris.data')
-    lines = [x for x in raw_data.split('\n') if x != '']
-    tuples = [tuple(x.split(',')) for x in lines]
-    sql_strings = ['(%s, %s, %s, %s, "%s")' % tup for tup in tuples]
-    cursor.execute("INSERT INTO iris_data VALUES %s" % ', '.join(sql_strings))
-
-
-@fixture(scope='session')
-def small_data(ic):
-    cursor = ic._cursor
-    cursor.execute('USE %s' % ic._temp_db)
-    cursor.execute("CREATE TABLE small_data (a INT, b DOUBLE, c STRING) "
-                   "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\\t' "
-                   "STORED AS TEXTFILE")
-    cursor.execute("INSERT INTO small_data VALUES (3, 2.718, 'foo'), "
-                   "(777, 3.14, 'bar'), (1729, 1.0, 'baz')")
+@yield_fixture(scope='session')
+def cur(con):
+    cur = con.cursor()
+    yield cur
+    cur.close()

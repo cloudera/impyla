@@ -78,10 +78,12 @@ pip install $IMPYLA_HOME
 python --version
 which python
 
+python -c "from impala.tests.util import ImpylaTestEnv; print(ImpylaTestEnv())"
+
 if [ $USE_KERBEROS = "True" ]; then
     pip install git+https://github.com/laserson/python-sasl.git@cython
     kinit -l 4h -kt /cdep/keytabs/systest.keytab systest
 fi
 
 # Run PEP 249 testing suite
-py.test --pyargs impala.tests.test_dbapi_compliance
+py.test --connect $IMPYLA_HOME/impala

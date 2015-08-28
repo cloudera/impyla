@@ -32,5 +32,6 @@ def test_sqlalchemy_compilation():
                     Column('col3', INT),
                     Column('col4', DOUBLE))
     observed = str(CreateTable(mytable, bind=engine))
-    expected = '\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, \n\tcol3 INT, \n\tcol4 DOUBLE\n)\n\n'
+    expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
+                '\n\tcol3 INT, \n\tcol4 DOUBLE\n)\n\n')
     assert expected == observed
