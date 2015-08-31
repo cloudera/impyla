@@ -45,6 +45,8 @@ class STRING(String):
 
 
 class ImpalaTypeCompiler(GenericTypeCompiler):
+    # pylint: disable=unused-argument
+
     def visit_TINYINT(self, type_):
         return 'TINYINT'
 
@@ -125,6 +127,7 @@ class ImpalaDialect(DefaultDialect):
 
     @classmethod
     def dbapi(cls):
+        # pylint: disable=method-hidden
         import impala.dbapi
         return impala.dbapi
 
@@ -151,6 +154,7 @@ class ImpalaDialect(DefaultDialect):
         return [tup[0] for tup in connection.execute(query).fetchall()]
 
     def get_columns(self, connection, table_name, schema=None, **kwargs):
+        # pylint: disable=unused-argument
         name = table_name
         if schema is not None:
             name = '%s.%s' % (schema, name)
@@ -170,6 +174,7 @@ class ImpalaDialect(DefaultDialect):
         return column_info
 
     def get_pk_constraint(self, connection, table_name, schema=None, **kw):
+        # pylint: disable=unused-argument
         # no primary keys in impala
         return {'constrained_columns': [], 'name': None}
 

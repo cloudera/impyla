@@ -72,7 +72,7 @@ conda info -a
 CONDA_ENV_NAME=pyenv-impyla-dbapi-test
 conda create -y -q -n $CONDA_ENV_NAME python=$PYTHON_VERSION
 source activate $CONDA_ENV_NAME
-pip install unittest2 sqlalchemy pytest
+pip install unittest2 thriftpy sqlalchemy pytest prospector[with_pyroma]
 # build impyla
 pip install $IMPYLA_HOME
 
@@ -88,3 +88,6 @@ fi
 
 # Run PEP 249 testing suite
 py.test --connect $IMPYLA_HOME/impala
+
+# Enforce PEP 8 etc
+prospector $IMPYLA_HOME

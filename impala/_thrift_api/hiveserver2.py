@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=unused-import
+
 import os
 import sys
 import six
@@ -51,14 +53,14 @@ if six.PY3:
     sys.modules[ImpalaService.__name__] = ImpalaService
 
     # import the HS2 objects
-    from TCLIService import (
+    from TCLIService import (  # noqa
         TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
         TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
         TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
         TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
         TGetOperationStatusReq, TOperationState, TCancelOperationReq,
         TCloseOperationReq, TGetLogReq, TProtocolVersion)
-    from ImpalaService import (
+    from ImpalaService import (  # noqa
         TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service)
-    from ExecStats import TExecStats
+    from ExecStats import TExecStats  # noqa
     ThriftClient = TClient

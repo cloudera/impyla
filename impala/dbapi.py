@@ -44,6 +44,7 @@ def connect(host='localhost', port=21050, protocol=None,
             auth_mechanism='NOSASL', user=None, password=None,
             kerberos_service_name='impala', use_ldap=None, ldap_user=None,
             ldap_password=None, use_kerberos=None):
+    # pylint: disable=too-many-locals
     if use_kerberos is not None:
         warn_deprecate('use_kerberos', 'auth_mechanism="GSSAPI"')
         if use_kerberos:
@@ -121,15 +122,15 @@ Time = datetime.time
 Timestamp = datetime.datetime
 
 
-def DateFromTicks(ticks):  # noqa
+def DateFromTicks(ticks):
     return Date(*time.localtime(ticks)[:3])
 
 
-def TimeFromTicks(ticks):  # noqa
+def TimeFromTicks(ticks):
     return Time(*time.localtime(ticks)[3:6])
 
 
-def TimestampFromTicks(ticks):  # noqa
+def TimestampFromTicks(ticks):
     return Timestamp(*time.localtime(ticks)[:6])
 
 if six.PY3:

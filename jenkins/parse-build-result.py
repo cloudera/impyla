@@ -18,7 +18,7 @@ import sys
 try:
     import json
 except ImportError:
-    import simplejson as json
+    import simplejson as json  # pylint: disable=import-error
 
 data = json.loads(sys.stdin.read())
 sys.stdout.write(data['result'] + '\n')

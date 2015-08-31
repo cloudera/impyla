@@ -85,6 +85,8 @@ def compute_result_schema(cursor, query_string):
 
 
 def create_view_from_query(cursor, query_string, view_name=None, safe=False):
+    # pylint: disable=unused-argument
+    warn_deprecate('create_view_from_query()')
     if view_name is None:
         view_name = _random_id(prefix="tmp_cv_")
     cursor.execute("CREATE VIEW %s AS %s" % (view_name, query_string))
@@ -92,6 +94,7 @@ def create_view_from_query(cursor, query_string, view_name=None, safe=False):
 
 
 def drop_view(cursor, view_name):
+    warn_deprecate('drop_view()')
     cursor.execute("DROP VIEW %s" % view_name)
 
 

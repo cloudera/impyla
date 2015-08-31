@@ -20,9 +20,10 @@ from six import reraise
 from six.moves import range
 
 from impala.util import _escape
-from impala.error import (Error, Warning, InterfaceError, DatabaseError,
-                          InternalError, OperationalError, ProgrammingError,
-                          IntegrityError, DataError, NotSupportedError)
+from impala.error import (  # pylint: disable=unused-import
+    Error, Warning, InterfaceError, DatabaseError, InternalError,
+    OperationalError, ProgrammingError, IntegrityError, DataError,
+    NotSupportedError)
 
 
 class Connection(object):
@@ -51,6 +52,7 @@ class Connection(object):
         raise NotImplementedError
 
     def kerberized(self):
+        # pylint: disable=protected-access
         # returns bool whether underlying service is kerberized or not
         from thrift_sasl import TSaslClientTransport
         if isinstance(self.service._iprot.trans, TSaslClientTransport):

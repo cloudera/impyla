@@ -17,7 +17,6 @@
 # Thrift gains Py3 compatibility.
 
 import os
-import sys
 import six
 import getpass
 
@@ -40,12 +39,11 @@ if six.PY3:
     # import thriftpy code
     # TODO: reenable cython
     # from thriftpy.protocol import TBinaryProtocol
-    from thriftpy import load
-    from thriftpy.protocol.binary import TBinaryProtocol
-    from thriftpy.transport import TSocket, TTransportException
+    from thriftpy.protocol.binary import TBinaryProtocol  # noqa
+    from thriftpy.transport import TSocket, TTransportException  # noqa
     # TODO: reenable cython
     # from thriftpy.transport import TBufferedTransport
-    from thriftpy.transport.buffered import TBufferedTransport
+    from thriftpy.transport.buffered import TBufferedTransport  # noqa
     thrift_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                               'thrift')
 

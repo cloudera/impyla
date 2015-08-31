@@ -525,6 +525,7 @@ def _parse_timestamp(value):
 
 # TODO: Add another decorator that runs the function in its own thread
 def threaded(func):
+    # pylint: disable=unused-argument
     raise NotImplementedError
 
 
@@ -533,6 +534,7 @@ def retry(func):
     # `service` must be the first arg in args or must be a kwarg
 
     def wrapper(*args, **kwargs):
+        # pylint: disable=protected-access
         # get the thrift transport
         if 'service' in kwargs:
             transport = kwargs['service']._iprot.trans
@@ -556,11 +558,9 @@ def retry(func):
             except socket.error:
                 log.exception('Failed to open transport (tries_left=%s)',
                               tries_left)
-                pass
             except TTransportException:
                 log.exception('Failed to open transport (tries_left=%s)',
                               tries_left)
-                pass
             except Exception:
                 raise
             log.debug('Closing transport (tries_left=%s)', tries_left)
@@ -597,11 +597,13 @@ def connect(host, port, timeout=45, use_ssl=False, ca_cert=None,
 
 
 def close_service(service):
+    # pylint: disable=protected-access
     log.debug('close_service: service=%s', service)
     service._iprot.trans.close()
 
 
 def reconnect(service):
+    # pylint: disable=protected-access
     log.debug('reconnect: service=%s', service)
     service._iprot.trans.close()
     service._iprot.trans.open()
@@ -654,6 +656,7 @@ def get_result_schema(service, operation_handle):
 
     schema = []
     for column in resp.schema.columns:
+        # pylint: disable=protected-access
         name = column.columnName
         entry = column.typeDesc.types[0].primitiveEntry
         type_ = TTypeId._VALUES_TO_NAMES[entry.type].split('_')[0]
@@ -674,6 +677,7 @@ def get_result_schema(service, operation_handle):
 @retry
 def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                   max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
+    # pylint: disable=too-many-locals,too-many-branches,protected-access
     if not operation_handle.hasResultSet:
         log.debug('fetch_results: operation_handle.hasResultSet=False')
         return None
@@ -756,6 +760,7 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
 
 @retry
 def get_current_database(service, session_handle):
+    # pylint: disable=unused-argument
     raise NotImplementedError
 
 
@@ -849,6 +854,7 @@ def get_functions(service, session_handle, database_name='.*'):
 
 @retry
 def get_operation_status(service, operation_handle):
+    # pylint: disable=protected-access
     req = TGetOperationStatusReq(operationHandle=operation_handle)
     log.debug('get_operation_status: req=%s', req)
     resp = service.GetOperationStatus(req)
@@ -945,6 +951,8 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     Returns the index of the next exec node in summary.exec_nodes that should
     be processed, used internally to this method only.
     """
+    # pylint: disable=too-many-locals
+
     attrs = ["latency_ns", "cpu_time_ns", "cardinality", "memory_used"]
 
     # Initialise aggregate and maximum stats
@@ -1029,6 +1037,8 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
         first_child_output = []
         idx = build_summary_table(summary, idx, False, indent_level,
                                   first_child_output)
+        # pylint: disable=unused-variable
+        # TODO: is child_idx supposed to be unused?  See #120
         for child_idx in range(1, node.num_children):
             # All other children are indented (we only have 0, 1 or 2 children
             # for every exec node at the moment)

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=unused-import
+
 import os
 import sys
 import six
@@ -33,7 +35,7 @@ if six.PY2:
 if six.PY3:
     # import thriftpy code
     from thriftpy import load
-    from thriftpy.thrift import TClient, TApplicationException
+    from thriftpy.thrift import TClient, TApplicationException  # noqa
 
     # dynamically load the beeswax modules
     from impala._thrift_api import thrift_dir
@@ -51,9 +53,9 @@ if six.PY3:
     sys.modules[beeswax.__name__] = beeswax
 
     # import the beeswax objects
-    from ExecStats import TExecStats
-    from Status import TStatus, TStatusCode
-    from ImpalaService import ImpalaService
-    from beeswax import QueryState
-    import beeswax as BeeswaxService
+    from ExecStats import TExecStats  # noqa
+    from Status import TStatus, TStatusCode  # noqa
+    from ImpalaService import ImpalaService  # noqa
+    from beeswax import QueryState  # noqa
+    import beeswax as BeeswaxService  # noqa
     ThriftClient = TClient

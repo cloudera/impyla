@@ -56,7 +56,7 @@ class BeeswaxConnection(Connection):
         # PEP 249
         raise NotSupportedError
 
-    def cursor(self, user=None, configuration=None):
+    def cursor(self, session_handle=None, user=None, configuration=None):
         # PEP 249
         if user is None:
             user = getpass.getuser()
@@ -77,6 +77,7 @@ class BeeswaxCursor(Cursor):
     # Beeswax does not support sessions
 
     def __init__(self, service, user):
+        # pylint: disable=protected-access
         self.service = service
         self.user = user
 
@@ -305,7 +306,7 @@ class BeeswaxCursor(Cursor):
             summary, idx, is_fragment_root, indent_level, output)
 
 
-class RpcStatus:
+class RpcStatus(object):
     """Convenience enum to describe Rpc return statuses"""
     OK = 0
     ERROR = 1
@@ -323,7 +324,7 @@ def build_default_query_options_dict(service):
     # impalad.
     try:
         get_default_query_options = service.get_default_configuration(False)
-    except:
+    except:  # pylint: disable=bare-except
         return {}
     rpc_result = __do_rpc(lambda: get_default_query_options)
     options, status = rpc_result
@@ -354,6 +355,8 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     Returns the index of the next exec node in summary.exec_nodes that should
     be processed, used internally to this method only.
     """
+    # pylint: disable=too-many-locals
+
     attrs = ["latency_ns", "cpu_time_ns", "cardinality", "memory_used"]
 
     # Initialise aggregate and maximum stats
@@ -438,6 +441,8 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
         first_child_output = []
         idx = build_summary_table(summary, idx, False, indent_level,
                                   first_child_output)
+        # pylint: disable=unused-variable
+        # TODO: is child_idx supposed to be unused?  See #120
         for child_idx in range(1, node.num_children):
             # All other children are indented (we only have 0, 1 or 2 children
             # for every exec node at the moment)
@@ -476,10 +481,11 @@ def ping(service):
 
 
 def close_service(service):
-    service._iprot.trans.close()
+    service._iprot.trans.close()  # pylint: disable=protected-access
 
 
 def reconnect(service):
+    # pylint: disable=protected-access
     service._iprot.trans.close()
     service._iprot.trans.open()
 
