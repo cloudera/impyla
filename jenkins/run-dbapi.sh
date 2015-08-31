@@ -34,10 +34,11 @@ printenv
 mkdir -p /tmp/impyla-dbapi
 TMP_DIR=$(mktemp -d -p /tmp/impyla-dbapi tmpXXXX)
 
-function cleanup {
+function cleanup_tmp_dir {
+    cd ~
     rm -rf $TMP_DIR
 }
-trap cleanup EXIT
+trap cleanup_tmp_dir EXIT
 
 cd $TMP_DIR
 
@@ -83,12 +84,28 @@ pip install $IMPYLA_HOME
 python --version
 which python
 
-python -c "from impala.tests.util import ImpylaTestEnv; print(ImpylaTestEnv())"
-
 if [ $IMPYLA_TEST_AUTH_MECH != "NOSASL" ]; then
     pip install git+https://github.com/laserson/python-sasl.git@cython
+
+    # CLOUDERA INTERNAL JENKINS/KERBEROS CONFIG
+    # impyla tests create databases, so we need to give systest the requisite
+    # privileges
+    kinit -l 4h -kt /cdep/keytabs/hive.keytab hive
+    sudo -u hive PYTHON_EGG_CACHE=/dev/null impala-shell -k -q "GRANT ALL ON SERVER TO ROLE cdep_default_admin WITH GRANT OPTION"
+    kdestroy
+
+    function cleanup_sentry_roles {
+        cleanup_tmp_dir  # only one command per trapped signal
+        kinit -l 4h -kt /cdep/keytabs/hive.keytab hive
+        sudo -u hive PYTHON_EGG_CACHE=/dev/null impala-shell -k -q "REVOKE ALL ON SERVER FROM ROLE cdep_default_admin"
+        kdestroy
+    }
+    trap cleanup_sentry_roles EXIT
+
     kinit -l 4h -kt /cdep/keytabs/systest.keytab systest
 fi
+
+python -c "from impala.tests.util import ImpylaTestEnv; print(ImpylaTestEnv())"
 
 cd $IMPYLA_HOME
 
