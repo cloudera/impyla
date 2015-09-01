@@ -26,6 +26,8 @@ set -x
 #   GIT_BRANCH
 # and for pulling in a pull request
 #   GITHUB_PR
+# For reporting to codecov.io, set
+#   CODECOV_TOKEN
 
 printenv
 
@@ -72,7 +74,9 @@ conda info -a
 CONDA_ENV_NAME=pyenv-impyla-dbapi-test
 conda create -y -q -n $CONDA_ENV_NAME python=$PYTHON_VERSION
 source activate $CONDA_ENV_NAME
-pip install unittest2 thriftpy sqlalchemy pytest prospector[with_pyroma]
+pip install thriftpy sqlalchemy
+pip install unittest2 pytest-cov codecov prospector[with_pyroma]
+
 # build impyla
 pip install $IMPYLA_HOME
 
@@ -87,7 +91,14 @@ if [ $IMPYLA_TEST_AUTH_MECH != "NOSASL" ]; then
 fi
 
 # Run PEP 249 testing suite
-py.test --connect $IMPYLA_HOME/impala
+py.test --connect \
+    --coverage $IMPYLA_HOME/impala \
+    $IMPYLA_HOME/impala
 
 # Enforce PEP 8 etc
 prospector $IMPYLA_HOME
+
+# Report code coverage to codecov.io
+if [ -n $CODECOV_TOKEN ]; then
+    codecov --token=$CODECOV_TOKEN
+fi
