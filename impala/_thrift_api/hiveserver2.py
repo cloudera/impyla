@@ -20,6 +20,7 @@ import six
 
 
 if six.PY2:
+    # pylint: disable=import-error
     # import HS2 codegen objects
     from impala._thrift_gen.TCLIService.ttypes import (
         TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,

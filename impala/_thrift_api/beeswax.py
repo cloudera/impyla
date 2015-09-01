@@ -20,6 +20,7 @@ import six
 
 
 if six.PY2:
+    # pylint: disable=import-error
     # import Apache Thrift code
     from thrift.Thrift import TApplicationException
 

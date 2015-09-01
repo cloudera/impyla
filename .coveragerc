@@ -5,6 +5,8 @@ omit: impala/tests*,
       impala/udf/*,
       impala/sklearn.py,
       impala/blob.py,
-      impala/bdf.py
-      impala/_sql_model.py
-      impala/context.py
+      impala/bdf.py,
+      impala/_sql_model.py,
+      impala/context.py,
+      impala/beeswax.py,
+      impala/_thrift_api/beeswax.py

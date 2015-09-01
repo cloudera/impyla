@@ -27,6 +27,7 @@ log = get_logger_and_init_null(__name__)
 
 
 if six.PY2:
+    # pylint: disable=import-error
     # import Apache Thrift code
     from thrift.transport.TSocket import TSocket
     from thrift.transport.TTransport import (
@@ -54,6 +55,7 @@ def get_socket(host, port, use_ssl, ca_cert):
               host, port, use_ssl, ca_cert)
 
     if use_ssl:
+        # pylint: disable=import-error
         from thrift.transport.TSSLSocket import TSSLSocket
         if ca_cert is None:
             return TSSLSocket(host, port, validate=False)
@@ -93,8 +95,9 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
             log.debug('get_transport: password=%s', password)
 
     # Initializes a sasl client
-    import sasl
+    import sasl  # pylint: disable=import-error
     from thrift_sasl import TSaslClientTransport
+
     def sasl_factory():
         sasl_client = sasl.Client()
         sasl_client.setAttr('host', host)
@@ -104,4 +107,5 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
             sasl_client.setAttr('password', password)
         sasl_client.init()
         return sasl_client
+
     return TSaslClientTransport(sasl_factory, auth_mechanism, socket)

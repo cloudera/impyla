@@ -40,7 +40,7 @@ log = get_logger_and_init_null(__name__)
 
 
 def as_pandas(cursor):
-    from pandas import DataFrame
+    from pandas import DataFrame  # pylint: disable=import-error
     names = [metadata[0] for metadata in cursor.description]
     return DataFrame.from_records(cursor.fetchall(), columns=names)
 

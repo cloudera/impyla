@@ -90,21 +90,21 @@ if [ $IMPYLA_TEST_AUTH_MECH != "NOSASL" ]; then
     kinit -l 4h -kt /cdep/keytabs/systest.keytab systest
 fi
 
+cd $IMPYLA_HOME
+
 # Run PEP 249 testing suite
 py.test --connect \
-    --cov $IMPYLA_HOME/impala \
+    --cov impala \
     --cov-report xml --cov-report term \
-    --cov-config $IMPYLA_HOME/.coveragerc \
-    $IMPYLA_HOME/impala
+    --cov-config .coveragerc \
+    impala
 
 # Enforce PEP 8 etc
 if [ $PYTHON_VERSION != "2.6" ]; then
-    prospector $IMPYLA_HOME
+    prospector
 fi
 
 # Report code coverage to codecov.io
 if [ -n $CODECOV_TOKEN ]; then
-    pushd $IMPYLA_HOME
     bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
-    popd
 fi
