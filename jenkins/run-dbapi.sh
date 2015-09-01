@@ -94,15 +94,17 @@ fi
 py.test --connect \
     --cov $IMPYLA_HOME/impala \
     --cov-report xml --cov-report term \
-    --cov-config $IMPYLA_HOME/.coveragerc
+    --cov-config $IMPYLA_HOME/.coveragerc \
     $IMPYLA_HOME/impala
 
 # Enforce PEP 8 etc
-prospector $IMPYLA_HOME
+if [ $PYTHON_VERSION != "2.6" ]; then
+    prospector $IMPYLA_HOME
+fi
 
 # Report code coverage to codecov.io
 if [ -n $CODECOV_TOKEN ]; then
     pushd $IMPYLA_HOME
-    codecov --token=$CODECOV_TOKEN
+    bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
     popd
 fi
