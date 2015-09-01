@@ -92,7 +92,7 @@ fi
 
 # Run PEP 249 testing suite
 py.test --connect \
-    --coverage $IMPYLA_HOME/impala \
+    --cov $IMPYLA_HOME/impala \
     $IMPYLA_HOME/impala
 
 # Enforce PEP 8 etc
