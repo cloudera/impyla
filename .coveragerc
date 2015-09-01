@@ -1,0 +1,10 @@
+[run]
+branch: True
+omit: impala/tests*,
+      impala/_thrift_gen/*,
+      impala/udf/*,
+      impala/sklearn.py,
+      impala/blob.py,
+      impala/bdf.py
+      impala/_sql_model.py
+      impala/context.py

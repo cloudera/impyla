@@ -93,6 +93,8 @@ fi
 # Run PEP 249 testing suite
 py.test --connect \
     --cov $IMPYLA_HOME/impala \
+    --cov-report xml --cov-report term \
+    --cov-config $IMPYLA_HOME/.coveragerc
     $IMPYLA_HOME/impala
 
 # Enforce PEP 8 etc
@@ -100,5 +102,7 @@ prospector $IMPYLA_HOME
 
 # Report code coverage to codecov.io
 if [ -n $CODECOV_TOKEN ]; then
+    pushd $IMPYLA_HOME
     codecov --token=$CODECOV_TOKEN
+    popd
 fi
