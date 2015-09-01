@@ -758,7 +758,7 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
     return rows
 
 
-@retry
+@retry  # pylint: disable=unused-argument
 def get_current_database(service, session_handle):
     # pylint: disable=unused-argument
     raise NotImplementedError

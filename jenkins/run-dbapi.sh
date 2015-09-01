@@ -75,7 +75,7 @@ CONDA_ENV_NAME=pyenv-impyla-dbapi-test
 conda create -y -q -n $CONDA_ENV_NAME python=$PYTHON_VERSION
 source activate $CONDA_ENV_NAME
 pip install thriftpy sqlalchemy
-pip install unittest2 pytest-cov codecov prospector[with_pyroma]
+pip install unittest2 pytest-cov
 
 # build impyla
 pip install $IMPYLA_HOME
@@ -101,6 +101,7 @@ py.test --connect \
 
 # Enforce PEP 8 etc
 if [ $PYTHON_VERSION != "2.6" ]; then
+    pip install prospector[with_pyroma]
     prospector
 fi
 
