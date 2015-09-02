@@ -98,7 +98,7 @@ def drop_view(cursor, view_name):
     cursor.execute("DROP VIEW %s" % view_name)
 
 
-def force_drop_database(cursor, database):
+def force_drop_impala_database(cursor, database):
     cursor.execute('USE %s' % database)
     cursor.execute('SHOW TABLES')
     tables = [x[0] for x in cursor.fetchall()]
@@ -115,6 +115,11 @@ def force_drop_database(cursor, database):
                        database, uda))
     cursor.execute('USE default')
     cursor.execute('DROP DATABASE IF EXISTS %s' % database)
+
+
+def force_drop_hive_database(cursor, database):
+    cursor.execute('USE default')
+    cursor.execute('DROP DATABASE IF EXISTS {0} CASCADE'.format(database))
 
 
 def _escape(s):

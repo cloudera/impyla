@@ -85,8 +85,11 @@ python --version
 which python
 
 if [ $IMPYLA_TEST_AUTH_MECH != "NOSASL" ]; then
+    # Hive and Kerberos all need sasl installed
     pip install git+https://github.com/laserson/python-sasl.git@cython
+fi
 
+if [ $IMPYLA_TEST_AUTH_MECH = "GSSAPI" -o $IMPYLA_TEST_AUTH_MECH = "LDAP" ]; then
     # CLOUDERA INTERNAL JENKINS/KERBEROS CONFIG
     # impyla tests create databases, so we need to give systest the requisite
     # privileges

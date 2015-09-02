@@ -25,13 +25,15 @@ import pytest
 
 import impala.dbapi
 from impala.tests.util import ImpylaTestEnv
-from impala.util import _random_id, force_drop_database
+from impala.util import (
+    _random_id, force_drop_impala_database, force_drop_hive_database)
 # must import the module, rather than the class, per comment in module
 from impala.tests import _dbapi20_tests
 
 
 ENV = ImpylaTestEnv()
 tmp_db = _random_id('tmp_impyla_dbapi_')
+hive = ENV.auth_mech == 'PLAIN'
 
 
 @pytest.mark.connect
@@ -61,7 +63,10 @@ class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
         con = cls.driver.connect(host=ENV.host, port=ENV.port,
                                  auth_mechanism=ENV.auth_mech)
         cur = con.cursor()
-        force_drop_database(cur, tmp_db)
+        if hive:
+            force_drop_hive_database(cur, tmp_db)
+        else:
+            force_drop_impala_database(cur, tmp_db)
         cur.close()
         con.close()
 
@@ -70,3 +75,24 @@ class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
 
     def test_setoutputsize(self):
         pass
+
+    # The following tests fail against Hive. We override them so we can skip on
+    # Hive, and otherwise execute the superclass version.
+
+    HIVE_STRING_ESCAPE_ERROR = 'HIVE-11723'
+
+    @pytest.mark.skipif(hive, reason=HIVE_STRING_ESCAPE_ERROR)
+    def test_execute(self):
+        super(ImpalaDBAPI20Test, self).test_execute()
+
+    @pytest.mark.skipif(hive, reason=HIVE_STRING_ESCAPE_ERROR)
+    def test_executemany(self):
+        super(ImpalaDBAPI20Test, self).test_executemany()
+
+    @pytest.mark.skipif(hive, reason=HIVE_STRING_ESCAPE_ERROR)
+    def test_setinputsizes(self):
+        super(ImpalaDBAPI20Test, self).test_setinputsizes()
+
+    @pytest.mark.skipif(hive, reason=HIVE_STRING_ESCAPE_ERROR)
+    def test_setoutputsize_basic(self):
+        super(ImpalaDBAPI20Test, self).test_setoutputsize_basic()

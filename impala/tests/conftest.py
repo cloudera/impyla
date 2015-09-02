@@ -19,7 +19,8 @@ import logging
 from pytest import fixture, yield_fixture, skip
 
 from impala.dbapi import connect
-from impala.util import _random_id, force_drop_database
+from impala.util import (
+    _random_id, force_drop_impala_database, force_drop_hive_database)
 from impala.tests.util import ImpylaTestEnv
 
 
@@ -57,6 +58,7 @@ def pytest_runtest_setup(item):
 
 
 ENV = ImpylaTestEnv()
+hive = ENV.auth_mech == 'PLAIN'
 
 
 @fixture(scope='session')
@@ -97,7 +99,10 @@ def con(host, port, auth_mech, tmp_db):
     # cleanup the temporary database
     con = connect(host=host, port=port, auth_mechanism=auth_mech)
     cur = con.cursor()
-    force_drop_database(cur, tmp_db)
+    if hive:
+        force_drop_hive_database(cur, tmp_db)
+    else:
+        force_drop_impala_database(cur, tmp_db)
     cur.close()
     con.close()
 
