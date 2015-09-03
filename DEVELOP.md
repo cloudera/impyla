@@ -66,7 +66,7 @@ readme (under "Installation")
     python setup.py register sdist bdist_egg upload
     ```
 
-6. If working on master, bump up to the next anticipated version with a `-dev`
+6. If working on master, bump up to the next anticipated version with a `.dev0`
 tag and commit
 
 
