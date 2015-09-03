@@ -53,9 +53,9 @@ readme (under "Installation")
     ```bash
     git push upstream vX.Y.Z
     ```
-    
+
     or
-    
+
     ```bash
     git push upstream --tags
     ```
