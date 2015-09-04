@@ -46,7 +46,7 @@ elif PY3:
 
 setup(
     name='impyla',
-    version='0.11.1',
+    version='0.11.2',
     description='Python client for the Impala distributed query engine',
     long_description=readme(),
     author='Uri Laserson',

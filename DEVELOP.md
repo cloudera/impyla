@@ -40,7 +40,7 @@ Copy a fresh copy of the `udf.h` header file
 
 2. Set the release version in `setup.py` (remove the `.dev0` tag if applicable)
 and commit the version number change.  Also set the new version number in the
-readme (under "Installation")
+readme (under "Installation") and update accordingly.
 
 3. Tag version number and summarize changes in the tag message
 

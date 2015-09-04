@@ -1,87 +1,70 @@
 # impyla
 
-Python client for the Impala distributed query engine.
+Python client for Impala/Hive distributed query engine.
 
 
 ### Features
 
-Fully implemented:
-
-* Lightweight, `pip`-installable package for connecting to Impala databases
+* Lightweight, `pip`-installable package for connecting to Impala and Hive
+  databases
 
 * Fully [DB API 2.0 (PEP 249)][pep249]-compliant Python client (similar to
-sqlite or MySQL clients) supporting Python 2 and Python 3.
+sqlite or MySQL clients) supporting Python 2.6+ and Python 3.3+.
 
-* Runs on HiveServer2 and Beeswax; runs with Kerberos
+* Connects to HiveServer2; runs with Kerberos, LDAP, SSL
+
+* [SQLAlchemy][sqlalchemy] connector
 
 * Converter to [pandas][pandas] `DataFrame`, allowing easy integration into the
 Python data stack (including [scikit-learn][sklearn] and
 [matplotlib][matplotlib])
 
-In various phases of maturity:
 
-* SQLAlchemy connector; integration with Blaze
+#### Deprecated functionality
 
-* `BigDataFrame` abstraction for performing `pandas`-style analytics on large
-datasets (similar to Spark's RDD abstraction); computation is pushed into the
-Impala engine.
+These features will be removed in a future release.
 
-* `scikit-learn`-flavored wrapper for [MADlib][madlib]-style prediction,
-allowing for large-scale, distributed machine learning (see
-[the Impala port of MADlib][madlibport])
+* `BigDataFrame`
 
-* Compiling UDFs written in Python into low-level machine code for execution by
-Impala (powered by [Numba][numba]/[LLVM][llvm])
+* beeswax support
+
+* scikit-learn wrapper
+
+* numba-compiled Python UDFs
+
+See the [Ibis project][ibis] for continued development of these higher-level
+features.
 
 
 ### Dependencies
 
-Required for DB API connectivity:
+Required:
 
 * Python 2.6+ or 3.3+
 
 * `six`
 
-* `thrift>=0.8` (Python package only; no need for code-gen) for Python 2, or
-`thriftpy` for Python 3
-
 * `thrift_sasl`
 
-Required for UDFs:
+* `bit_array`
 
-* `numba<=0.13.4` (which has a few requirements, like LLVM)
+* `thrift` (on Python 2.x) or `thriftpy` (on Python 3.x)
 
-* `boost` (because `udf.h` depends on `boost/cstdint.hpp`)
+Optional:
 
-Required for SQLAlchemy integration (and Blaze):
+* `pandas` for conversion to `DataFrame` objects
 
-* `sqlalchemy`
+* `python-sasl` for Kerberos support (for Python 3.x support, requires
+  laserson/python-sasl@cython)
 
-Required for `BigDataFrame`:
+* `sqlalchemy` for the SQLAlchemy engine
 
-* `pandas`
+* `pytest` for running tests; `unittest2` for testing on Python 2.6
 
-Required for Kerberos support:
-
-* `python-sasl` (for Python 3 support, requires laserson/python-sasl@cython)
-
-Required for utilizing automated shipping/registering of code/UDFs/BDFs/etc:
-
-* `hdfs[kerberos]` (a Python client that wraps WebHDFS; kerberos is optional)
-
-For manipulating results as pandas `DataFrame`s, we recommend installing pandas
-regardless.
-
-Generally, we recommend installing all the libraries above; the UDF libraries
-will be the most difficult, and are not required if you will not use any Python
-UDFs.  Interacting with Impala using the `ImpalaContext` will simplify shipping
-data and will perform cleanup on temporary data/tables.
-
-This project is installed with `setuptools`.
 
 ### Installation
 
-Install the latest release (`0.10.0`) with `pip`:
+Install the latest release (`0.11.1`) with `pip`:
 
 ```bash
 pip install impyla
@@ -90,35 +73,36 @@ pip install impyla
 For the latest (dev) version, clone the repo:
 
 ```bash
+pip install git+https://github.com/cloudera/impyla.git
+```
+
+or clone the repo:
+
+```bash
 git clone https://github.com/cloudera/impyla.git
 cd impyla
-make # optional: only for Numba-compiled UDFs; requires LLVM/clang
 python setup.py install
 ```
 
 #### Running the tests
 
-impyla uses the [pytest][pytest] toolchain, and depends on the following environment
-variables:
+impyla uses the [pytest][pytest] toolchain, and depends on the following
+environment variables:
 
 ```bash
-export IMPALA_HOST=your.impalad.com
-# beeswax might work here too
-export IMPALA_PORT=21050
-export IMPALA_PROTOCOL=hiveserver2
-# needed to push data to the cluster
-export NAMENODE_HOST=bottou01-10g.pa.cloudera.com
-export WEBHDFS_PORT=50070
+export IMPYLA_TEST_HOST=your.impalad.com
+export IMPYLA_TEST_PORT=21050
+export IMPYLA_TEST_AUTH_MECH=NOSASL
 ```
 
 To run the maximal set of tests, run
 
 ```bash
-py.test --dbapi-compliance path/to/impyla/impala/tests
+cd path/to/impyla
+py.test --connect impyla
 ```
 
-Leave out the `--dbapi-compliance` option to skip tests for DB API compliance.
-Add a `--udf` option to only run local UDF compilation tests.
+Leave out the `--connect` option to skip tests for DB API compliance.
 
 
 ### Quickstart
@@ -135,10 +119,6 @@ print cursor.description # prints the result set's schema
 results = cursor.fetchall()
 ```
 
-**Note**: if connecting to Impala through the *HiveServer2* service, make sure
-to set the port to the HiveServer2 port (defaults to 21050 in CM), not Beeswax
-(defaults to 21000) which is what the Impala shell uses.
-
 The `Cursor` object also exposes the iterator interface, which is buffered
 (controlled by `cursor.arraysize`):
 
@@ -149,7 +129,7 @@ for row in cursor:
 ```
 
 You can also get back a pandas DataFrame object
-    
+
 ```python
 from impala.util import as_pandas
 df = as_pandas(cur)
@@ -166,3 +146,5 @@ df = as_pandas(cur)
 [numba]: http://numba.pydata.org/
 [llvm]: http://llvm.org/
 [pytest]: http://pytest.org/latest/
+[sqlalchemy]: http://www.sqlalchemy.org/
+[ibis]: http://www.ibis-project.org/
