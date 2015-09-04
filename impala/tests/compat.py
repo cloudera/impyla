@@ -14,17 +14,10 @@
 
 # pylint: disable=unused-import
 
-import six
+import sys
 
-if six.PY3:
-    def lzip(*x):
-        return list(zip(*x))
 
-    from decimal import Decimal
-elif six.PY2:
-    lzip = zip
-
-    try:
-        from cdecimal import Decimal
-    except ImportError:
-        from decimal import Decimal  # noqa
+if sys.version_info[:2] <= (2, 6):
+    import unittest2 as unittest
+else:
+    import unittest  # noqa
