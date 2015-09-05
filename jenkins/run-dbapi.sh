@@ -73,7 +73,7 @@ conda info -a
 
 # Install impyla and deps into new environment
 CONDA_ENV_NAME=pyenv-impyla-dbapi-test
-conda create -y -q -n $CONDA_ENV_NAME python=$PYTHON_VERSION
+conda create -y -q -n $CONDA_ENV_NAME python=$PYTHON_VERSION pip
 source activate $CONDA_ENV_NAME
 pip install thriftpy sqlalchemy
 pip install unittest2 pytest-cov
