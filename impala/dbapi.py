@@ -40,7 +40,7 @@ paramstyle = 'pyformat'
 
 
 def connect(host='localhost', port=21050, protocol=None,
-            database=None, timeout=45, use_ssl=False, ca_cert=None,
+            database=None, timeout=None, use_ssl=False, ca_cert=None,
             auth_mechanism='NOSASL', user=None, password=None,
             kerberos_service_name='impala', use_ldap=None, ldap_user=None,
             ldap_password=None, use_kerberos=None):

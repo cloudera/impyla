@@ -452,14 +452,16 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     return idx
 
 
-def connect(host, port, timeout=45, use_ssl=False, ca_cert=None,
+def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
             auth_mechanism=None):
     sock = get_socket(host, port, use_ssl, ca_cert)
+    if timeout is not None:
+        timeout = timeout * 1000.  # TSocket expects millis
     if six.PY2:
-        sock.setTimeout(timeout * 1000.)
+        sock.setTimeout(timeout)
     elif six.PY3:
-        sock.set_timeout(timeout * 1000.)
+        sock.set_timeout(timeout)
     transport = get_transport(sock, host, kerberos_service_name,
                               auth_mechanism, user, password)
     transport.open()
