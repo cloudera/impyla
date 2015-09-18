@@ -36,9 +36,7 @@ reqs = ['six', 'thrift_sasl', 'bitarray']
 packages = find_packages(exclude=['impala._thrift_gen',
                                   'impala._thrift_gen.*'])
 if PY2:
-    apache_thrift_pkgs = find_packages(include=['impala._thrift_gen',
-                                                'impala._thrift_gen.*'])
-    packages.extend(apache_thrift_pkgs)
+    packages = find_packages()  # This time including apache thrift packages
     reqs.append('thrift')
 elif PY3:
     reqs.append('thriftpy')
