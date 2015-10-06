@@ -178,37 +178,42 @@ class Cursor(object):
 
 def _replace_numeric_markers(operation, string_parameters):
     """
-    Replaces qname and numeric markers in the given operation, from
+    Replaces qname, format, and numeric markers in the given operation, from
     the string_parameters list.
+
     Raises ProgrammingError on wrong number of parameters or bindings
     when using qmark. There is no error checking on numeric parameters.
     """
-    # replace qmark parameters
-    param_count = len(string_parameters)
-    qmark_index = 0
-    while operation.find('?') > -1:
-        if qmark_index < param_count:
-            operation = operation.replace('?',
-                                          string_parameters[qmark_index],
-                                          1)
-            qmark_index += 1
-        else:
+    def replace_markers(marker, op, parameters):
+        param_count = len(parameters)
+        marker_index = 0
+        while op.find(marker) > -1:
+            if marker_index < param_count:
+                op = op.replace(marker, parameters[marker_index], 1)
+                marker_index += 1
+            else:
+                raise ProgrammingError("Incorrect number of bindings "
+                                       "supplied. The current statement uses "
+                                       "%d or more, and there are %d "
+                                       "supplied." % (marker_index + 1,
+                                                      param_count))
+        if marker_index != 0 and marker_index != param_count:
             raise ProgrammingError("Incorrect number of bindings "
                                    "supplied. The current statement uses "
                                    "%d or more, and there are %d supplied." %
-                                   (qmark_index+1, param_count))
-    if qmark_index != 0 and qmark_index != param_count:
-        raise ProgrammingError("Incorrect number of bindings "
-                               "supplied. The current statement uses "
-                               "%d or more, and there are %d supplied." %
-                               (qmark_index+1, param_count))
+                                   (marker_index + 1, param_count))
+        return op
+
+    # replace qmark parameters and format parameters
+    operation = replace_markers('?', operation, string_parameters)
+    operation = replace_markers(r'%s', operation, string_parameters)
 
     # replace numbered parameters
     # Go through them backwards so smaller numbers don't replace
     # parts of larger ones
-    for index in range(param_count, 0, -1):
+    for index in xrange(len(string_parameters), 0, -1):
         operation = operation.replace(':' + str(index),
-                                      string_parameters[index-1])
+                                      string_parameters[index - 1])
     return operation
 
 

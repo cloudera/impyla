@@ -198,6 +198,49 @@ def test_qmark():
             dt("should have raised exception", q[0], q[1])
 
 
+def test_format():
+    dt("select * from test where int = 1",
+       "select * from test where int = %s",
+       [1])
+    dt("select * from test where str = 'foo'",
+       "select * from test where str = %s",
+       ["foo"])
+    dt("select * from test where flt = 0.123",
+       "select * from test where flt = %s",
+       [0.123])
+    dt("select * from test where nul = NULL",
+       "select * from test where nul = %s",
+       [None])
+    dt("select * from test where int = 1 and str = 'foo' and " +
+       "flt = 0.123 and nul = NULL",
+       "select * from test where int = %s and str = " +
+       "%s and flt = %s and nul = %s",
+       [1, "foo", 0.123, None])
+    # no spaces around =
+    # characters around them
+    dt("select * from test where int=1 and str='foo' and " +
+       "flt=(0.123) and nul=NULL",
+       "select * from test where int=%s and str=" +
+       "%s and flt=(%s) and nul=%s",
+       [1, "foo", 0.123, None])
+    # tuple instead of list
+    dt("select * from test where int=1 and str='foo' and " +
+       "flt=0.123 and nul=NULL",
+       "select * from test where int=%s and str=" +
+       "%s and flt=%s and nul=%s",
+       (1, "foo", 0.123, None))
+    # bad number of bindings
+    bad_bindings = [
+        ("select * from test where int = %s", []),
+        ("select * from test where int = %s or int = %s", [1]),
+        ("select * from test where int = %s", [1, 2]),
+        ("select * from test where int = %s or int = %s or int = %s",
+         [1, 2, 3, 4])]
+    for q in bad_bindings:
+        with raises(ProgrammingError):
+            dt("should have raised exception", q[0], q[1])
+
+
 def test_bad_argument_type():
     with raises(ProgrammingError):
         _bind_parameters("select * from test", 1)
