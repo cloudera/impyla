@@ -211,7 +211,7 @@ def _replace_numeric_markers(operation, string_parameters):
     # replace numbered parameters
     # Go through them backwards so smaller numbers don't replace
     # parts of larger ones
-    for index in xrange(len(string_parameters), 0, -1):
+    for index in range(len(string_parameters), 0, -1):
         operation = operation.replace(':' + str(index),
                                       string_parameters[index - 1])
     return operation
