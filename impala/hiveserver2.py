@@ -167,6 +167,13 @@ class HiveServer2Cursor(Cursor):
 
     def close(self):
         # PEP 249
+        # If an operation is active and isn't closed before the session is
+        # closed, then the server will cancel the operation upon closing
+        # the session. Cancellation could be problematic for some DDL
+        # operations. This avoids requiring the user to call the non-PEP 249
+        # close_operation().
+        self.close_operation()
+
         log.info('Closing HiveServer2Cursor')
         close_session(self.service, self.session_handle)
 

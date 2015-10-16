@@ -133,7 +133,12 @@ class BeeswaxCursor(Cursor):
 
     def close(self):
         # PEP 249
-        pass
+        # If an operation is active and isn't closed before the session is
+        # closed, then the server will cancel the operation upon closing
+        # the session. Cancellation could be problematic for some DDL
+        # operations. This avoids requiring the user to call the non-PEP 249
+        # close_operation().
+        self.close_operation()
 
     def cancel_operation(self):
         if self._last_operation_active:
