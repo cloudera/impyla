@@ -24,9 +24,7 @@ from impala.error import (  # noqa
     Error, Warning, InterfaceError, DatabaseError, InternalError,
     OperationalError, ProgrammingError, IntegrityError, DataError,
     NotSupportedError)
-from impala.util import (
-    warn_deprecate_hs2, warn_deprecate, warn_deprecate_protocol)
-import impala.beeswax as beeswax
+from impala.util import warn_deprecate, warn_deprecate_protocol
 import impala.hiveserver2 as hs2
 
 
@@ -81,14 +79,6 @@ def connect(host='localhost', port=21050, protocol=None,
                               kerberos_service_name=kerberos_service_name,
                               auth_mechanism=auth_mechanism)
         return hs2.HiveServer2Connection(service, default_db=database)
-    if protocol.lower() == 'beeswax':
-        warn_deprecate_hs2()
-        service = beeswax.connect(host=host, port=port, timeout=timeout,
-                                  use_ssl=use_ssl, ca_cert=ca_cert,
-                                  user=user, password=password,
-                                  kerberos_service_name=kerberos_service_name,
-                                  auth_mechanism=auth_mechanism)
-        return beeswax.BeeswaxConnection(service, default_db=database)
     raise NotSupportedError("The specified protocol '%s' is not supported."
                             % protocol)
 
