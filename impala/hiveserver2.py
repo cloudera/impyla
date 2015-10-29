@@ -322,13 +322,26 @@ class HiveServer2Cursor(Cursor):
                 break
         return local_buffer
 
-    def fetchall(self):
+    def fetchall(self, columnar=False):
         # PEP 249
         log.info('Fetching all result rows')
-        try:
-            return list(self)
-        except StopIteration:
-            return []
+
+        if not columnar:
+            try:
+                return list(self)
+            except StopIteration:
+                return []
+        else:
+            batches = []
+            while True:
+                try:
+                    batch = self._fetch_batch(columnar=True)
+                    if batch.length == 0:
+                        break
+                    batches.append(batch)
+                except StopIteration:
+                    break
+            return batches
 
     def setinputsizes(self, sizes):
         # PEP 249
@@ -342,26 +355,29 @@ class HiveServer2Cursor(Cursor):
         return self
 
     def __next__(self):
-        if not self.has_result_set:
-            raise ProgrammingError(
-                "Trying to fetch results on an operation with no results.")
-        if len(self._buffer) > 0:
-            log.debug('__next__: popping row out of buffer')
-            return self._buffer.pop(0)
-        elif self._last_operation_active:
-            # self._buffer is empty here and op is active: try to pull more
-            # rows
-            log.debug('__next__: buffer empty and op is active => fetching '
-                      'more rows')
-            rows = fetch_results(self.service, self._last_operation_handle,
-                                 self.hs2_protocol_version, self.description,
-                                 self.buffersize)
+        if len(self._buffer) == 0:
+            rows = self._fetch_batch(columnar=False)
             self._buffer.extend(rows)
             if len(self._buffer) == 0:
                 log.debug('__next__: no more rows to fetch')
                 raise StopIteration
-            log.debug('__next__: popping row out of buffer')
-            return self._buffer.pop(0)
+
+        log.debug('__next__: popping row out of buffer')
+        return self._buffer.pop(0)
+
+    def _fetch_batch(self, columnar=False):
+        if not self.has_result_set:
+            raise ProgrammingError("Trying to fetch results on an operation "
+                                   "with no results.")
+        if self._last_operation_active:
+            # self._buffer is empty here and op is active: try to pull more
+            # rows
+            log.debug('fetch: buffer empty and op is active => fetching '
+                      'more rows')
+
+            return fetch_results(self.service, self._last_operation_handle,
+                                 self.hs2_protocol_version, self.description,
+                                 self.buffersize, columnar=columnar)
         else:
             # buffer is already empty
             raise StopIteration
@@ -683,29 +699,65 @@ def get_result_schema(service, operation_handle):
     return schema
 
 
-@retry
-def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
-                  max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
-    # pylint: disable=too-many-locals,too-many-branches,protected-access
-    if not operation_handle.hasResultSet:
-        log.debug('fetch_results: operation_handle.hasResultSet=False')
-        return None
+class HS2Fetch(object):
 
-    # the schema is necessary to pull the proper values (i.e., coalesce)
-    if schema is None:
-        schema = get_result_schema(service, operation_handle)
+    def __init__(self, service, operation_handle, hs2_protocol_version,
+                 schema=None, max_rows=1024,
+                 columnar=False,
+                 orientation=TFetchOrientation.FETCH_NEXT):
 
-    req = TFetchResultsReq(operationHandle=operation_handle,
-                           orientation=orientation,
-                           maxRows=max_rows)
-    log.debug('fetch_results: hs2_protocol_version=%s max_rows=%s '
-              'orientation=%s req=%s', hs2_protocol_version, max_rows,
-              orientation, req)
-    resp = service.FetchResults(req)
-    err_if_rpc_not_ok(resp)
+        if not operation_handle.hasResultSet:
+            log.debug('fetch_results: operation_handle.hasResultSet=False')
+            return None
 
-    if hs2_protocol_version == TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6:
-        tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
+        # the schema is necessary to pull the proper values (i.e., coalesce)
+        if schema is None:
+            schema = get_result_schema(service, operation_handle)
+
+        self.service = service
+        self.operation_handle = operation_handle
+        self.schema = schema
+        self.hs2_protocol_version = hs2_protocol_version
+        self.orientation = orientation
+        self.max_rows = max_rows
+
+        self.columnar = columnar
+
+    def get_results(self):
+        req = TFetchResultsReq(operationHandle=self.operation_handle,
+                               orientation=self.orientation,
+                               maxRows=self.max_rows)
+        log.debug('fetch_results: hs2_protocol_version=%s max_rows=%s '
+                  'orientation=%s req=%s',
+                  self.hs2_protocol_version, self.max_rows,
+                  self.orientation, req)
+
+        @retry
+        def rpc(service, req):
+            resp = service.FetchResults(req)
+            err_if_rpc_not_ok(resp)
+            return resp
+
+        resp = rpc(self.service, req)
+
+        if self._is_columnar_protocol():
+            if self.columnar:
+                return self._columnar_as_columns(resp)
+            else:
+                return self._columnar_as_rows(resp)
+        elif self._is_pre_columnar():
+            if self.columnar:
+                raise NotImplementedError
+            return self._non_columnar(resp)
+        else:
+            protocol_name = (TProtocolVersion._VALUES_TO_NAMES
+                             [self.hs2_protocol_version])
+            raise HiveServer2Error("Got HiveServer2 version {0}; "
+                                   "expected V1 - V6"
+                                   .format(protocol_name))
+
+    def _columnar_as_rows(self, resp):
+        tcols = [_TTypeId_to_TColumnValue_getters[self.schema[i][1]](col)
                  for (i, col) in enumerate(resp.results.columns)]
         num_cols = len(tcols)
         num_rows = len(tcols[0].values)
@@ -714,7 +766,7 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
 
         column_data = []
         for j in range(num_cols):
-            type_ = schema[j][1]
+            type_ = self.schema[j][1]
             nulls = tcols[j].nulls
             values = tcols[j].values
 
@@ -743,15 +795,54 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                         values[i] = None
             column_data.append(values)
 
-        # TODO: enable columnar fetch
-        rows = lzip(*column_data)
-    elif hs2_protocol_version in _pre_columnar_protocols:
+        return lzip(*column_data)
+
+    def _columnar_as_columns(self, resp):
+        tcols = [_TTypeId_to_TColumnValue_getters[self.schema[i][1]](col)
+                 for (i, col) in enumerate(resp.results.columns)]
+
+        num_cols = len(tcols)
+        num_rows = len(tcols[0].values)
+
+        columns = []
+        for j in range(num_cols):
+            type_ = self.schema[j][1]
+            nulls = tcols[j].nulls
+            values = tcols[j].values
+
+            # thriftpy sometimes returns unicode instead of bytes
+            if six.PY3 and isinstance(nulls, str):
+                nulls = nulls.encode('utf-8')
+
+            is_null = bitarray(endian='little')
+            is_null.frombytes(nulls)
+
+            # Ref HUE-2722, HiveServer2 sometimes does not add trailing '\x00'
+            if len(values) > len(nulls):
+                to_append = ((len(values) - len(nulls) + 7) // 8)
+                is_null.frombytes(b'\x00' * to_append)
+
+            if type_ == 'TIMESTAMP':
+                for i in range(num_rows):
+                    if not is_null[i]:
+                        values[i] = _parse_timestamp(values[i])
+            elif type_ == 'DECIMAL':
+                for i in range(num_rows):
+                    if not is_null[i]:
+                        values[i] = Decimal(values[i])
+
+            col = Column(type_, values, is_null)
+            columns.append(col)
+
+        return ColumnBatch(columns)
+
+    def _non_columnar(self, resp):
         log.debug('fetch_results: ROWS num-rows=%s', len(resp.results.rows))
         rows = []
         for trow in resp.results.rows:
             row = []
             for (i, col_val) in enumerate(trow.colVals):
-                type_ = schema[i][1]
+                type_ = self.schema[i][1]
                 value = _TTypeId_to_TColumnValue_getters[type_](col_val).value
                 if type_ == 'TIMESTAMP':
                     value = _parse_timestamp(value)
@@ -760,11 +851,42 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                         value = Decimal(value)
                 row.append(value)
             rows.append(tuple(row))
-    else:
-        raise HiveServer2Error(
-            "Got HiveServer2 version {0}; expected V1 - V6".format(
-                TProtocolVersion._VALUES_TO_NAMES[hs2_protocol_version]))
-    return rows
+        return rows
+
+    def _is_columnar_protocol(self):
+        return (self.hs2_protocol_version ==
+                TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6)
+
+    def _is_pre_columnar(self):
+        return self.hs2_protocol_version in _pre_columnar_protocols
+
+
+class ColumnBatch(object):
+
+    def __init__(self, columns):
+        self.columns = columns
+        self.length = len(columns[0]) if len(columns) > 0 else 0
+
+
+class Column(object):
+
+    def __init__(self, data_type, values, nulls):
+        self.data_type = data_type
+        self.values = values
+        self.nulls = nulls
+
+    def __len__(self):
+        return len(self.values)
+
+
+def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
+                  max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT,
+                  columnar=False):
+    fetcher = HS2Fetch(service, operation_handle, hs2_protocol_version,
+                       schema=schema, max_rows=max_rows,
+                       columnar=columnar,
+                       orientation=orientation)
+    return fetcher.get_results()
 
 
 @retry  # pylint: disable=unused-argument
