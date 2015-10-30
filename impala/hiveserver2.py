@@ -115,7 +115,7 @@ class HiveServer2Cursor(Cursor):
         self._last_operation_handle = None
         self._last_operation_active = False
         self._buffersize = None
-        self._buffer = []
+        self._buffer = Batch()  # zero-length
 
         # initial values, per PEP 249
         self._description = None
@@ -230,7 +230,7 @@ class HiveServer2Cursor(Cursor):
 
     def _reset_state(self):
         log.debug('_reset_state: Resetting cursor state')
-        self._buffer = []
+        self._buffer = Batch()
         self._description = None
         if self._last_operation_active:
             self._last_operation_active = False
@@ -330,6 +330,23 @@ class HiveServer2Cursor(Cursor):
         except StopIteration:
             return []
 
+    def fetchcolumnar(self):
+        """Executes a fetchall operation returning a list of CBatches"""
+        if not _is_columnar_protocol(self.hs2_protocol_version):
+            raise NotSupportedError("HiveServer2 protocol version ({0}) does "
+                                    "not support columnar fetching".format(
+                                        self.hs2_protocol_version))
+        batches = []
+        while True:
+            batch = fetch_results(
+                self.service, self._last_operation_handle,
+                self.hs2_protocol_version, self.description,
+                self.buffersize)
+            if len(batch) == 0:
+                break
+            batches.append(batch)
+        return batches
+
     def setinputsizes(self, sizes):
         # PEP 249
         pass
@@ -347,23 +364,20 @@ class HiveServer2Cursor(Cursor):
                 "Trying to fetch results on an operation with no results.")
         if len(self._buffer) > 0:
             log.debug('__next__: popping row out of buffer')
-            return self._buffer.pop(0)
+            return self._buffer.pop()
         elif self._last_operation_active:
-            # self._buffer is empty here and op is active: try to pull more
-            # rows
             log.debug('__next__: buffer empty and op is active => fetching '
-                      'more rows')
-            rows = fetch_results(self.service, self._last_operation_handle,
-                                 self.hs2_protocol_version, self.description,
-                                 self.buffersize)
-            self._buffer.extend(rows)
+                      'more data')
+            self._buffer = fetch_results(
+                self.service, self._last_operation_handle,
+                self.hs2_protocol_version, self.description, self.buffersize)
             if len(self._buffer) == 0:
-                log.debug('__next__: no more rows to fetch')
+                log.debug('__next__: no more data to fetch')
                 raise StopIteration
             log.debug('__next__: popping row out of buffer')
-            return self._buffer.pop(0)
+            return self._buffer.pop()
         else:
-            # buffer is already empty
+            log.debug('__next__: buffer empty')
             raise StopIteration
 
     def ping(self):
@@ -683,36 +697,67 @@ def get_result_schema(service, operation_handle):
     return schema
 
 
-@retry
-def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
-                  max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
-    # pylint: disable=too-many-locals,too-many-branches,protected-access
-    if not operation_handle.hasResultSet:
-        log.debug('fetch_results: operation_handle.hasResultSet=False')
-        return None
+def _is_columnar_protocol(hs2_protocol_version):
+    return (hs2_protocol_version ==
+            TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6)
 
-    # the schema is necessary to pull the proper values (i.e., coalesce)
-    if schema is None:
-        schema = get_result_schema(service, operation_handle)
 
-    req = TFetchResultsReq(operationHandle=operation_handle,
-                           orientation=orientation,
-                           maxRows=max_rows)
-    log.debug('fetch_results: hs2_protocol_version=%s max_rows=%s '
-              'orientation=%s req=%s', hs2_protocol_version, max_rows,
-              orientation, req)
-    resp = service.FetchResults(req)
-    err_if_rpc_not_ok(resp)
+def _is_precolumnar_protocol(hs2_protocol_version):
+    return hs2_protocol_version in _pre_columnar_protocols
 
-    if hs2_protocol_version == TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6:
+
+class Batch(object):
+    def __init__(self):
+        pass
+
+    def __len__(self):
+        return 0
+
+    def pop(self):
+        raise NotImplementedError("Cannot pop a Batch object")
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if len(self) > 0:
+            return self.pop()
+        raise StopIteration
+
+    def __str__(self):
+        return 'Batch()'
+
+
+class Column(object):
+    def __init__(self, data_type, values, nulls):
+        self.data_type = data_type
+        self.values = values
+        self.nulls = nulls
+
+    def __len__(self):
+        return len(self.values)
+
+    def __str__(self):
+        return 'Column(type={0}, values={1}, nulls={2})'.format(
+            self.data_type, self.values, self.nulls)
+
+    def pop(self):
+        isnull = self.nulls.pop(0)
+        value = self.values.pop(0)
+        return None if isnull else value
+
+
+class CBatch(Batch):
+    def __init__(self, trowset, schema):
+        self.schema = schema
         tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
-                 for (i, col) in enumerate(resp.results.columns)]
+                 for (i, col) in enumerate(trowset.columns)]
         num_cols = len(tcols)
         num_rows = len(tcols[0].values)
-        log.debug('fetch_results: COLUMNAR num_cols=%s num_rows=%s tcols=%s',
+        log.debug('CBatch: input TRowSet num_cols=%s num_rows=%s tcols=%s',
                   num_cols, num_rows, tcols)
 
-        column_data = []
+        self.columns = []
         for j in range(num_cols):
             type_ = schema[j][1]
             nulls = tcols[j].nulls
@@ -734,21 +779,29 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                 for i in range(num_rows):
                     values[i] = (None if is_null[i] else
                                  _parse_timestamp(values[i]))
-            elif type_ == 'DECIMAL':
+            if type_ == 'DECIMAL':
                 for i in range(num_rows):
                     values[i] = (None if is_null[i] else Decimal(values[i]))
-            else:
-                for i in range(num_rows):
-                    if is_null[i]:
-                        values[i] = None
-            column_data.append(values)
 
-        # TODO: enable columnar fetch
-        rows = lzip(*column_data)
-    elif hs2_protocol_version in _pre_columnar_protocols:
-        log.debug('fetch_results: ROWS num-rows=%s', len(resp.results.rows))
-        rows = []
-        for trow in resp.results.rows:
+            self.columns.append(Column(type_, values, is_null))
+
+    def __len__(self):
+        return len(self.columns[0]) if len(self.columns) > 0 else 0
+
+    def pop(self):
+        return tuple([c.pop() for c in self.columns])
+
+    def __str__(self):
+        col_string = ','.join([str(col) for col in self.columns])
+        return 'CBatch({0})'.format(col_string)
+
+
+class RBatch(Batch):
+    def __init__(self, trowset, schema):
+        log.debug('RBatch: input TRowSet: %s', trowset)
+        self.schema = schema
+        self.rows = []
+        for trow in trowset.rows:
             row = []
             for (i, col_val) in enumerate(trow.colVals):
                 type_ = schema[i][1]
@@ -759,12 +812,46 @@ def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
                     if value:
                         value = Decimal(value)
                 row.append(value)
-            rows.append(tuple(row))
+            self.rows.append(tuple(row))
+
+    def __len__(self):
+        return len(self.rows)
+
+    def pop(self):
+        return self.rows.pop(0)
+
+
+@retry
+def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
+                  max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
+    # pylint: disable=too-many-locals,too-many-branches,protected-access
+    if not operation_handle.hasResultSet:
+        log.debug('fetch_results: operation_handle.hasResultSet=False')
+        return None
+
+    # the schema is necessary to pull the proper values (i.e., coalesce)
+    if schema is None:
+        schema = get_result_schema(service, operation_handle)
+
+    req = TFetchResultsReq(operationHandle=operation_handle,
+                           orientation=orientation,
+                           maxRows=max_rows)
+    log.debug('fetch_results: hs2_protocol_version=%s max_rows=%s '
+              'orientation=%s req=%s', hs2_protocol_version, max_rows,
+              orientation, req)
+    resp = service.FetchResults(req)
+    err_if_rpc_not_ok(resp)
+
+    if _is_columnar_protocol(hs2_protocol_version):
+        log.debug('fetch_results: constructing CBatch')
+        return CBatch(resp.results, schema)
+    elif _is_precolumnar_protocol(hs2_protocol_version):
+        log.debug('fetch_results: constructing RBatch')
+        return RBatch(resp.results, schema)
     else:
         raise HiveServer2Error(
             "Got HiveServer2 version {0}; expected V1 - V6".format(
                 TProtocolVersion._VALUES_TO_NAMES[hs2_protocol_version]))
-    return rows
 
 
 @retry  # pylint: disable=unused-argument
