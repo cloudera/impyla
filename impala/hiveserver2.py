@@ -25,7 +25,7 @@ from six.moves import range
 from bitarray import bitarray
 
 
-from impala.compat import lzip, Decimal
+from impala.compat import Decimal
 from impala.util import get_logger_and_init_null
 from impala.interface import Connection, Cursor, _bind_parameters
 from impala.error import NotSupportedError, OperationalError, ProgrammingError
@@ -357,6 +357,9 @@ class HiveServer2Cursor(Cursor):
 
     def __iter__(self):
         return self
+
+    def next(self):
+        return self.__next__()
 
     def __next__(self):
         if not self.has_result_set:
@@ -718,6 +721,9 @@ class Batch(object):
 
     def __iter__(self):
         return self
+
+    def next(self):
+        return self.__next__()
 
     def __next__(self):
         if len(self) > 0:
