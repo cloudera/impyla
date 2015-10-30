@@ -24,7 +24,7 @@ from impala.error import (  # noqa
     Error, Warning, InterfaceError, DatabaseError, InternalError,
     OperationalError, ProgrammingError, IntegrityError, DataError,
     NotSupportedError)
-from impala.util import warn_deprecate, warn_deprecate_protocol
+from impala.util import warn_deprecate, warn_protocol_param
 import impala.hiveserver2 as hs2
 
 
@@ -37,11 +37,11 @@ threadsafety = 1  # Threads may share the module, but not connections
 paramstyle = 'pyformat'
 
 
-def connect(host='localhost', port=21050, protocol=None,
-            database=None, timeout=None, use_ssl=False, ca_cert=None,
-            auth_mechanism='NOSASL', user=None, password=None,
-            kerberos_service_name='impala', use_ldap=None, ldap_user=None,
-            ldap_password=None, use_kerberos=None):
+def connect(host='localhost', port=21050, database=None, timeout=None,
+            use_ssl=False, ca_cert=None, auth_mechanism='NOSASL', user=None,
+            password=None, kerberos_service_name='impala', use_ldap=None,
+            ldap_user=None, ldap_password=None, use_kerberos=None,
+            protocol=None):
     # pylint: disable=too-many-locals
     if use_kerberos is not None:
         warn_deprecate('use_kerberos', 'auth_mechanism="GSSAPI"')
@@ -70,17 +70,20 @@ def connect(host='localhost', port=21050, protocol=None,
         warn_deprecate('ldap_password', 'password')
         password = ldap_password
 
-    if protocol is None or protocol.lower() == 'hiveserver2':
-        if protocol:
-            warn_deprecate_protocol()
-        service = hs2.connect(host=host, port=port,
-                              timeout=timeout, use_ssl=use_ssl,
-                              ca_cert=ca_cert, user=user, password=password,
-                              kerberos_service_name=kerberos_service_name,
-                              auth_mechanism=auth_mechanism)
-        return hs2.HiveServer2Connection(service, default_db=database)
-    raise NotSupportedError("The specified protocol '%s' is not supported."
-                            % protocol)
+    if protocol is not None:
+        if protocol.lower() == 'hiveserver2':
+            warn_protocol_param()
+        else:
+            raise NotSupportedError(
+                "'{0}' is not a supported protocol; only HiveServer2 is "
+                "supported".format(protocol))
+
+    service = hs2.connect(host=host, port=port,
+                          timeout=timeout, use_ssl=use_ssl,
+                          ca_cert=ca_cert, user=user, password=password,
+                          kerberos_service_name=kerberos_service_name,
+                          auth_mechanism=auth_mechanism)
+    return hs2.HiveServer2Connection(service, default_db=database)
 
 
 class _DBAPITypeObject(object):

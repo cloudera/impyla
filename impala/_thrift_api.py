@@ -16,7 +16,10 @@
 # thriftpy for Py3 at the moment.  This should all be temporary, as Apache
 # Thrift gains Py3 compatibility.
 
+from __future__ import absolute_import
+
 import os
+import sys
 import six
 import getpass
 
@@ -27,7 +30,7 @@ log = get_logger_and_init_null(__name__)
 
 
 if six.PY2:
-    # pylint: disable=import-error
+    # pylint: disable=import-error,unused-import
     # import Apache Thrift code
     from thrift.transport.TSocket import TSocket
     from thrift.transport.TTransport import (
@@ -35,9 +38,25 @@ if six.PY2:
     from thrift.protocol.TBinaryProtocol import (
         TBinaryProtocolAccelerated as TBinaryProtocol)
 
+    # import HS2 codegen objects
+    from impala._thrift_gen.TCLIService.ttypes import (
+        TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
+        TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
+        TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
+        TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
+        TGetOperationStatusReq, TOperationState, TCancelOperationReq,
+        TCloseOperationReq, TGetLogReq, TProtocolVersion)
+    from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
+        TGetRuntimeProfileReq, TGetExecSummaryReq)
+    from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
+    from impala._thrift_gen.ExecStats.ttypes import TExecStats
+    ThriftClient = ImpalaHiveServer2Service.Client
+
 
 if six.PY3:
     # import thriftpy code
+    from thriftpy import load
+    from thriftpy.thrift import TClient
     # TODO: reenable cython
     # from thriftpy.protocol import TBinaryProtocol
     from thriftpy.protocol.binary import TBinaryProtocol  # noqa
@@ -45,8 +64,31 @@ if six.PY3:
     # TODO: reenable cython
     # from thriftpy.transport import TBufferedTransport
     from thriftpy.transport.buffered import TBufferedTransport  # noqa
-    thrift_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                              'thrift')
+    thrift_dir = os.path.join(os.path.dirname(__file__), 'thrift')
+
+    # dynamically load the HS2 modules
+    ExecStats = load(os.path.join(thrift_dir, 'ExecStats.thrift'),
+                     include_dirs=[thrift_dir])
+    TCLIService = load(os.path.join(thrift_dir, 'TCLIService.thrift'),
+                       include_dirs=[thrift_dir])
+    ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
+                         include_dirs=[thrift_dir])
+    sys.modules[ExecStats.__name__] = ExecStats
+    sys.modules[TCLIService.__name__] = TCLIService
+    sys.modules[ImpalaService.__name__] = ImpalaService
+
+    # import the HS2 objects
+    from TCLIService import (  # noqa
+        TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
+        TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
+        TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
+        TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
+        TGetOperationStatusReq, TOperationState, TCancelOperationReq,
+        TCloseOperationReq, TGetLogReq, TProtocolVersion)
+    from ImpalaService import (  # noqa
+        TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service)
+    from ExecStats import TExecStats  # noqa
+    ThriftClient = TClient
 
 
 def get_socket(host, port, use_ssl, ca_cert):

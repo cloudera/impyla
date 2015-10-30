@@ -84,20 +84,6 @@ def compute_result_schema(cursor, query_string):
     return schema
 
 
-def create_view_from_query(cursor, query_string, view_name=None, safe=False):
-    # pylint: disable=unused-argument
-    warn_deprecate('create_view_from_query()')
-    if view_name is None:
-        view_name = _random_id(prefix="tmp_cv_")
-    cursor.execute("CREATE VIEW %s AS %s" % (view_name, query_string))
-    return view_name
-
-
-def drop_view(cursor, view_name):
-    warn_deprecate('drop_view()')
-    cursor.execute("DROP VIEW %s" % view_name)
-
-
 def force_drop_impala_database(cursor, database):
     cursor.execute('USE %s' % database)
     cursor.execute('SHOW TABLES')
@@ -145,24 +131,9 @@ def _py_to_sql_string(value):
 # Logging-related utils
 
 
-def warn_deprecate_hs2():
-    msg = ("Beeswax support in impyla is now deprecated and will be removed "
-           "in a future release (along with the 'protocol' argument); "
-           "please switch to using HiveServer2.")
-    warnings.warn(msg, Warning)
-
-
-def warn_deprecate_ibis(functionality='This'):
-    msg = ("{0} functionality in impyla is now deprecated and will be removed "
-           "in a future release; please see the Ibis project instead: "
-           "http://ibis-project.org/".format(functionality))
-    warnings.warn(msg, Warning)
-
-
-def warn_deprecate_protocol():
-    msg = ("Specifying the protocol argument is now deprecated (because "
-           "HiveServer2 should always be preferred). It is no longer "
-           "necessary and will be removed in a future release.")
+def warn_protocol_param():
+    msg = ("Specifying the protocol argument is no longer necessary because "
+           "impyla only supports HiveServer2.")
     warnings.warn(msg, Warning)
 
 

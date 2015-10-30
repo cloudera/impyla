@@ -24,17 +24,13 @@ import re
 from six.moves import range
 from bitarray import bitarray
 
-
 from impala.compat import Decimal
 from impala.util import get_logger_and_init_null
 from impala.interface import Connection, Cursor, _bind_parameters
-from impala.error import NotSupportedError, OperationalError, ProgrammingError
-
-
-from impala.error import HiveServer2Error
+from impala.error import (
+    NotSupportedError, OperationalError, ProgrammingError, HiveServer2Error)
 from impala._thrift_api import (
-    get_socket, get_transport, TTransportException, TBinaryProtocol)
-from impala._thrift_api.hiveserver2 import (
+    get_socket, get_transport, TTransportException, TBinaryProtocol,
     TOpenSessionReq, TFetchResultsReq, TCloseSessionReq, TExecuteStatementReq,
     TGetInfoReq, TGetInfoType, TTypeId, TFetchOrientation,
     TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq, TGetSchemasReq,

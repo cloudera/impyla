@@ -33,13 +33,12 @@ PY3 = sys.version_info[0] == 3
 # Apache Thrift does not yet support Python 3 (see THRIFT-1857).  We use
 # thriftpy as a stopgap replacement
 reqs = ['six', 'thrift_sasl', 'bitarray']
-packages = find_packages(exclude=['impala._thrift_gen',
-                                  'impala._thrift_gen.*'])
 if PY2:
-    # include apache thrift packages this time
     packages = find_packages()
     reqs.append('thrift')
 elif PY3:
+    packages = find_packages(exclude=['impala._thrift_gen',
+                                      'impala._thrift_gen.*'])
     reqs.append('thriftpy')
 
 
@@ -53,15 +52,10 @@ setup(
     url='https://github.com/cloudera/impyla',
     packages=packages,
     install_package_data=True,
-    package_data={
-        'impala.udf': ['precompiled/impyla.bc'],
-        'impala.tests': ['data/iris.data'],
-        'impala.thrift': ['*.thrift']
-    },
-    scripts=['bin/register-impala-udfs.py'],
+    package_data={'impala.thrift': ['*.thrift']},
     install_requires=reqs,
     keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark pydata '
-              'pandas distributed db api pep 249'),
+              'pandas distributed db api pep 249 hive hiveserver2 hs2'),
     license='Apache License, Version 2.0',
     classifiers=[
         'Programming Language :: Python :: 2',
@@ -72,5 +66,4 @@ setup(
     ],
     entry_points={
         'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect']},
-    zip_safe=False
-)
+    zip_safe=False)
