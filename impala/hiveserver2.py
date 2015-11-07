@@ -336,7 +336,7 @@ class HiveServer2Cursor(Cursor):
         except StopIteration:
             return []
 
-    def fetchcolumnar(self):
+    def fetchcolumnar(self, convert_types=True):
         """Executes a fetchall operation returning a list of CBatches"""
         if not self._last_operation.is_columnar:
             raise NotSupportedError("Server does not support columnar "
@@ -344,7 +344,8 @@ class HiveServer2Cursor(Cursor):
         batches = []
         while True:
             batch = self._last_operation.fetch(self.description,
-                                               self.buffersize)
+                                               self.buffersize,
+                                               convert_types=convert_types)
             if len(batch) == 0:
                 break
             batches.append(batch)
@@ -631,7 +632,7 @@ class Column(object):
 
 class CBatch(Batch):
 
-    def __init__(self, trowset, schema):
+    def __init__(self, trowset, schema, convert_types=True):
         self.schema = schema
         tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
                  for (i, col) in enumerate(trowset.columns)]
@@ -653,20 +654,26 @@ class CBatch(Batch):
             is_null = bitarray(endian='little')
             is_null.frombytes(nulls)
 
+            if convert_types:
+                values = self._convert_values(num_rows, type_, is_null, values)
+
             # Ref HUE-2722, HiveServer2 sometimes does not add trailing '\x00'
             if len(values) > len(nulls):
                 to_append = ((len(values) - len(nulls) + 7) // 8)
                 is_null.frombytes(b'\x00' * to_append)
 
-            if type_ == 'TIMESTAMP':
-                for i in range(num_rows):
-                    values[i] = (None if is_null[i] else
-                                 _parse_timestamp(values[i]))
-            if type_ == 'DECIMAL':
-                for i in range(num_rows):
-                    values[i] = (None if is_null[i] else Decimal(values[i]))
-
             self.columns.append(Column(type_, values, is_null))
+
+    def _convert_values(self, num_rows, type_, is_null, values):
+        if type_ == 'TIMESTAMP':
+            for i in range(num_rows):
+                values[i] = (None if is_null[i] else
+                             _parse_timestamp(values[i]))
+        if type_ == 'DECIMAL':
+            for i in range(num_rows):
+                values[i] = (None if is_null[i] else Decimal(values[i]))
+
+        return values
 
     def __len__(self):
         return len(self.columns[0]) if len(self.columns) > 0 else 0
@@ -928,7 +935,8 @@ class Operation(ThriftRPC):
         return resp.summary
 
     def fetch(self, schema=None, max_rows=1024,
-              orientation=TFetchOrientation.FETCH_NEXT):
+              orientation=TFetchOrientation.FETCH_NEXT,
+              convert_types=True):
         if not self.has_result_set:
             log.debug('fetch_results: operation_handle.hasResultSet=False')
             return None
@@ -941,12 +949,13 @@ class Operation(ThriftRPC):
                                orientation=orientation,
                                maxRows=max_rows)
         resp = self._rpc('FetchResults', req)
-        return self._wrap_results(resp.results, schema)
+        return self._wrap_results(resp.results, schema,
+                                  convert_types=convert_types)
 
-    def _wrap_results(self, results, schema):
+    def _wrap_results(self, results, schema, convert_types=True):
         if self.is_columnar:
             log.debug('fetch_results: constructing CBatch')
-            return CBatch(results, schema)
+            return CBatch(results, schema, convert_types=convert_types)
         else:
             log.debug('fetch_results: constructing RBatch')
             return RBatch(results, schema)
