@@ -27,8 +27,8 @@ from bitarray import bitarray
 from impala.compat import Decimal
 from impala.util import get_logger_and_init_null
 from impala.interface import Connection, Cursor, _bind_parameters
-from impala.error import (
-    NotSupportedError, OperationalError, ProgrammingError, HiveServer2Error)
+from impala.error import (NotSupportedError, OperationalError,
+                          ProgrammingError, HiveServer2Error)
 from impala._thrift_api import (
     get_socket, get_transport, TTransportException, TBinaryProtocol,
     TOpenSessionReq, TFetchResultsReq, TCloseSessionReq, TExecuteStatementReq,
@@ -41,6 +41,8 @@ from impala._thrift_api import (
 
 
 log = get_logger_and_init_null(__name__)
+
+V6_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6
 
 
 class HiveServer2Connection(Connection):
@@ -59,7 +61,10 @@ class HiveServer2Connection(Connection):
         """Close the session and the Thrift transport."""
         # PEP 249
         log.info('Closing HS2 connection')
-        close_service(self.service)
+        self.service.close()
+
+    def reconnect(self):
+        self.service.reconnect()
 
     def commit(self):
         """Impala doesn't support transactions; does nothing."""
@@ -71,24 +76,28 @@ class HiveServer2Connection(Connection):
         # PEP 249
         raise NotSupportedError
 
-    def cursor(self, session_handle=None, user=None, configuration=None):
+    def cursor(self, user=None, configuration=None):
         # PEP 249
         log.info('Getting a cursor (Impala session)')
+
         if user is None:
             user = getpass.getuser()
-        if session_handle is None:
-            log.debug('.cursor(): getting new session_handle')
-            (session_handle, default_config, hs2_protocol_version) = (
-                open_session(self.service, user, configuration))
-        cursor = HiveServer2Cursor(
-            self.service, session_handle, default_config, hs2_protocol_version)
+
+        log.debug('.cursor(): getting new session_handle')
+
+        session = self.service.open_session(user, configuration)
+
+        log.debug('HiveServer2Cursor(service=%s, session_handle=%s, '
+                  'default_config=%s, hs2_protocol_version=%s)',
+                  self.service, session.handle,
+                  session.config, session.hs2_protocol_version)
+
+        cursor = HiveServer2Cursor(session)
+
         if self.default_db is not None:
             log.info('Using database %s as default', self.default_db)
             cursor.execute('USE %s' % self.default_db)
         return cursor
-
-    def reconnect(self):
-        reconnect(self.service)
 
 
 class HiveServer2Cursor(Cursor):
@@ -96,19 +105,12 @@ class HiveServer2Cursor(Cursor):
     # HiveServer2Cursor objects are associated with a Session
     # they are instantiated with alive session_handles
 
-    def __init__(self, service, session_handle, default_config=None,
-                 hs2_protocol_version=(
-                     TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6)):
-        log.debug('HiveServer2Cursor(service=%s, session_handle=%s, '
-                  'default_config=%s, hs2_protocol_version=%s)', service,
-                  session_handle, default_config, hs2_protocol_version)
-        self.service = service
-        self.session_handle = session_handle
-        self.default_config = default_config
-        self.hs2_protocol_version = hs2_protocol_version
+    def __init__(self, session):
+        self.session = session
+
+        self._last_operation = None
 
         self._last_operation_string = None
-        self._last_operation_handle = None
         self._last_operation_active = False
         self._buffersize = None
         self._buffer = Batch()  # zero-length
@@ -122,8 +124,8 @@ class HiveServer2Cursor(Cursor):
         # PEP 249
         if self._description is None and self.has_result_set:
             log.debug('description=None has_result_set=True => getting schema')
-            schema = get_result_schema(self.service,
-                                       self._last_operation_handle)
+
+            schema = self._last_operation.get_result_schema()
             self._description = schema
         return self._description
 
@@ -158,8 +160,8 @@ class HiveServer2Cursor(Cursor):
 
     @property
     def has_result_set(self):
-        return (self._last_operation_handle is not None and
-                self._last_operation_handle.hasResultSet)
+        return (self._last_operation is not None and
+                self._last_operation.has_result_set)
 
     def close(self):
         # PEP 249
@@ -171,18 +173,30 @@ class HiveServer2Cursor(Cursor):
         self.close_operation()
 
         log.info('Closing HiveServer2Cursor')
-        close_session(self.service, self.session_handle)
+
+        self.session.close()
 
     def cancel_operation(self):
         if self._last_operation_active:
             log.info('Canceling active operation')
-            cancel_operation(self.service, self._last_operation_handle)
+            self._last_operation.cancel()
             self._reset_state()
 
     def close_operation(self):
         if self._last_operation_active:
             log.info('Closing active operation')
             self._reset_state()
+
+    def _reset_state(self):
+        log.debug('_reset_state: Resetting cursor state')
+        self._buffer = Batch()
+        self._description = None
+        if self._last_operation_active:
+            self._last_operation_active = False
+
+            self._last_operation.close()
+        self._last_operation_string = None
+        self._last_operation = None
 
     def execute(self, operation, parameters=None, configuration=None):
         # PEP 249
@@ -201,22 +215,27 @@ class HiveServer2Cursor(Cursor):
                                                                parameters)
             else:
                 self._last_operation_string = operation
-            self._last_operation_handle = execute_statement(
-                self.service, self.session_handle, self._last_operation_string,
-                configuration)
+
+            op = self.session.execute(self._last_operation_string,
+                                      configuration)
+            self._last_operation = op
 
         self._execute_async(op)
 
     def _debug_log_state(self):
-        log.debug(
-            '_execute_async: self._buffer=%s self._description=%s '
-            'self._last_operation_active=%s self._last_operation_handle=%s',
-            self._buffer, self._description, self._last_operation_active,
-            self._last_operation_handle)
+        if self._last_operation_active:
+            handle = self._last_operation.handle
+        else:
+            handle = None
+        log.debug('_execute_async: self._buffer=%s self._description=%s '
+                  'self._last_operation_active=%s '
+                  'self._last_operation=%s',
+                  self._buffer, self._description,
+                  self._last_operation_active, handle)
 
     def _execute_async(self, operation_fn):
         # operation_fn should set self._last_operation_string and
-        # self._last_operation_handle
+        # self._last_operation
         self._debug_log_state()
         self._reset_state()
         self._debug_log_state()
@@ -224,21 +243,11 @@ class HiveServer2Cursor(Cursor):
         self._last_operation_active = True
         self._debug_log_state()
 
-    def _reset_state(self):
-        log.debug('_reset_state: Resetting cursor state')
-        self._buffer = Batch()
-        self._description = None
-        if self._last_operation_active:
-            self._last_operation_active = False
-            close_operation(self.service, self._last_operation_handle)
-        self._last_operation_string = None
-        self._last_operation_handle = None
-
     def _wait_to_finish(self):
         loop_start = time.time()
         while True:
-            operation_state = get_operation_status(
-                self.service, self._last_operation_handle)
+            operation_state = self._last_operation.get_status()
+
             log.debug('_wait_to_finish: waited %s seconds so far',
                       time.time() - loop_start)
             if self._op_state_is_error(operation_state):
@@ -247,21 +256,22 @@ class HiveServer2Cursor(Cursor):
                 break
             time.sleep(self._get_sleep_interval(loop_start))
 
+    def status(self):
+        return self._last_operation.get_status()
+
     def execution_failed(self):
-        if self._last_operation_handle is None:
+        if self._last_operation is None:
             raise ProgrammingError("Operation state is not available")
-        operation_state = get_operation_status(
-            self.service, self._last_operation_handle)
+        operation_state = self._last_operation.get_status()
         return self._op_state_is_error(operation_state)
 
     def _op_state_is_error(self, operation_state):
         return operation_state == 'ERROR_STATE'
 
     def is_executing(self):
-        if self._last_operation_handle is None:
+        if self._last_operation is None:
             raise ProgrammingError("Operation state is not available")
-        operation_state = get_operation_status(
-            self.service, self._last_operation_handle)
+        operation_state = self._last_operation.get_status()
         return self._op_state_is_executing(operation_state)
 
     def _op_state_is_executing(self, operation_state):
@@ -328,16 +338,13 @@ class HiveServer2Cursor(Cursor):
 
     def fetchcolumnar(self):
         """Executes a fetchall operation returning a list of CBatches"""
-        if not _is_columnar_protocol(self.hs2_protocol_version):
-            raise NotSupportedError("HiveServer2 protocol version ({0}) does "
-                                    "not support columnar fetching".format(
-                                        self.hs2_protocol_version))
+        if not self._last_operation.is_columnar:
+            raise NotSupportedError("Server does not support columnar "
+                                    "fetching")
         batches = []
         while True:
-            batch = fetch_results(
-                self.service, self._last_operation_handle,
-                self.hs2_protocol_version, self.description,
-                self.buffersize)
+            batch = self._last_operation.fetch(self.description,
+                                               self.buffersize)
             if len(batch) == 0:
                 break
             batches.append(batch)
@@ -367,9 +374,8 @@ class HiveServer2Cursor(Cursor):
         elif self._last_operation_active:
             log.debug('__next__: buffer empty and op is active => fetching '
                       'more data')
-            self._buffer = fetch_results(
-                self.service, self._last_operation_handle,
-                self.hs2_protocol_version, self.description, self.buffersize)
+            self._buffer = self._last_operation.fetch(self.description,
+                                                      self.buffersize)
             if len(self._buffer) == 0:
                 log.debug('__next__: no more data to fetch')
                 raise StopIteration
@@ -383,35 +389,31 @@ class HiveServer2Cursor(Cursor):
         """Checks connection to server by requesting some info from the
         server."""
         log.info('Pinging the impalad')
-        return ping(self.service, self.session_handle)
+        return self.session.ping()
 
     def get_log(self):
-        return get_log(self.service, self._last_operation_handle)
+        return self._last_operation.get_log()
 
     def get_profile(self):
-        return get_profile(
-            self.service, self._last_operation_handle, self.session_handle)
+        return self._last_operation.get_profile()
 
     def get_summary(self):
-        return get_summary(
-            self.service, self._last_operation_handle, self.session_handle)
+        return self._last_operation.get_summary()
 
     def build_summary_table(self, summary, output, idx=0,
                             is_fragment_root=False, indent_level=0):
-        return build_summary_table(
-            summary, idx, is_fragment_root, indent_level, output)
+        return build_summary_table(summary, idx, is_fragment_root,
+                                   indent_level, output)
 
     def get_databases(self):
         def op():
             self._last_operation_string = "RPC_GET_DATABASES"
-            self._last_operation_handle = get_databases(self.service,
-                                                        self.session_handle)
+            self._last_operation = self.session.get_databases()
         self._execute_async(op)
         self._wait_to_finish()
 
     def database_exists(self, db_name):
-        return database_exists(self.service, self.session_handle,
-                               self.hs2_protocol_version, db_name)
+        return self.session.database_exists(db_name)
 
     def get_tables(self, database_name=None):
         if database_name is None:
@@ -419,18 +421,16 @@ class HiveServer2Cursor(Cursor):
 
         def op():
             self._last_operation_string = "RPC_GET_TABLES"
-            self._last_operation_handle = get_tables(self.service,
-                                                     self.session_handle,
-                                                     database_name)
+            self._last_operation = self.session.get_tables(database_name)
+
         self._execute_async(op)
         self._wait_to_finish()
 
     def table_exists(self, table_name, database_name=None):
         if database_name is None:
             database_name = '.*'
-        return table_exists(self.service, self.session_handle,
-                            self.hs2_protocol_version, table_name,
-                            database_name)
+        return self.session.table_exists(table_name,
+                                         database=database_name)
 
     def get_table_schema(self, table_name, database_name=None):
         if database_name is None:
@@ -438,8 +438,8 @@ class HiveServer2Cursor(Cursor):
 
         def op():
             self._last_operation_string = "RPC_DESCRIBE_TABLE"
-            self._last_operation_handle = get_table_schema(
-                self.service, self.session_handle, table_name, database_name)
+            self._last_operation = self.session.get_table_schema(
+                table_name, database_name)
 
         self._execute_async(op)
         self._wait_to_finish()
@@ -466,8 +466,7 @@ class HiveServer2Cursor(Cursor):
 
         def op():
             self._last_operation_string = "RPC_GET_FUNCTIONS"
-            self._last_operation_handle = get_functions(
-                self.service, self.session_handle, database_name)
+            self._last_operation = self.session.get_functions(database_name)
 
         self._execute_async(op)
         self._wait_to_finish()
@@ -549,48 +548,6 @@ def threaded(func):
     raise NotImplementedError
 
 
-def retry(func):
-    # Retries RPCs after closing/reopening transport
-    # `service` must be the first arg in args or must be a kwarg
-
-    def wrapper(*args, **kwargs):
-        # pylint: disable=protected-access
-        # get the thrift transport
-        if 'service' in kwargs:
-            transport = kwargs['service']._iprot.trans
-        elif len(args) > 0 and isinstance(args[0], ThriftClient):
-            transport = args[0]._iprot.trans
-        else:
-            raise HiveServer2Error(
-                "RPC function does not have expected 'service' arg")
-
-        tries_left = 3
-        while tries_left > 0:
-            try:
-                log.debug('Attempting to open transport (tries_left=%s)',
-                          tries_left)
-                if six.PY2 and not transport.isOpen():
-                    transport.open()
-                elif six.PY3 and not transport.is_open():
-                    transport.open()
-                log.debug('Transport opened')
-                return func(*args, **kwargs)
-            except socket.error:
-                log.exception('Failed to open transport (tries_left=%s)',
-                              tries_left)
-            except TTransportException:
-                log.exception('Failed to open transport (tries_left=%s)',
-                              tries_left)
-            except Exception:
-                raise
-            log.debug('Closing transport (tries_left=%s)', tries_left)
-            transport.close()
-            tries_left -= 1
-        raise
-
-    return wrapper
-
-
 def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
             auth_mechanism=None):
@@ -615,85 +572,8 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
         service = ThriftClient(ImpalaHiveServer2Service, protocol)
     log.debug('sock=%s transport=%s protocol=%s service=%s', sock, transport,
               protocol, service)
-    return service
 
-
-def close_service(service):
-    # pylint: disable=protected-access
-    log.debug('close_service: service=%s', service)
-    service._iprot.trans.close()
-
-
-def reconnect(service):
-    # pylint: disable=protected-access
-    log.debug('reconnect: service=%s', service)
-    service._iprot.trans.close()
-    service._iprot.trans.open()
-
-
-@retry
-def open_session(service, user, configuration=None):
-    req = TOpenSessionReq(
-        client_protocol=TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6,
-        username=user, configuration=configuration)
-    log.debug('open_session: req=%s', req)
-    resp = service.OpenSession(req)
-    log.debug('open_session: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    return (resp.sessionHandle, resp.configuration, resp.serverProtocolVersion)
-
-
-@retry
-def close_session(service, session_handle):
-    req = TCloseSessionReq(sessionHandle=session_handle)
-    log.debug('close_session: req=%s', req)
-    resp = service.CloseSession(req)
-    log.debug('close_session: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-
-
-@retry
-def execute_statement(service, session_handle, statement, configuration=None,
-                      async=False):
-    req = TExecuteStatementReq(sessionHandle=session_handle,
-                               statement=statement, confOverlay=configuration,
-                               runAsync=async)
-    log.debug('execute_statement: req=%s', req)
-    resp = service.ExecuteStatement(req)
-    log.debug('execute_statement: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    return resp.operationHandle
-
-
-@retry
-def get_result_schema(service, operation_handle):
-    if not operation_handle.hasResultSet:
-        log.debug('get_result_schema: operation_handle.hasResultSet=False')
-        return None
-    req = TGetResultSetMetadataReq(operationHandle=operation_handle)
-    log.debug('get_result_schema: req=%s', req)
-    resp = service.GetResultSetMetadata(req)
-    log.debug('get_result_schema: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-
-    schema = []
-    for column in resp.schema.columns:
-        # pylint: disable=protected-access
-        name = column.columnName
-        entry = column.typeDesc.types[0].primitiveEntry
-        type_ = TTypeId._VALUES_TO_NAMES[entry.type].split('_')[0]
-        if type_ == 'DECIMAL':
-            qualifiers = entry.typeQualifiers.qualifiers
-            precision = qualifiers['precision'].i32Value
-            scale = qualifiers['scale'].i32Value
-            schema.append((name, type_, None, None,
-                           precision, scale, None))
-        else:
-            schema.append((name, type_, None, None, None, None, None))
-
-    log.debug('get_result_schema: schema=%s', schema)
-
-    return schema
+    return HS2Service(service)
 
 
 def _is_columnar_protocol(hs2_protocol_version):
@@ -750,6 +630,7 @@ class Column(object):
 
 
 class CBatch(Batch):
+
     def __init__(self, trowset, schema):
         self.schema = schema
         tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
@@ -823,208 +704,284 @@ class RBatch(Batch):
         return self.rows.pop(0)
 
 
-@retry
-def fetch_results(service, operation_handle, hs2_protocol_version, schema=None,
-                  max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
-    # pylint: disable=too-many-locals,too-many-branches,protected-access
-    if not operation_handle.hasResultSet:
-        log.debug('fetch_results: operation_handle.hasResultSet=False')
-        return None
+class ThriftRPC(object):
 
-    # the schema is necessary to pull the proper values (i.e., coalesce)
-    if schema is None:
-        schema = get_result_schema(service, operation_handle)
+    def __init__(self, client, retries=3):
+        self.client = client
+        self.retries = retries
 
-    req = TFetchResultsReq(operationHandle=operation_handle,
-                           orientation=orientation,
-                           maxRows=max_rows)
-    log.debug('fetch_results: hs2_protocol_version=%s max_rows=%s '
-              'orientation=%s req=%s', hs2_protocol_version, max_rows,
-              orientation, req)
-    resp = service.FetchResults(req)
-    err_if_rpc_not_ok(resp)
+    def _rpc(self, func_name, request):
+        self._log_request(func_name, request)
+        response = self._execute(func_name, request)
+        self._log_response(func_name, response)
+        err_if_rpc_not_ok(response)
+        return response
 
-    if _is_columnar_protocol(hs2_protocol_version):
-        log.debug('fetch_results: constructing CBatch')
-        return CBatch(resp.results, schema)
-    elif _is_precolumnar_protocol(hs2_protocol_version):
-        log.debug('fetch_results: constructing RBatch')
-        return RBatch(resp.results, schema)
-    else:
-        raise HiveServer2Error(
-            "Got HiveServer2 version {0}; expected V1 - V6".format(
-                TProtocolVersion._VALUES_TO_NAMES[hs2_protocol_version]))
+    def _execute(self, func_name, request):
+        # pylint: disable=protected-access
+        # get the thrift transport
+        transport = self.client._iprot.trans
+        tries_left = self.retries
+        while tries_left > 0:
+            try:
+                log.debug('Attempting to open transport (tries_left=%s)',
+                          tries_left)
+                open_transport(transport)
+                log.debug('Transport opened')
+                func = getattr(self.client, func_name)
+                return func(request)
+            except socket.error:
+                log.exception('Failed to open transport (tries_left=%s)',
+                              tries_left)
+            except TTransportException:
+                log.exception('Failed to open transport (tries_left=%s)',
+                              tries_left)
+            except Exception:
+                raise
+            log.debug('Closing transport (tries_left=%s)', tries_left)
+            transport.close()
+            tries_left -= 1
 
+        raise HiveServer2Error('Failed after retrying {0} times'
+                               .format(self.retries))
 
-@retry  # pylint: disable=unused-argument
-def get_current_database(service, session_handle):
-    # pylint: disable=unused-argument
-    raise NotImplementedError
+    def _operation(self, kind, request):
+        resp = self._rpc(kind, request)
+        return self._get_operation(resp.operationHandle)
 
+    def _log_request(self, kind, request):
+        log.debug('{0}: req={1!s}'.format(kind, request))
 
-@retry
-def get_databases(service, session_handle):
-    req = TGetSchemasReq(sessionHandle=session_handle, schemaName='.*')
-    log.debug('get_databases: req=%s', req)
-    resp = service.GetSchemas(req)
-    log.debug('get_databases: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    return resp.operationHandle
-
-
-@retry
-def database_exists(service, session_handle, hs2_protocol_version, db_name):
-    req = TGetSchemasReq(sessionHandle=session_handle, schemaName=db_name)
-    log.debug('database_exists: req=%s', req)
-    resp = service.GetSchemas(req)
-    log.debug('database_exists: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    operation_handle = resp.operationHandle
-    # this only fetches default max_rows, but there should only be one row
-    # ideally
-    results = fetch_results(service=service, operation_handle=operation_handle,
-                            hs2_protocol_version=hs2_protocol_version)
-    exists = False
-    for result in results:
-        if result[0].lower() == db_name.lower():
-            exists = True
-    close_operation(service, operation_handle)
-    return exists
+    def _log_response(self, kind, response):
+        log.debug('{0}: resp={1!s}'.format(kind, response))
 
 
-@retry
-def get_tables(service, session_handle, database_name='.*'):
-    req = TGetTablesReq(sessionHandle=session_handle, schemaName=database_name,
-                        tableName='.*')
-    log.debug('get_tables: req=%s', req)
-    resp = service.GetTables(req)
-    log.debug('get_tables: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    return resp.operationHandle
+def open_transport(transport):
+    if six.PY2 and not transport.isOpen():
+        transport.open()
+    elif six.PY3 and not transport.is_open():
+        transport.open()
 
 
-@retry
-def table_exists(service, session_handle, hs2_protocol_version, table_name,
-                 database_name='.*'):
-    req = TGetTablesReq(sessionHandle=session_handle, schemaName=database_name,
-                        tableName=table_name)
-    log.debug('table_exists: req=%s', req)
-    resp = service.GetTables(req)
-    log.debug('table_exists: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    operation_handle = resp.operationHandle
-    # this only fetches default max_rows, but there should only be one row
-    # ideally
-    results = fetch_results(service=service, operation_handle=operation_handle,
-                            hs2_protocol_version=hs2_protocol_version)
-    exists = False
-    for result in results:
-        if result[2].lower() == table_name.lower():
-            exists = True
-    close_operation(service, operation_handle)
-    return exists
+class HS2Service(ThriftRPC):
+
+    def __init__(self, thrift_client, retries=3):
+        ThriftRPC.__init__(self, thrift_client, retries=retries)
+
+    def close(self):
+        # pylint: disable=protected-access
+        log.debug('close_service: client=%s', self.client)
+        self.client._iprot.trans.close()
+
+    def reconnect(self):
+        # pylint: disable=protected-access
+        log.debug('reconnect: client=%s', self.client)
+        self.client._iprot.trans.close()
+        self.client._iprot.trans.open()
+
+    def open_session(self, user, configuration=None):
+        protocol = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6
+        req = TOpenSessionReq(client_protocol=protocol,
+                              username=user,
+                              configuration=configuration)
+        resp = self._rpc('OpenSession', req)
+        return HS2Session(self, resp.sessionHandle,
+                          resp.configuration,
+                          resp.serverProtocolVersion)
 
 
-@retry
-def get_table_schema(service, session_handle, table_name, database_name='.*'):
-    req = TGetColumnsReq(sessionHandle=session_handle,
-                         schemaName=database_name, tableName=table_name,
-                         columnName='.*')
-    log.debug('get_table_schema: req=%s', req)
-    resp = service.GetColumns(req)
-    log.debug('get_table_schema: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    return resp.operationHandle
+class HS2Session(ThriftRPC):
+
+    def __init__(self, service, handle, config, hs2_protocol_version,
+                 retries=3):
+        self.service = service
+        self.handle = handle
+        self.config = config
+        self.hs2_protocol_version = hs2_protocol_version
+
+        if hs2_protocol_version not in TProtocolVersion._VALUES_TO_NAMES:
+            raise HiveServer2Error("Got HiveServer2 version {0}; "
+                                   "expected V1 - V6"
+                                   .format(hs2_protocol_version))
+
+        ThriftRPC.__init__(self, self.service.client, retries=retries)
+
+    def close(self):
+        req = TCloseSessionReq(sessionHandle=self.handle)
+        self._rpc('CloseSession', req)
+
+    def execute(self, statement, configuration=None, async=False):
+        req = TExecuteStatementReq(sessionHandle=self.handle,
+                                   statement=statement,
+                                   confOverlay=configuration,
+                                   runAsync=async)
+        return self._operation('ExecuteStatement', req)
+
+    def get_databases(self, schema='.*'):
+        req = TGetSchemasReq(sessionHandle=self.handle, schemaName=schema)
+        return self._operation('GetSchemas', req)
+
+    def get_tables(self, database='.*', table_like='.*'):
+        req = TGetTablesReq(sessionHandle=self.handle,
+                            schemaName=database,
+                            tableName=table_like)
+        return self._operation('GetTables', req)
+
+    def get_table_schema(self, table, database='.*'):
+        req = TGetColumnsReq(sessionHandle=self.handle,
+                             schemaName=database,
+                             tableName=table, columnName='.*')
+        return self._operation('GetColumns', req)
+
+    def get_functions(self, database='.*'):
+        # TODO: need to test this one especially
+        req = TGetFunctionsReq(sessionHandle=self.handle,
+                               schemaName=database,
+                               functionName='.*')
+        return self._operation('GetFunctions', req)
+
+    def database_exists(self, db_name):
+        op = self.get_databases(schema=db_name)
+
+        # this only fetches default max_rows, but there should only be one row
+        # ideally
+        results = op.fetch()
+
+        exists = False
+        for result in results:
+            if result[0].lower() == db_name.lower():
+                exists = True
+        op.close()
+        return exists
+
+    def table_exists(self, table, database='.*'):
+        op = self.get_tables(database=database, table_like=table)
+        results = op.fetch()
+        exists = False
+        for result in results:
+            if result[2].lower() == table.lower():
+                exists = True
+        op.close()
+        return exists
+
+    def ping(self):
+        req = TGetInfoReq(sessionHandle=self.handle,
+                          infoType=TGetInfoType.CLI_SERVER_NAME)
+        log.debug('ping: req=%s', req)
+        try:
+            resp = self.client.GetInfo(req)
+        except TTransportException:
+            log.exception('ping: failed')
+            return False
+        log.debug('ping: resp=%s', resp)
+        try:
+            err_if_rpc_not_ok(resp)
+        except HiveServer2Error:
+            log.exception('ping: failed')
+            return False
+        return True
+
+    def _get_operation(self, handle):
+        return Operation(self, handle)
 
 
-@retry
-def get_functions(service, session_handle, database_name='.*'):
-    # TODO: need to test this one especially
-    req = TGetFunctionsReq(sessionHandle=session_handle,
-                           schemaName=database_name,
-                           functionName='.*')
-    log.debug('get_functions: req=%s', req)
-    resp = service.GetFunctions(req)
-    log.debug('get_functions: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    return resp.operationHandle
+class Operation(ThriftRPC):
 
+    def __init__(self, session, handle, retries=3):
+        self.session = session
+        self.handle = handle
+        self._schema = None
+        ThriftRPC.__init__(self, self.session.client, retries=retries)
 
-@retry
-def get_operation_status(service, operation_handle):
-    # pylint: disable=protected-access
-    req = TGetOperationStatusReq(operationHandle=operation_handle)
-    log.debug('get_operation_status: req=%s', req)
-    resp = service.GetOperationStatus(req)
-    log.debug('get_operation_status: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    return TOperationState._VALUES_TO_NAMES[resp.operationState]
+    @property
+    def has_result_set(self):
+        return self.handle.hasResultSet
 
+    def get_status(self):
+        # pylint: disable=protected-access
+        req = TGetOperationStatusReq(operationHandle=self.handle)
+        resp = self._rpc('GetOperationStatus', req)
+        return TOperationState._VALUES_TO_NAMES[resp.operationState]
 
-@retry
-def cancel_operation(service, operation_handle):
-    req = TCancelOperationReq(operationHandle=operation_handle)
-    log.debug('cancel_operation: req=%s', req)
-    resp = service.CancelOperation(req)
-    log.debug('cancel_operation: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
+    def get_log(self):
+        req = TGetLogReq(operationHandle=self.handle)
+        return self._rpc('GetLog', req).log
 
+    def cancel(self):
+        req = TCancelOperationReq(operationHandle=self.handle)
+        self._rpc('CancelOperation', req)
 
-@retry
-def close_operation(service, operation_handle):
-    req = TCloseOperationReq(operationHandle=operation_handle)
-    log.debug('close_operation: req=%s', req)
-    resp = service.CloseOperation(req)
-    log.debug('close_operation: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
+    def close(self):
+        req = TCloseOperationReq(operationHandle=self.handle)
+        self._rpc('CloseOperation', req)
 
+    def get_profile(self):
+        req = TGetRuntimeProfileReq(operationHandle=self.handle,
+                                    sessionHandle=self.session.handle)
+        resp = self._rpc('GetRuntimeProfile', req)
+        return resp.profile
 
-@retry
-def get_log(service, operation_handle):
-    req = TGetLogReq(operationHandle=operation_handle)
-    log.debug('get_log: req=%s', req)
-    resp = service.GetLog(req)
-    log.debug('get_log: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    return resp.log
+    def get_summary(self):
+        req = TGetExecSummaryReq(operationHandle=self.handle,
+                                 sessionHandle=self.session.handle)
+        resp = self._rpc('GetExecSummary', req)
+        return resp.summary
 
+    def fetch(self, schema=None, max_rows=1024,
+              orientation=TFetchOrientation.FETCH_NEXT):
+        if not self.has_result_set:
+            log.debug('fetch_results: operation_handle.hasResultSet=False')
+            return None
 
-def ping(service, session_handle):
-    req = TGetInfoReq(sessionHandle=session_handle,
-                      infoType=TGetInfoType.CLI_SERVER_NAME)
-    log.debug('ping: req=%s', req)
-    try:
-        resp = service.GetInfo(req)
-    except TTransportException:
-        log.exception('ping: failed')
-        return False
-    log.debug('ping: resp=%s', resp)
-    try:
-        err_if_rpc_not_ok(resp)
-    except HiveServer2Error:
-        log.exception('ping: failed')
-        return False
-    return True
+        # the schema is necessary to pull the proper values (i.e., coalesce)
+        if schema is None:
+            schema = self.get_result_schema()
 
+        req = TFetchResultsReq(operationHandle=self.handle,
+                               orientation=orientation,
+                               maxRows=max_rows)
+        resp = self._rpc('FetchResults', req)
+        return self._wrap_results(resp.results, schema)
 
-def get_profile(service, operation_handle, session_handle):
-    req = TGetRuntimeProfileReq(operationHandle=operation_handle,
-                                sessionHandle=session_handle)
-    log.debug('get_profile: req=%s', req)
-    resp = service.GetRuntimeProfile(req)
-    log.debug('get_profile: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    return resp.profile
+    def _wrap_results(self, results, schema):
+        if self.is_columnar:
+            log.debug('fetch_results: constructing CBatch')
+            return CBatch(results, schema)
+        else:
+            log.debug('fetch_results: constructing RBatch')
+            return RBatch(results, schema)
 
+    @property
+    def is_columnar(self):
+        protocol = self.session.hs2_protocol_version
+        return _is_columnar_protocol(protocol)
 
-def get_summary(service, operation_handle, session_handle):
-    req = TGetExecSummaryReq(operationHandle=operation_handle,
-                             sessionHandle=session_handle)
-    log.debug('get_summary: req=%s', req)
-    resp = service.GetExecSummary(req)
-    log.debug('get_summary: resp=%s', resp)
-    err_if_rpc_not_ok(resp)
-    return resp.summary
+    def get_result_schema(self):
+        if not self.handle.hasResultSet:
+            log.debug('get_result_schema: handle.hasResultSet=False')
+            return None
+
+        req = TGetResultSetMetadataReq(operationHandle=self.handle)
+        resp = self._rpc('GetResultSetMetadata', req)
+
+        schema = []
+        for column in resp.schema.columns:
+            # pylint: disable=protected-access
+            name = column.columnName
+            entry = column.typeDesc.types[0].primitiveEntry
+            type_ = TTypeId._VALUES_TO_NAMES[entry.type].split('_')[0]
+            if type_ == 'DECIMAL':
+                qualifiers = entry.typeQualifiers.qualifiers
+                precision = qualifiers['precision'].i32Value
+                scale = qualifiers['scale'].i32Value
+                schema.append((name, type_, None, None,
+                               precision, scale, None))
+            else:
+                schema.append((name, type_, None, None, None, None, None))
+
+        log.debug('get_result_schema: schema=%s', schema)
+
+        return schema
 
 
 def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
