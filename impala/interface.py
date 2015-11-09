@@ -44,7 +44,7 @@ class Connection(object):
         # PEP 249
         raise NotImplementedError
 
-    def cursor(self, session_handle=None, user=None, configuration=None):
+    def cursor(self, user=None, configuration=None, convert_types=True):
         # PEP 249
         raise NotImplementedError
 
