@@ -758,7 +758,7 @@ class ThriftRPC(object):
 
     def _log_request(self, kind, request):
         # pylint: disable=logging-format-interpolation
-        log.debug('%s: req={1!s}'.format(kind, request))
+        log.debug('{0}: req={1!s}'.format(kind, request))
 
     def _log_response(self, kind, response):
         # pylint: disable=logging-format-interpolation
