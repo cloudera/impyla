@@ -48,7 +48,7 @@ Optional:
 
 ### Installation
 
-Install the latest release (`0.11.1`) with `pip`:
+Install the latest release (`0.12.0`) with `pip`:
 
 ```bash
 pip install impyla
