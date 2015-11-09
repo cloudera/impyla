@@ -76,7 +76,7 @@ class HiveServer2Connection(Connection):
         # PEP 249
         raise NotSupportedError
 
-    def cursor(self, user=None, configuration=None):
+    def cursor(self, user=None, configuration=None, convert_types=True):
         # PEP 249
         log.info('Getting a cursor (Impala session)')
 
@@ -92,7 +92,7 @@ class HiveServer2Connection(Connection):
                   self.service, session.handle,
                   session.config, session.hs2_protocol_version)
 
-        cursor = HiveServer2Cursor(session)
+        cursor = HiveServer2Cursor(session, convert_types=convert_types)
 
         if self.default_db is not None:
             log.info('Using database %s as default', self.default_db)
@@ -105,8 +105,9 @@ class HiveServer2Cursor(Cursor):
     # HiveServer2Cursor objects are associated with a Session
     # they are instantiated with alive session_handles
 
-    def __init__(self, session):
+    def __init__(self, session, convert_types=True):
         self.session = session
+        self.convert_types = convert_types
 
         self._last_operation = None
 
@@ -336,16 +337,17 @@ class HiveServer2Cursor(Cursor):
         except StopIteration:
             return []
 
-    def fetchcolumnar(self, convert_types=True):
+    def fetchcolumnar(self):
         """Executes a fetchall operation returning a list of CBatches"""
         if not self._last_operation.is_columnar:
             raise NotSupportedError("Server does not support columnar "
                                     "fetching")
         batches = []
         while True:
-            batch = self._last_operation.fetch(self.description,
-                                               self.buffersize,
-                                               convert_types=convert_types)
+            batch = (self._last_operation
+                     .fetch(self.description,
+                            self.buffersize,
+                            convert_types=self.convert_types))
             if len(batch) == 0:
                 break
             batches.append(batch)
@@ -654,23 +656,23 @@ class CBatch(Batch):
             is_null = bitarray(endian='little')
             is_null.frombytes(nulls)
 
-            if convert_types:
-                values = self._convert_values(num_rows, type_, is_null, values)
-
             # Ref HUE-2722, HiveServer2 sometimes does not add trailing '\x00'
             if len(values) > len(nulls):
                 to_append = ((len(values) - len(nulls) + 7) // 8)
                 is_null.frombytes(b'\x00' * to_append)
 
+            if convert_types:
+                values = self._convert_values(type_, is_null, values)
+
             self.columns.append(Column(type_, values, is_null))
 
-    def _convert_values(self, num_rows, type_, is_null, values):
+    def _convert_values(self, type_, is_null, values):
         if type_ == 'TIMESTAMP':
-            for i in range(num_rows):
+            for i in range(len(values)):
                 values[i] = (None if is_null[i] else
                              _parse_timestamp(values[i]))
         if type_ == 'DECIMAL':
-            for i in range(num_rows):
+            for i in range(len(values)):
                 values[i] = (None if is_null[i] else Decimal(values[i]))
 
         return values
