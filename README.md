@@ -1,7 +1,8 @@
 # impyla
 
-Python client for Impala/Hive distributed query engine.
+Python DBAPI 2.0 client for Impala/Hive distributed query engine.
 
+For higher-level Impala functionality, see the [Ibis project][ibis].
 
 ### Features
 
@@ -18,23 +19,6 @@ sqlite or MySQL clients) supporting Python 2.6+ and Python 3.3+.
 * Converter to [pandas][pandas] `DataFrame`, allowing easy integration into the
 Python data stack (including [scikit-learn][sklearn] and
 [matplotlib][matplotlib])
-
-
-#### Deprecated functionality
-
-These features will be removed in a future release.
-
-* `BigDataFrame`
-
-* beeswax support
-
-* scikit-learn wrapper
-
-* numba-compiled Python UDFs
-
-See the [Ibis project][ibis] for continued development of these higher-level
-features.
-
 
 ### Dependencies
 
