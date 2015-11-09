@@ -757,9 +757,11 @@ class ThriftRPC(object):
         return self._get_operation(resp.operationHandle)
 
     def _log_request(self, kind, request):
-        log.debug('{0}: req={1!s}'.format(kind, request))
+        # pylint: disable=logging-format-interpolation
+        log.debug('%s: req={1!s}'.format(kind, request))
 
     def _log_response(self, kind, response):
+        # pylint: disable=logging-format-interpolation
         log.debug('{0}: resp={1!s}'.format(kind, response))
 
 
@@ -801,6 +803,7 @@ class HS2Session(ThriftRPC):
 
     def __init__(self, service, handle, config, hs2_protocol_version,
                  retries=3):
+        # pylint: disable=protected-access
         self.service = service
         self.handle = handle
         self.config = config
