@@ -9,15 +9,11 @@ ignore-paths:
     - ez_setup.py
     - impala/tests/_dbapi20_tests.py
     - bin/register-impala-udfs.py
-    - impala/_sql_model.py
-    - impala/bdf.py
-    - impala/blob.py
-    - impala/context.py
-    - impala/sklearn.py
 
 ignore-patterns:
     - ^build
     - ^impala/_thrift_gen
+    - ^dev
     - ^examples
     - udf
 
