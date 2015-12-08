@@ -667,6 +667,7 @@ class CBatch(Batch):
             self.columns.append(Column(type_, values, is_null))
 
     def _convert_values(self, type_, is_null, values):
+        # pylint: disable=consider-using-enumerate
         if type_ == 'TIMESTAMP':
             for i in range(len(values)):
                 values[i] = (None if is_null[i] else
