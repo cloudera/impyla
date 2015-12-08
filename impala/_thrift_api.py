@@ -16,6 +16,8 @@
 # thriftpy for Py3 at the moment.  This should all be temporary, as Apache
 # Thrift gains Py3 compatibility.
 
+# pylint: disable=wrong-import-position
+
 from __future__ import absolute_import
 
 import os
