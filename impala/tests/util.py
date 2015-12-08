@@ -19,7 +19,7 @@ import six
 
 class ImpylaTestEnv(object):
 
-    def __init__(self, host=None, port=None, auth_mech=None):
+    def __init__(self, host=None, port=None, auth_mech=None, use_ssl=None):
         if host is not None:
             self.host = host
         elif 'IMPYLA_TEST_HOST' in os.environ:
@@ -43,6 +43,14 @@ class ImpylaTestEnv(object):
         else:
             sys.stderr.write("IMPYLA_TEST_AUTH_MECH not set; using 'NOSASL'")
             self.auth_mech = 'NOSASL'
+
+        if use_ssl is not None:
+            self.use_ssl = use_ssl
+        elif 'IMPYLA_TEST_USE_SSL' in os.environ:
+            self.use_ssl = os.environ['IMPYLA_TEST_USE_SSL'].lower() == 'true'
+        else:
+            sys.stderr.write("IMPYLA_TEST_USE_SSL not set; using False")
+            self.use_ssl = False
 
     def __repr__(self):
         kvs = ['{0}={1}'.format(k, v)
