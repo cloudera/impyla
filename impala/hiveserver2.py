@@ -60,7 +60,7 @@ class HiveServer2Connection(Connection):
     def close(self):
         """Close the session and the Thrift transport."""
         # PEP 249
-        log.info('Closing HS2 connection')
+        log.debug('Closing HS2 connection')
         self.service.close()
 
     def reconnect(self):
@@ -78,7 +78,7 @@ class HiveServer2Connection(Connection):
 
     def cursor(self, user=None, configuration=None, convert_types=True):
         # PEP 249
-        log.info('Getting a cursor (Impala session)')
+        log.debug('Getting a cursor (Impala session)')
 
         if user is None:
             user = getpass.getuser()
@@ -173,7 +173,7 @@ class HiveServer2Cursor(Cursor):
         # close_operation().
         self.close_operation()
 
-        log.info('Closing HiveServer2Cursor')
+        log.debug('Closing HiveServer2Cursor')
 
         self.session.close()
 
@@ -203,12 +203,12 @@ class HiveServer2Cursor(Cursor):
         # PEP 249
         self.execute_async(operation, parameters=parameters,
                            configuration=configuration)
-        log.info('Waiting for query to finish')
+        log.debug('Waiting for query to finish')
         self._wait_to_finish()  # make execute synchronous
-        log.info('Query finished')
+        log.debug('Query finished')
 
     def execute_async(self, operation, parameters=None, configuration=None):
-        log.info('Executing query %s', operation)
+        log.debug('Executing query %s', operation)
 
         def op():
             if parameters:
@@ -295,7 +295,7 @@ class HiveServer2Cursor(Cursor):
 
     def executemany(self, operation, seq_of_parameters):
         # PEP 249
-        log.info('Attempting to execute %s queries', len(seq_of_parameters))
+        log.debug('Attempting to execute %s queries', len(seq_of_parameters))
         for parameters in seq_of_parameters:
             self.execute(operation, parameters)
             if self.has_result_set:
@@ -306,7 +306,7 @@ class HiveServer2Cursor(Cursor):
         # PEP 249
         if not self.has_result_set:
             raise ProgrammingError("Tried to fetch but no results.")
-        log.info('Fetching a single row')
+        log.debug('Fetching a single row')
         try:
             return next(self)
         except StopIteration:
@@ -318,7 +318,7 @@ class HiveServer2Cursor(Cursor):
             raise ProgrammingError("Tried to fetch but no results.")
         if size is None:
             size = self.arraysize
-        log.info('Fetching up to %s result rows', size)
+        log.debug('Fetching up to %s result rows', size)
         local_buffer = []
         i = 0
         while i < size:
@@ -331,7 +331,7 @@ class HiveServer2Cursor(Cursor):
 
     def fetchall(self):
         # PEP 249
-        log.info('Fetching all result rows')
+        log.debug('Fetching all result rows')
         try:
             return list(self)
         except StopIteration:
@@ -554,7 +554,7 @@ def threaded(func):
 def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
             auth_mechanism=None):
-    log.info('Connecting to HiveServer2 %s:%s with %s authentication '
+    log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
              'mechanism', host, port, auth_mechanism)
     sock = get_socket(host, port, use_ssl, ca_cert)
     if timeout is not None:
