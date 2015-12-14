@@ -501,6 +501,10 @@ _TTypeId_to_TColumnValue_getters = {
     'BINARY': operator.attrgetter('binaryVal'),
     'VARCHAR': operator.attrgetter('stringVal'),
     'CHAR': operator.attrgetter('stringVal'),
+    'MAP': operator.attrgetter('stringVal'),
+    'ARRAY': operator.attrgetter('stringVal'),
+    'STRUCT': operator.attrgetter('stringVal'),
+    'UNIONTYPE': operator.attrgetter('stringVal'),
 }
 
 _pre_columnar_protocols = [
