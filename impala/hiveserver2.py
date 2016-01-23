@@ -77,6 +77,23 @@ class HiveServer2Connection(Connection):
         raise NotSupportedError
 
     def cursor(self, user=None, configuration=None, convert_types=True):
+        """Get a cursor from the HiveServer2 (HS2) connection.
+
+        Parameters
+        ----------
+        user : str, optional
+        configuration : dict of str keys and values, optional
+            Configuration overlay for the HS2 session.
+        convert_types : bool, optional
+            When `False`, timestamps and decimal values will not be converted
+            to Python `datetime` and `Decimal` values. (These conversions are
+            expensive.)
+
+        Returns
+        -------
+        HiveServer2Cursor
+            A `Cursor` object (DB API 2.0-compliant).
+        """
         # PEP 249
         log.debug('Getting a cursor (Impala session)')
 
@@ -101,6 +118,10 @@ class HiveServer2Connection(Connection):
 
 
 class HiveServer2Cursor(Cursor):
+    """The DB API 2.0 Cursor object.
+
+    See the PEP 249 specification for more details.
+    """
     # PEP 249
     # HiveServer2Cursor objects are associated with a Session
     # they are instantiated with alive session_handles
@@ -200,6 +221,26 @@ class HiveServer2Cursor(Cursor):
         self._last_operation = None
 
     def execute(self, operation, parameters=None, configuration=None):
+        """Synchronously execute a SQL query.
+
+        Blocks until results are available.
+
+        Parameters
+        ----------
+        operation : str
+            The SQL query to execute.
+        parameters : str, optional
+            Parameters to be bound to variables in the SQL query, if any.
+            Impyla supports all DB API `paramstyle`s, including `qmark`,
+            `numeric`, `named`, `format`, `pyformat`.
+        configuration : dict of str keys and values, optional
+            Configuration overlay for this query.
+
+        Returns
+        -------
+        NoneType
+            Results are available through a call to `fetch*`.
+        """
         # PEP 249
         self.execute_async(operation, parameters=parameters,
                            configuration=configuration)
@@ -208,6 +249,27 @@ class HiveServer2Cursor(Cursor):
         log.debug('Query finished')
 
     def execute_async(self, operation, parameters=None, configuration=None):
+        """Asynchronously execute a SQL query.
+
+        Immediately returns after query is sent to the HS2 server.  Poll with
+        `is_executing`. A call to `fetch*` will block.
+
+        Parameters
+        ----------
+        operation : str
+            The SQL query to execute.
+        parameters : str, optional
+            Parameters to be bound to variables in the SQL query, if any.
+            Impyla supports all DB API `paramstyle`s, including `qmark`,
+            `numeric`, `named`, `format`, `pyformat`.
+        configuration : dict of str keys and values, optional
+            Configuration overlay for this query.
+
+        Returns
+        -------
+        NoneType
+            Results are available through a call to `fetch*`.
+        """
         log.debug('Executing query %s', operation)
 
         def op():
@@ -344,10 +406,10 @@ class HiveServer2Cursor(Cursor):
                                     "fetching")
         batches = []
         while True:
-            batch = (self._last_operation
-                     .fetch(self.description,
-                            self.buffersize,
-                            convert_types=self.convert_types))
+            batch = (self._last_operation.fetch(
+                         self.description,
+                         self.buffersize,
+                         convert_types=self.convert_types))
             if len(batch) == 0:
                 break
             batches.append(batch)
@@ -389,8 +451,7 @@ class HiveServer2Cursor(Cursor):
             raise StopIteration
 
     def ping(self):
-        """Checks connection to server by requesting some info from the
-        server."""
+        """Checks connection to server by requesting some info."""
         log.info('Pinging the impalad')
         return self.session.ping()
 

@@ -42,6 +42,68 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
             password=None, kerberos_service_name='impala', use_ldap=None,
             ldap_user=None, ldap_password=None, use_kerberos=None,
             protocol=None):
+    """Get a connection to HiveServer2 (HS2).
+
+    These options are largely compatible with the impala-shell command line
+    arguments. See those docs for more information.
+
+    Parameters
+    ----------
+    host : str
+        The hostname for HS2. For Impala, this can be any of the `impalad`s.
+    port : int, optional
+        The port number for HS2. The Impala default is 21050. The Hive port is
+        likely different.
+    database : str, optional
+        The default database. If `None`, the result is
+        implementation-dependent.
+    timeout : int, optional
+        Connection timeout in seconds. Default is no timeout.
+    use_ssl : bool, optional
+        Enable SSL.
+    ca_cert : str, optional
+        Local path to the the third-party CA certificate. If SSL is enabled but
+        the certificate is not specified, the server certificate will not be
+        validated.
+    auth_mechanism : {'NOSASL', 'PLAIN', 'GSSAPI', 'LDAP'}
+        Specify the authentication mechanism. `'NOSASL'` for unsecured Impala.
+        `'PLAIN'` for unsecured Hive (because Hive requires the SASL
+        transport). `'GSSAPI'` for Kerberos and `'LDAP'` for Kerberos with
+        LDAP.
+    user : str, optional
+        LDAP user, if applicable.
+    password : str, optional
+        LDAP password, if applicable.
+    kerberos_service_name : str, optional
+        Authenticate to a particular `impalad` service principal. Uses
+        `'impala'` by default.
+    use_ldap : bool, optional
+        Specify `auth_mechanism='LDAP'` instead.
+
+        .. deprecated:: 0.11.0
+    ldap_user : str, optional
+        Use `user` parameter instead.
+
+        .. deprecated:: 0.11.0
+    ldap_password : str, optional
+        Use `password` parameter instead.
+
+        .. deprecated:: 0.11.0
+    use_kerberos : bool, optional
+        Specify `auth_mechanism='GSSAPI'` instead.
+
+        .. deprecated:: 0.11.0
+    protocol : str, optional
+        Do not use.  HiveServer2 is the only protocol currently supported.
+
+        .. deprecated:: 0.11.0
+
+
+    Returns
+    -------
+    HiveServer2Connection
+        A `Connection` object (DB API 2.0-compliant).
+    """
     # pylint: disable=too-many-locals
     if use_kerberos is not None:
         warn_deprecate('use_kerberos', 'auth_mechanism="GSSAPI"')

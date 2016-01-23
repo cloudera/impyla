@@ -249,7 +249,7 @@ def _bind_parameters_dict(operation, parameters):
 
 
 def _bind_parameters(operation, parameters):
-    # If parameters is a list, assume either qmark or numeric
+    # If parameters is a list, assume either qmark, format, or numeric
     # format. If not, assume either named or pyformat parameters
     if isinstance(parameters, (list, tuple)):
         return _bind_parameters_list(operation, parameters)

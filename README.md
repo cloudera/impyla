@@ -1,24 +1,26 @@
 # impyla
 
-Python DBAPI 2.0 client for Impala/Hive distributed query engine.
+Python client for HiveServer2 implementations (e.g., Impala, Hive) for
+distributed query engines.
 
-For higher-level Impala functionality, see the [Ibis project][ibis].
+For higher-level Impala functionality, including a Pandas-like interface over
+distributed data sets, see the [Ibis project][ibis].
 
 ### Features
 
-* Lightweight, `pip`-installable package for connecting to Impala and Hive
-  databases
+* HiveServer2 compliant; works with Impala and Hive, including nested data
 
 * Fully [DB API 2.0 (PEP 249)][pep249]-compliant Python client (similar to
 sqlite or MySQL clients) supporting Python 2.6+ and Python 3.3+.
 
-* Connects to HiveServer2; runs with Kerberos, LDAP, SSL
+* Works with Kerberos, LDAP, SSL
 
 * [SQLAlchemy][sqlalchemy] connector
 
 * Converter to [pandas][pandas] `DataFrame`, allowing easy integration into the
 Python data stack (including [scikit-learn][sklearn] and
-[matplotlib][matplotlib])
+[matplotlib][matplotlib]); but see the [Ibis project][ibis] for a richer
+experience
 
 ### Dependencies
 
@@ -26,20 +28,20 @@ Required:
 
 * Python 2.6+ or 3.3+
 
-* `six`
-
-* `thrift_sasl`
-
-* `bit_array`
+* `six`, `bit_array`
 
 * `thrift` (on Python 2.x) or `thriftpy` (on Python 3.x)
 
+For Hive and/or Kerberos support:
+
+* `thrift_sasl`
+
+* `python-sasl` (for Python 3.x support, requires
+  [cloudera/python-sasl@cython][python-sasl-cython] branch)
+
 Optional:
 
-* `pandas` for conversion to `DataFrame` objects
-
-* `python-sasl` for Kerberos support (for Python 3.x support, requires
-  laserson/python-sasl@cython)
+* `pandas` for conversion to `DataFrame` objects; but see the [Ibis project][ibis] instead
 
 * `sqlalchemy` for the SQLAlchemy engine
 
@@ -54,7 +56,7 @@ Install the latest release (`0.12.0`) with `pip`:
 pip install impyla
 ```
 
-For the latest (dev) version, clone the repo:
+For the latest (dev) version, install directly from the repo:
 
 ```bash
 pip install git+https://github.com/cloudera/impyla.git
@@ -89,7 +91,7 @@ py.test --connect impyla
 Leave out the `--connect` option to skip tests for DB API compliance.
 
 
-### Quickstart
+### Usage
 
 Impyla implements the [Python DB API v2.0 (PEP 249)][pep249] database interface
 (refer to it for API details):
@@ -99,7 +101,7 @@ from impala.dbapi import connect
 conn = connect(host='my.host.com', port=21050)
 cursor = conn.cursor()
 cursor.execute('SELECT * FROM mytable LIMIT 100')
-print cursor.description # prints the result set's schema
+print cursor.description  # prints the result set's schema
 results = cursor.fetchall()
 ```
 
@@ -132,3 +134,4 @@ df = as_pandas(cur)
 [pytest]: http://pytest.org/latest/
 [sqlalchemy]: http://www.sqlalchemy.org/
 [ibis]: http://www.ibis-project.org/
+[python-sasl-cython]: https://github.com/laserson/python-sasl/tree/cython/sasl
