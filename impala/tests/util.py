@@ -47,4 +47,4 @@ class ImpylaTestEnv(object):
     def __repr__(self):
         kvs = ['{0}={1}'.format(k, v)
                for (k, v) in six.iteritems(self.__dict__)]
-        return 'IbisTestEnv(\n    {0})'.format(',\n    '.join(kvs))
+        return 'ImpylaTestEnv(\n    {0})'.format(',\n    '.join(kvs))
