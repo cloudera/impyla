@@ -28,6 +28,10 @@ set -x
 #   GITHUB_PR
 # For reporting to codecov.io, set
 #   CODECOV_TOKEN
+#
+# If testing against Hive, make sure that the HDFS dir /user/<username> exists
+# for whichever user is running the Hive queries.  Otherwise, the MapReduce
+# jobs will fail.
 
 printenv
 
@@ -88,12 +92,6 @@ if [ $IMPYLA_TEST_AUTH_MECH != "NOSASL" ]; then
     # Hive and Kerberos all need sasl installed
     sudo yum install -y cyrus-sasl-devel
     pip install git+https://github.com/laserson/python-sasl.git@cython
-fi
-
-if [ $IMPYLA_TEST_AUTH_MECH = "PLAIN" ]; then
-    # Hive uses MapReduce, which requires that /user/jenkins exist
-    sudo -u hdfs hadoop fs -mkdir -p /user/jenkins
-    sudo -u hdfs hadoop fs -chown jenkins:jenkins /user/jenkins
 fi
 
 if [ $IMPYLA_TEST_AUTH_MECH = "GSSAPI" -o $IMPYLA_TEST_AUTH_MECH = "LDAP" ]; then
