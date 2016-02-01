@@ -623,8 +623,12 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
     if six.PY2:
         sock.setTimeout(timeout)
     elif six.PY3:
-        sock.socket_timeout = timeout
-        sock.connect_timeout = timeout
+        try:
+            # thriftpy has a release where set_timeout is missing
+            sock.set_timeout(timeout)
+        except AttributeError:
+            sock.socket_timeout = timeout
+            sock.connect_timeout = timeout
     transport = get_transport(sock, host, kerberos_service_name,
                               auth_mechanism, user, password)
     transport.open()
