@@ -566,6 +566,7 @@ _TTypeId_to_TColumnValue_getters = {
     'ARRAY': operator.attrgetter('stringVal'),
     'STRUCT': operator.attrgetter('stringVal'),
     'UNIONTYPE': operator.attrgetter('stringVal'),
+    'DATE': operator.attrgetter('stringVal')
 }
 
 _pre_columnar_protocols = [
