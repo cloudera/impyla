@@ -280,7 +280,7 @@ class HiveServer2Cursor(Cursor):
                 self._last_operation_string = operation
 
             op = self.session.execute(self._last_operation_string,
-                                      configuration)
+                                      configuration, async=True)
             self._last_operation = op
 
         self._execute_async(op)
