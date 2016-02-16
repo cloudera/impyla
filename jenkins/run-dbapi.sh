@@ -91,7 +91,7 @@ which python
 if [ $IMPYLA_TEST_AUTH_MECH != "NOSASL" ]; then
     # Hive and Kerberos all need sasl installed
     sudo yum install -y cyrus-sasl-devel
-    pip install git+https://github.com/laserson/python-sasl.git@cython
+    pip install sasl
 fi
 
 if [ $IMPYLA_TEST_AUTH_MECH = "GSSAPI" -o $IMPYLA_TEST_AUTH_MECH = "LDAP" ]; then
