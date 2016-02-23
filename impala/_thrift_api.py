@@ -139,17 +139,24 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
             log.debug('get_transport: password=%s', password)
 
     # Initializes a sasl client
-    import sasl  # pylint: disable=import-error
     from thrift_sasl import TSaslClientTransport
+    try:
+        import sasl  # pylint: disable=import-error
 
-    def sasl_factory():
-        sasl_client = sasl.Client()
-        sasl_client.setAttr('host', host)
-        sasl_client.setAttr('service', kerberos_service_name)
-        if auth_mechanism.upper() in ['PLAIN', 'LDAP']:
-            sasl_client.setAttr('username', user)
-            sasl_client.setAttr('password', password)
-        sasl_client.init()
-        return sasl_client
+        def sasl_factory():
+            sasl_client = sasl.Client()
+            sasl_client.setAttr('host', host)
+            sasl_client.setAttr('service', kerberos_service_name)
+            if auth_mechanism.upper() in ['PLAIN', 'LDAP']:
+                sasl_client.setAttr('username', user)
+                sasl_client.setAttr('password', password)
+            sasl_client.init()
+            return sasl_client
+    except ImportError:
+        log.warn("Unable to import 'sasl'. Fallback to 'puresasl'.")
+        from impala.sasl_compat import PureSASLClient
+
+        def sasl_factory():
+            return PureSASLClient(host, username=user, password=password, service=kerberos_service_name)
 
     return TSaslClientTransport(sasl_factory, auth_mechanism, socket)
