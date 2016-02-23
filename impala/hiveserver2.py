@@ -367,6 +367,7 @@ class HiveServer2Cursor(Cursor):
 
     def fetchone(self):
         # PEP 249
+        self._wait_to_finish()
         if not self.has_result_set:
             raise ProgrammingError("Tried to fetch but no results.")
         log.debug('Fetching a single row')
@@ -377,6 +378,7 @@ class HiveServer2Cursor(Cursor):
 
     def fetchmany(self, size=None):
         # PEP 249
+        self._wait_to_finish()
         if not self.has_result_set:
             raise ProgrammingError("Tried to fetch but no results.")
         if size is None:
@@ -394,6 +396,7 @@ class HiveServer2Cursor(Cursor):
 
     def fetchall(self):
         # PEP 249
+        self._wait_to_finish()
         log.debug('Fetching all result rows')
         try:
             return list(self)
@@ -402,6 +405,7 @@ class HiveServer2Cursor(Cursor):
 
     def fetchcolumnar(self):
         """Executes a fetchall operation returning a list of CBatches"""
+        self._wait_to_finish()
         if not self._last_operation.is_columnar:
             raise NotSupportedError("Server does not support columnar "
                                     "fetching")
