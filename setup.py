@@ -32,7 +32,7 @@ PY3 = sys.version_info[0] == 3
 
 # Apache Thrift does not yet support Python 3 (see THRIFT-1857).  We use
 # thriftpy as a stopgap replacement
-reqs = ['six', 'thrift_sasl', 'bitarray']
+reqs = ['six', 'thrift_sasl', 'bitarray', 'sasl>=0.2.1']
 if PY2:
     packages = find_packages()
     reqs.append('thrift')
