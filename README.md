@@ -34,10 +34,10 @@ Required:
 
 For Hive and/or Kerberos support:
 
-* `thrift_sasl`
-
-* `python-sasl` (for Python 3.x support, requires
-  [cloudera/python-sasl@cython][python-sasl-cython] branch)
+```
+pip install thrift_sasl
+pip install sasl
+```
 
 Optional:
 

@@ -32,19 +32,19 @@ PY3 = sys.version_info[0] == 3
 
 # Apache Thrift does not yet support Python 3 (see THRIFT-1857).  We use
 # thriftpy as a stopgap replacement
-reqs = ['six', 'thrift_sasl', 'bitarray']
+reqs = ['six', 'thrift_sasl', 'bitarray', 'sasl>=0.2.1']
 if PY2:
     packages = find_packages()
     reqs.append('thrift')
 elif PY3:
     packages = find_packages(exclude=['impala._thrift_gen',
                                       'impala._thrift_gen.*'])
-    reqs.append('thriftpy')
+    reqs.append('thriftpy>=0.3.5')
 
 
 setup(
     name='impyla',
-    version='0.14.0.dev0',
+    version='0.13.2',
     description='Python client for the Impala distributed query engine',
     long_description=readme(),
     author='Uri Laserson',
