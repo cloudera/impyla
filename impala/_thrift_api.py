@@ -99,8 +99,10 @@ def get_socket(host, port, use_ssl, ca_cert):
               host, port, use_ssl, ca_cert)
 
     if use_ssl:
-        # pylint: disable=import-error
-        from thrift.transport.TSSLSocket import TSSLSocket
+        if six.PY2:
+            from thrift.transport.TSSLSocket import TSSLSocket
+        else:
+            from thriftpy.transport.sslsocket import TSSLSocket
         if ca_cert is None:
             return TSSLSocket(host, port, validate=False)
         else:
