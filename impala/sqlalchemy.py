@@ -132,7 +132,6 @@ class ImpalaDialect(DefaultDialect):
         return impala.dbapi
 
     def initialize(self, connection):
-        self.server_version_info = self._get_server_version_info(connection)
         self.default_schema_name = connection.connection.default_db
 
     def _get_server_version_info(self, connection):
