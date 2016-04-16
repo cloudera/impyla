@@ -127,7 +127,7 @@ class HiveServer2DictCursor(HiveServer2Cursor):
 
     def __next__(self):
         record = super(self.__class__, self).__next__()
-        return {name : record[index] for index, name in enumerate(self.fields)}
+        return dict(zip(self.fields, record))
 
 
 class HiveServer2Cursor(Cursor):
