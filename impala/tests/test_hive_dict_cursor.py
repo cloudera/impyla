@@ -18,7 +18,7 @@ def test_dict_cursor(cur):
 
     cur.execute('SHOW TABLES')
     tables = cur.fetchall()
-    assert any([t[0] == 'tmp_hive' for t in tables])
+    assert any(t['tableName'] == 'tmp_hive' for t in tables)
 
     cur.execute("INSERT INTO tmp_hive "
                 "VALUES ('foo', 1, 0.5), ('bar', 2, NULL), ('baz', 3, 6.2)")
@@ -47,4 +47,4 @@ def test_dict_cursor(cur):
 
     cur.execute('SHOW TABLES')
     tables = cur.fetchall()
-    assert all([t['tableName'] != 'tmp_hive' for t in tables])
+    assert not any(t['tableName'] == 'tmp_hive' for t in tables)
