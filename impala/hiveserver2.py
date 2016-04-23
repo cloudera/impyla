@@ -119,17 +119,6 @@ class HiveServer2Connection(Connection):
         return cursor
 
 
-class HiveServer2DictCursor(HiveServer2Cursor):
-    """The cursor that returns each element as a dictionary"""
-    def execute(self, operation, parameters=None, configuration=None):
-        super(self.__class__, self).execute(operation, parameters, configuration)
-        self.fields = [d[0] for d in self.description]
-
-    def __next__(self):
-        record = super(self.__class__, self).__next__()
-        return dict(zip(self.fields, record))
-
-
 class HiveServer2Cursor(Cursor):
     """The DB API 2.0 Cursor object.
 
@@ -552,6 +541,18 @@ class HiveServer2Cursor(Cursor):
 
         self._execute_async(op)
         self._wait_to_finish()
+
+
+class HiveServer2DictCursor(HiveServer2Cursor):
+    """The cursor that returns each element as a dictionary"""
+    def execute(self, operation, parameters=None, configuration=None):
+        super(self.__class__, self).execute(operation, parameters,
+                                            configuration)
+        self.fields = [d[0] for d in self.description]
+
+    def __next__(self):
+        record = super(self.__class__, self).__next__()
+        return dict(zip(self.fields, record))
 
 
 # This work builds off of:
