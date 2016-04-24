@@ -101,12 +101,16 @@ def get_socket(host, port, use_ssl, ca_cert):
     if use_ssl:
         if six.PY2:
             from thrift.transport.TSSLSocket import TSSLSocket
-        else:
+            if ca_cert is None:
+                return TSSLSocket(host, port, validate=False)
+            else:
+                return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
+        else:    
             from thriftpy.transport.sslsocket import TSSLSocket
-        if ca_cert is None:
-            return TSSLSocket(host, port, validate=False)
-        else:
-            return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
+            if ca_cert is None:
+                return TSSLSocket(host, port, validate=False)
+            else:
+                return TSSLSocket(host, port, validate=True, cafile=ca_cert)
     else:
         return TSocket(host, port)
 
