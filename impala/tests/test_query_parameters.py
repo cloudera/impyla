@@ -241,6 +241,17 @@ def test_format():
             dt("should have raised exception", q[0], q[1])
 
 
+def test_date_type():
+    import datetime
+    today = datetime.date(2016, 5, 7)
+    query = 'select %(today)s'
+    dt("select '2016-05-07'", query, {'today': today})
+
+    today = datetime.datetime(2016, 5, 7, 12, 0)
+    query = 'select %(today)s'
+    dt("select '2016-05-07 12:00:00'", query, {'today': today})
+
+
 def test_bad_argument_type():
     with raises(ProgrammingError):
         _bind_parameters("select * from test", 1)

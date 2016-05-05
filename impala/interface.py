@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 
+import datetime
 import re
 import six
 from six import reraise
@@ -238,6 +239,8 @@ def _bind_parameters_dict(operation, parameters):
             string_parameters[name] = 'NULL'
         elif isinstance(value, six.string_types):
             string_parameters[name] = "'" + _escape(value) + "'"
+        elif isinstance(value, datetime.date):
+            string_parameters[name] = "'{0}'".format(value)
         else:
             string_parameters[name] = str(value)
 
