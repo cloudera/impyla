@@ -177,45 +177,50 @@ class Cursor(object):
             reraise(exc_type, exc_val, exc_tb)
 
 
+def _replace_simple_markers(marker, operation, string_parameters):
+    """
+    Replaces qmark and format markers in the given operation, from the
+    string_parameters list.
+
+    Raises ProgrammingError on wrong number of parameters or bindings.
+    """
+    param_count = len(string_parameters)
+    marker_count = operation.count(marker)
+    if marker_count == 0:
+        return operation, False
+    if param_count != marker_count:
+        raise ProgrammingError("Incorrect number of bindings supplied. "
+                               "The current statement uses %d, and "
+                               "there are %d supplied." %
+                               (marker_count, param_count))
+    operation = operation.replace(marker, '{}')
+    return operation.format(*string_parameters), True
+
+
 def _replace_numeric_markers(operation, string_parameters):
     """
-    Replaces qname, format, and numeric markers in the given operation, from
-    the string_parameters list.
+    Replaces numeric markers in the given operation, from the
+    string_parameters list.
 
-    Raises ProgrammingError on wrong number of parameters or bindings
-    when using qmark. There is no error checking on numeric parameters.
+    Raises ProgrammingError on wrong number of parameters or bindings.
     """
-    def replace_markers(marker, op, parameters):
-        param_count = len(parameters)
-        marker_index = 0
-        while op.find(marker) > -1:
-            if marker_index < param_count:
-                op = op.replace(marker, parameters[marker_index], 1)
-                marker_index += 1
-            else:
-                raise ProgrammingError("Incorrect number of bindings "
-                                       "supplied. The current statement uses "
-                                       "%d or more, and there are %d "
-                                       "supplied." % (marker_index + 1,
-                                                      param_count))
-        if marker_index != 0 and marker_index != param_count:
-            raise ProgrammingError("Incorrect number of bindings "
-                                   "supplied. The current statement uses "
-                                   "%d or more, and there are %d supplied." %
-                                   (marker_index + 1, param_count))
-        return op
-
-    # replace qmark parameters and format parameters
-    operation = replace_markers('?', operation, string_parameters)
-    operation = replace_markers(r'%s', operation, string_parameters)
-
-    # replace numbered parameters
-    # Go through them backwards so smaller numbers don't replace
-    # parts of larger ones
-    for index in range(len(string_parameters), 0, -1):
-        operation = operation.replace(':' + str(index),
-                                      string_parameters[index - 1])
-    return operation
+    param_count = len(string_parameters)
+    marker_count = len(re.findall(':\d+', operation))
+    if marker_count == 0:
+        return operation, False
+    if param_count != marker_count:
+        raise ProgrammingError("Incorrect number of bindings supplied. "
+                               "The current statement uses %d, and "
+                               "there are %d supplied." %
+                               (marker_count, param_count))
+    def format_index(matchobj):
+        index = int(matchobj.group(1)) - 1
+        return '{{{}}}'.format(index)
+    operation = re.sub(':(\d+)', format_index, operation)
+    try:
+        return operation.format(*string_parameters)
+    except (IndexError, KeyError):
+        raise ProgrammingError("Incorrect parameter index is specified.")
 
 
 def _bind_parameters_list(operation, parameters):
@@ -228,7 +233,13 @@ def _bind_parameters_list(operation, parameters):
         else:
             string_parameters.append(str(value))
 
-    # replace qmark and numeric parameters
+    # replace qmark, format, and numeric parameters
+    operation, is_done = _replace_simple_markers('?', operation,
+                                                 string_parameters)
+    if is_done: return operation
+    operation, is_done = _replace_simple_markers('%s', operation,
+                                                 string_parameters)
+    if is_done: return operation
     return _replace_numeric_markers(operation, string_parameters)
 
 
