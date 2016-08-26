@@ -257,3 +257,8 @@ def test_bad_argument_type():
         _bind_parameters("select * from test", 1)
     with raises(ProgrammingError):
         _bind_parameters("select * from test", "a")
+
+def test_marker_replacement():
+    dt("select * from test where x = '%s'",
+       "select * from test where x = %s",
+       [r'%s'])

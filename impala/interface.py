@@ -188,9 +188,14 @@ def _replace_numeric_markers(operation, string_parameters):
     def replace_markers(marker, op, parameters):
         param_count = len(parameters)
         marker_index = 0
-        while op.find(marker) > -1:
+        start_offset = 0
+        while True:
+            found_offset = op.find(marker, start_offset)
+            if not found_offset > -1:
+                break
             if marker_index < param_count:
-                op = op.replace(marker, parameters[marker_index], 1)
+                op = op[:found_offset]+op[found_offset:].replace(marker, parameters[marker_index], 1)
+                start_offset = found_offset + len(parameters[marker_index])
                 marker_index += 1
             else:
                 raise ProgrammingError("Incorrect number of bindings "
