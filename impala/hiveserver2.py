@@ -37,7 +37,7 @@ from impala._thrift_api import (
     TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq, TOperationState,
     TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion,
     TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service,
-    TExecStats, ThriftClient)
+    TExecStats, ThriftClient, TApplicationException)
 
 
 log = get_logger_and_init_null(__name__)
@@ -1004,9 +1004,22 @@ class Operation(ThriftRPC):
         resp = self._rpc('GetOperationStatus', req)
         return TOperationState._VALUES_TO_NAMES[resp.operationState]
 
-    def get_log(self):
-        req = TGetLogReq(operationHandle=self.handle)
-        return self._rpc('GetLog', req).log
+    def get_log(self, max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
+        try:
+            req = TGetLogReq(operationHandle=self.handle)
+            log = self._rpc('GetLog', req).log
+        except TApplicationException as e: # raised if Hive is used
+            if not e.type == TApplicationException.UNKNOWN_METHOD:
+                raise
+            req = TFetchResultsReq(operationHandle=self.handle,
+                                   orientation=orientation,
+                                   maxRows=max_rows,
+                                   fetchType=1)
+            resp = self._rpc('FetchResults', req)
+            schema = [('Log', 'STRING', None, None, None, None, None)]
+            log = self._wrap_results(resp.results, schema, convert_types=True)
+            log = '\n'.join([l[0] for l in log])
+        return log
 
     def cancel(self):
         req = TCancelOperationReq(operationHandle=self.handle)
