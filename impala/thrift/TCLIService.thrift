@@ -1055,6 +1055,9 @@ struct TFetchResultsReq {
   // Max number of rows that should be returned in
   // the rowset.
   3: required i64 maxRows
+
+  // Specify the fetchType for retrieval of logs use 1
+  4: optional i32 fetchType
 }
 
 struct TFetchResultsResp {
