@@ -1018,7 +1018,7 @@ class Operation(ThriftRPC):
             resp = self._rpc('FetchResults', req)
             schema = [('Log', 'STRING', None, None, None, None, None)]
             log = self._wrap_results(resp.results, schema, convert_types=True)
-            log = '\n'.join([l[0] for l in log])
+            log = '\n'.join(l[0] for l in log)
         return log
 
     def cancel(self):
