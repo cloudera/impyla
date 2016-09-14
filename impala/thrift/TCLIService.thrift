@@ -1056,7 +1056,8 @@ struct TFetchResultsReq {
   // the rowset.
   3: required i64 maxRows
 
-  // Specify the fetchType for retrieval of logs use 1
+  // The type of a fetch results request.
+  // 0 represents Query output. 1 represents Log. 
   4: optional i16 fetchType
 }
 
