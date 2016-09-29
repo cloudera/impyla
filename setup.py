@@ -39,7 +39,7 @@ if PY2:
 elif PY3:
     packages = find_packages(exclude=['impala._thrift_gen',
                                       'impala._thrift_gen.*'])
-    reqs.append('thriftpy>=0.3.5')
+    reqs.append('thriftpy==0.3.5')
 
 
 setup(
