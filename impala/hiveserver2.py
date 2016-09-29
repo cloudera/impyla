@@ -315,12 +315,17 @@ class HiveServer2Cursor(Cursor):
     def _wait_to_finish(self):
         loop_start = time.time()
         while True:
-            operation_state = self._last_operation.get_status()
+            req = TGetOperationStatusReq(operationHandle=self._last_operation.handle)
+            resp = self._last_operation._rpc('GetOperationStatus', req)
+            operation_state = TOperationState._VALUES_TO_NAMES[resp.operationState]
 
             log.debug('_wait_to_finish: waited %s seconds so far',
                       time.time() - loop_start)
             if self._op_state_is_error(operation_state):
-                raise OperationalError("Operation is in ERROR_STATE")
+                if resp.errorMessage:
+                    raise OperationalError(resp.errorMessage)
+                else:
+                    raise OperationalError("Operation is in ERROR_STATE")
             if not self._op_state_is_executing(operation_state):
                 break
             time.sleep(self._get_sleep_interval(loop_start))
