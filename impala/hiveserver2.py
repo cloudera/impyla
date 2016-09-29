@@ -57,6 +57,9 @@ class HiveServer2Connection(Connection):
         self.service = service
         self.default_db = default_db
 
+    def __del__(self):
+        self.close()
+
     def close(self):
         """Close the session and the Thrift transport."""
         # PEP 249
