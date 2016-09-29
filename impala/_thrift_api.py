@@ -37,6 +37,7 @@ if six.PY2:
     from thrift.transport.TSocket import TSocket
     from thrift.transport.TTransport import (
         TBufferedTransport, TTransportException)
+    from thrift.Thrift import TApplicationException
     from thrift.protocol.TBinaryProtocol import (
         TBinaryProtocolAccelerated as TBinaryProtocol)
 
@@ -58,7 +59,7 @@ if six.PY2:
 if six.PY3:
     # import thriftpy code
     from thriftpy import load
-    from thriftpy.thrift import TClient
+    from thriftpy.thrift import TClient, TApplicationException
     # TODO: reenable cython
     # from thriftpy.protocol import TBinaryProtocol
     from thriftpy.protocol.binary import TBinaryProtocol  # noqa
@@ -105,7 +106,7 @@ def get_socket(host, port, use_ssl, ca_cert):
                 return TSSLSocket(host, port, validate=False)
             else:
                 return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
-        else:    
+        else:
             from thriftpy.transport.sslsocket import TSSLSocket
             if ca_cert is None:
                 return TSSLSocket(host, port, validate=False)
