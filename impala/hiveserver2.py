@@ -146,6 +146,11 @@ class HiveServer2Cursor(Cursor):
         self._description = None
         self._rowcount = -1
 
+        self._closed = False
+
+    def __del__(self):
+        self.close()
+
     @property
     def description(self):
         # PEP 249
@@ -192,6 +197,8 @@ class HiveServer2Cursor(Cursor):
 
     def close(self):
         # PEP 249
+        if self._closed:
+            return
         # If an operation is active and isn't closed before the session is
         # closed, then the server will cancel the operation upon closing
         # the session. Cancellation could be problematic for some DDL
@@ -202,6 +209,7 @@ class HiveServer2Cursor(Cursor):
         log.debug('Closing HiveServer2Cursor')
 
         self.session.close()
+        self._closed = True
 
     def cancel_operation(self):
         if self._last_operation_active:
