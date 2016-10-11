@@ -126,7 +126,7 @@ class HiveServer2Connection(Connection):
         cursor_class = HiveServer2DictCursor if dictify else HiveServer2Cursor
 
         cursor = cursor_class(session, convert_types=convert_types,
-                              fetch_error=True)
+                              fetch_error=fetch_error)
 
         if self.default_db is not None:
             log.info('Using database %s as default', self.default_db)
