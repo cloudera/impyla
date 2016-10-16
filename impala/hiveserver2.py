@@ -57,9 +57,6 @@ class HiveServer2Connection(Connection):
         self.service = service
         self.default_db = default_db
 
-    def __del__(self):
-        self.close()
-
     def close(self):
         """Close the session and the Thrift transport."""
         # PEP 249
@@ -79,7 +76,8 @@ class HiveServer2Connection(Connection):
         # PEP 249
         raise NotSupportedError
 
-    def cursor(self, user=None, configuration=None, convert_types=True, dictify=False):
+    def cursor(self, user=None, configuration=None, convert_types=True, 
+               dictify=False, fetch_error=True):
         """Get a cursor from the HiveServer2 (HS2) connection.
 
         Parameters
@@ -91,6 +89,19 @@ class HiveServer2Connection(Connection):
             When `False`, timestamps and decimal values will not be converted
             to Python `datetime` and `Decimal` values. (These conversions are
             expensive.)
+        fetch_error : bool, optional
+            In versions of impala prior to 2.7.0, when an operation fails and 
+            the impalad returns an error state, the error message is not always
+            returned. In these cases the error message can be retrieved by a 
+            subsequent fetch call but this has the side effect of invalidating 
+            the query handle and  causing any further on the current query to 
+            functions like log or profile to cause an exception. 
+            When set to `True` impyla will attempt to fetch the error message. 
+            When set to `False`, this flag will cause impyla not to attempt to
+            fetch the message and the query handle. In this case the query 
+            handle remains valid and impyla will raise an exception with a 
+            message of "Operation is in ERROR_STATE". The Default option
+            is `True`.
 
         Returns
         -------
@@ -114,7 +125,8 @@ class HiveServer2Connection(Connection):
 
         cursor_class = HiveServer2DictCursor if dictify else HiveServer2Cursor
 
-        cursor = cursor_class(session, convert_types=convert_types)
+        cursor = cursor_class(session, convert_types=convert_types,
+                              fetch_error=fetch_error)
 
         if self.default_db is not None:
             log.info('Using database %s as default', self.default_db)
@@ -131,9 +143,10 @@ class HiveServer2Cursor(Cursor):
     # HiveServer2Cursor objects are associated with a Session
     # they are instantiated with alive session_handles
 
-    def __init__(self, session, convert_types=True):
+    def __init__(self, session, convert_types=True, fetch_error=True):
         self.session = session
         self.convert_types = convert_types
+        self.fetch_error = fetch_error
 
         self._last_operation = None
 
@@ -321,6 +334,9 @@ class HiveServer2Cursor(Cursor):
         self._debug_log_state()
 
     def _wait_to_finish(self):
+        # Prior to IMPALA-1633 GetOperationStatus does not populate errorMessage
+        # in case of failure. If not populated queries that return results
+        # can get a failure description witha further call to FetchResults rpc.
         loop_start = time.time()
         while True:
             req = TGetOperationStatusReq(operationHandle=self._last_operation.handle)
@@ -333,7 +349,11 @@ class HiveServer2Cursor(Cursor):
                 if resp.errorMessage:
                     raise OperationalError(resp.errorMessage)
                 else:
-                    raise OperationalError("Operation is in ERROR_STATE")
+                    if self.fetch_error and self.has_result_set:
+                        self._last_operation_active=False
+                        self._last_operation.fetch()
+                    else:
+                        raise OperationalError("Operation is in ERROR_STATE")
             if not self._op_state_is_executing(operation_state):
                 break
             time.sleep(self._get_sleep_interval(loop_start))
