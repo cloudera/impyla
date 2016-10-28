@@ -779,17 +779,21 @@ class Column(object):
         self.data_type = data_type
         self.values = values
         self.nulls = nulls
+        self.rows_left = len(self.values)
 
     def __len__(self):
-        return len(self.values)
+        return self.rows_left
 
     def __str__(self):
         return 'Column(type={0}, values={1}, nulls={2})'.format(
             self.data_type, self.values, self.nulls)
 
     def pop(self):
-        isnull = self.nulls.pop(0)
-        value = self.values.pop(0)
+        if self.rows_left < 1:
+            raise StopIteration 
+        isnull = self.nulls[-self.rows_left]
+        value = self.values[-self.rows_left]
+        self.rows_left -= 1
         return None if isnull else value
 
 
@@ -801,6 +805,7 @@ class CBatch(Batch):
                  for (i, col) in enumerate(trowset.columns)]
         num_cols = len(tcols)
         num_rows = len(tcols[0].values)
+        
         log.debug('CBatch: input TRowSet num_cols=%s num_rows=%s tcols=%s',
                   num_cols, num_rows, tcols)
 
