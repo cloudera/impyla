@@ -805,6 +805,7 @@ class Column(object):
         self.values = values
         self.nulls = nulls
         self.rows_left = len(self.values)
+        self.num_rows = self.rows_left
 
     def __len__(self):
         return self.rows_left
@@ -815,11 +816,13 @@ class Column(object):
 
     def pop(self):
         if self.rows_left < 1:
-            raise StopIteration 
-        isnull = self.nulls[-self.rows_left]
-        value = self.values[-self.rows_left]
+            raise StopIteration
+        pos = self.num_rows-self.rows_left
         self.rows_left -= 1
-        return None if isnull else value
+        if self.nulls[pos]:
+           return None
+        value = self.values[pos]
+        return value
 
 
 class CBatch(Batch):
