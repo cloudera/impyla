@@ -252,7 +252,7 @@ class HiveServer2Cursor(Cursor):
         # If there was an error when closing last operation then
         # raise exception
         if exc_info:
-            raise exc_info[1], None, exc_info[2]
+            six.reraise(*exc_info)
 
     def cancel_operation(self):
         if self._last_operation_active:
