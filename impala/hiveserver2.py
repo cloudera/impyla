@@ -21,6 +21,7 @@ import datetime
 import socket
 import operator
 import re
+import sys
 from six.moves import range
 from bitarray import bitarray
 
@@ -167,7 +168,14 @@ class HiveServer2Cursor(Cursor):
         self._closed = False
 
     def __del__(self):
-        self.close()
+        try:
+           self.close_operation()
+        except Exception:
+            pass
+        try:
+           self.session.close()
+        except Exception:
+            pass
 
     @property
     def description(self):
@@ -222,12 +230,29 @@ class HiveServer2Cursor(Cursor):
         # the session. Cancellation could be problematic for some DDL
         # operations. This avoids requiring the user to call the non-PEP 249
         # close_operation().
-        self.close_operation()
+        exc_info = None
+        try:
+            self.close_operation()
+        except Exception:
+            exc_info = sys.exc_info()
 
         log.debug('Closing HiveServer2Cursor')
+        try:
+            self.session.close()
+        except Exception:
+            # If we encountered an error when closing the session
+            # then print operation close exception to logs and 
+            # raise the session close exception
+            if exc_info:
+                log.error('Failure encountered closing last operation.',
+                                                        exc_info=exc_info)
+            raise
 
-        self.session.close()
         self._closed = True
+        # If there was an error when closing last operation then
+        # raise exception
+        if exc_info:
+            raise exc_info[1], None, exc_info[2]
 
     def cancel_operation(self):
         if self._last_operation_active:
