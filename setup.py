@@ -51,6 +51,8 @@ setup(
     cmdclass=versioneer.get_cmdclass(),
     description='Python client for the Impala distributed query engine',
     long_description=readme(),
+    maintainer='Wes McKinney',
+    maintainer_email='wes.mckinney@twosigma.com',
     author='Uri Laserson',
     author_email='laserson@cloudera.com',
     url='https://github.com/cloudera/impyla',
@@ -58,7 +60,7 @@ setup(
     install_package_data=True,
     package_data={'impala.thrift': ['*.thrift']},
     install_requires=reqs,
-    keywords=('cloudera impala python hadoop sql hdfs mpp madlib spark pydata '
+    keywords=('cloudera impala python hadoop sql hdfs mpp spark pydata '
               'pandas distributed db api pep 249 hive hiveserver2 hs2'),
     license='Apache License, Version 2.0',
     classifiers=[
@@ -66,7 +68,8 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4'
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5'
     ],
     entry_points={
         'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect']},
