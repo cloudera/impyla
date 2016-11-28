@@ -42,9 +42,13 @@ elif PY3:
     reqs.append('thriftpy>=0.3.5')
 
 
+import versioneer  # noqa
+
+
 setup(
     name='impyla',
-    version='0.13.8',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description='Python client for the Impala distributed query engine',
     long_description=readme(),
     author='Uri Laserson',
