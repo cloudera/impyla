@@ -12,13 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pytest import yield_fixture
 
-def test_dict_cursor(cur):
+
+@yield_fixture(scope='session')
+def cur2(con):
+    cur = con.cursor(dictify=True)
+    yield cur
+    cur.close()
+
+
+def test_dict_cursor(cur2):
+    cur = cur2
     cur.execute('CREATE TABLE tmp_hive (a STRING, b INT, c DOUBLE)')
 
     cur.execute('SHOW TABLES')
     tables = cur.fetchall()
-    assert any(t['tableName'] == 'tmp_hive' for t in tables)
+    assert any(t['name'] == 'tmp_hive' for t in tables)
 
     cur.execute("INSERT INTO tmp_hive "
                 "VALUES ('foo', 1, 0.5), ('bar', 2, NULL), ('baz', 3, 6.2)")

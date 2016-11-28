@@ -77,7 +77,7 @@ class HiveServer2Connection(Connection):
         # PEP 249
         raise NotSupportedError
 
-    def cursor(self, user=None, configuration=None, convert_types=True, 
+    def cursor(self, user=None, configuration=None, convert_types=True,
                dictify=False, fetch_error=True):
         """Get a cursor from the HiveServer2 (HS2) connection.
 
@@ -93,20 +93,20 @@ class HiveServer2Connection(Connection):
         dictify : bool, optional
             When `True` cursor will return key value pairs instead of rows.
         batch_cursor : bool, optional
-            When `True` cursor will return CBatches directly rather than rows. 
+            When `True` cursor will return CBatches directly rather than rows.
         fetch_error : bool, optional
-            In versions of impala prior to 2.7.0, when an operation fails and 
+            In versions of impala prior to 2.7.0, when an operation fails and
             the impalad returns an error state, the error message is not always
-            returned. In these cases the error message can be retrieved by a 
+            returned. In these cases the error message can be retrieved by a
             subsequent fetch rpc call but this has a side effect of invalidating
-            the query handle and causing any further operations against it to 
-            fail. e.g. calling log() or profile(). 
+            the query handle and causing any further operations against it to
+            fail. e.g. calling log() or profile().
 
-            When set to `True` impyla will attempt to fetch the error message. 
+            When set to `True` impyla will attempt to fetch the error message.
             When set to `False`, this flag will cause impyla not to attempt to
-            fetch the message with a fetch call . In this case the query 
-            handle remains valid and impyla will raise an exception with a 
-            message of "Operation is in ERROR_STATE". 
+            fetch the message with a fetch call . In this case the query
+            handle remains valid and impyla will raise an exception with a
+            message of "Operation is in ERROR_STATE".
             The Default option is `True`.
 
         Returns
@@ -241,7 +241,7 @@ class HiveServer2Cursor(Cursor):
             self.session.close()
         except Exception:
             # If we encountered an error when closing the session
-            # then print operation close exception to logs and 
+            # then print operation close exception to logs and
             # raise the session close exception
             if exc_info:
                 log.error('Failure encountered closing last operation.',
@@ -458,7 +458,7 @@ class HiveServer2Cursor(Cursor):
             log.debug('fetchcbatch: buffer has data in. Returning it and wiping buffer')
             batch = self._buffer
             self._buffer = Batch()
-            return batch 
+            return batch
         elif self._last_operation_active:
             log.debug('fetchcbatch: buffer empty and op is active => fetching '
                       'more data')
@@ -467,10 +467,10 @@ class HiveServer2Cursor(Cursor):
                          self.buffersize,
                          convert_types=self.convert_types))
             if len(batch) == 0:
-               return None 
+               return None
             return batch
         else:
-           return None 
+           return None
 
 
     def fetchmany(self, size=None):
@@ -640,11 +640,15 @@ class HiveServer2Cursor(Cursor):
 
 
 class HiveServer2DictCursor(HiveServer2Cursor):
+
     """The cursor that returns each element as a dictionary"""
     def execute(self, operation, parameters=None, configuration=None):
         super(self.__class__, self).execute(operation, parameters,
                                             configuration)
-        self.fields = [d[0] for d in self.description]
+        if self.description is not None:
+            self.fields = [d[0] for d in self.description]
+        else:
+            self.fields = None
 
     def __next__(self):
         record = super(self.__class__, self).__next__()
@@ -833,7 +837,7 @@ class CBatch(Batch):
                  for (i, col) in enumerate(trowset.columns)]
         num_cols = len(tcols)
         num_rows = len(tcols[0].values)
-        
+
         log.debug('CBatch: input TRowSet num_cols=%s num_rows=%s tcols=%s',
                   num_cols, num_rows, tcols)
 

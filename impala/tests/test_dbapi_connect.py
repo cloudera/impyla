@@ -30,7 +30,6 @@ from impala.tests.util import ImpylaTestEnv
 
 
 ENV = ImpylaTestEnv()
-ENV.hive_port = 10000
 DEFAULT_AUTH = True
 DEFAULT_AUTH_ERROR = "Non-default authorization method"
 
@@ -67,18 +66,22 @@ class ImpalaConnectionTests(unittest.TestCase):
         self._execute_queries(self.connection)
 
     def test_hive_plain_connect(self):
-        self.connection = connect(ENV.host, ENV.hive_port, auth_mechanism="PLAIN", timeout=5,
-                                  user="cloudera", password="cloudera")
+        self.connection = connect(ENV.host, ENV.hive_port,
+                                  auth_mechanism="PLAIN",
+                                  timeout=5,
+                                  user=ENV.hive_user,
+                                  password="cloudera")
         self._execute_queries(self.connection)
 
     @pytest.mark.skipif(DEFAULT_AUTH, reason=DEFAULT_AUTH_ERROR)
     def test_impala_plain_connect(self):
-        self.connection = connect(ENV.host, ENV.port, auth_mechanism="PLAIN", timeout=5,
-                                  user="cloudera", password="cloudera")
+        self.connection = connect(ENV.host, ENV.port, auth_mechanism="PLAIN",
+                                  timeout=5,
+                                  user=ENV.hive_user,
+                                  password="cloudera")
         self._execute_queries(self.connection)
 
     @pytest.mark.skipif(DEFAULT_AUTH, reason=DEFAULT_AUTH_ERROR)
     def test_hive_nosasl_connect(self):
         self.connection = connect(ENV.host, ENV.hive_port, timeout=5)
         self._execute_queries(self.connection)
-

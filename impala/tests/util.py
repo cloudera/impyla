@@ -17,32 +17,43 @@ import sys
 import six
 
 
+identity = lambda x: x
+
+
+def get_env_var(name, coercer, default):
+    if name in os.environ:
+        return coercer(os.environ[name])
+    else:
+        sys.stderr.write("{0} not set; using {1!r}".format(name, default))
+        return default
+
+
 class ImpylaTestEnv(object):
 
-    def __init__(self, host=None, port=None, auth_mech=None):
+    def __init__(self, host=None, port=None, hive_port=None, auth_mech=None):
         if host is not None:
             self.host = host
-        elif 'IMPYLA_TEST_HOST' in os.environ:
-            self.host = os.environ['IMPYLA_TEST_HOST']
         else:
-            sys.stderr.write("IMPYLA_TEST_HOST not set; using 'localhost'")
-            self.host = 'localhost'
+            self.host = get_env_var('IMPYLA_TEST_HOST', identity, 'localhost')
 
         if port is not None:
             self.port = port
-        elif 'IMPYLA_TEST_PORT' in os.environ:
-            self.port = int(os.environ['IMPYLA_TEST_PORT'])
         else:
-            sys.stderr.write("IMPYLA_TEST_PORT not set; using 21050")
-            self.port = 21050
+            self.port = get_env_var('IMPYLA_TEST_PORT', int, 21050)
+
+        if hive_port is not None:
+            self.hive_port = hive_port
+        else:
+            self.hive_port = get_env_var('IMPYLA_TEST_HIVE_PORT', int, 10000)
+
+        self.hive_user = get_env_var('IMPYLA_TEST_HIVE_USER', identity,
+                                     'cloudera')
 
         if auth_mech is not None:
             self.auth_mech = auth_mech
-        elif 'IMPYLA_TEST_AUTH_MECH' in os.environ:
-            self.auth_mech = os.environ['IMPYLA_TEST_AUTH_MECH']
         else:
-            sys.stderr.write("IMPYLA_TEST_AUTH_MECH not set; using 'NOSASL'")
-            self.auth_mech = 'NOSASL'
+            self.auth_mech = get_env_var('IMPYLA_TEST_AUTH_MECH', identity,
+                                         'NOSASL')
 
     def __repr__(self):
         kvs = ['{0}={1}'.format(k, v)
