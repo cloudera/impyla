@@ -35,7 +35,7 @@ PY3 = sys.version_info[0] == 3
 reqs = ['six', 'bitarray']
 if PY2:
     packages = find_packages()
-    reqs.append('thrift')
+    reqs.append('thrift<=0.9.3')
 elif PY3:
     packages = find_packages(exclude=['impala._thrift_gen',
                                       'impala._thrift_gen.*'])
