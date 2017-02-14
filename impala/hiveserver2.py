@@ -738,10 +738,16 @@ def threaded(func):
 
 def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
-            auth_mechanism=None):
+            auth_mechanism=None, krb_host=None):
     log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
              'mechanism', host, port, auth_mechanism)
     sock = get_socket(host, port, use_ssl, ca_cert)
+    
+    if krb_host:
+        kerberos_host = krb_host
+    else:
+        kerberos_host = host
+    
     if timeout is not None:
         timeout = timeout * 1000.  # TSocket expects millis
     if six.PY2:
@@ -753,7 +759,7 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
         except AttributeError:
             sock.socket_timeout = timeout
             sock.connect_timeout = timeout
-    transport = get_transport(sock, host, kerberos_service_name,
+    transport = get_transport(sock, kerberos_host, kerberos_service_name,
                               auth_mechanism, user, password)
     transport.open()
     protocol = TBinaryProtocol(transport)
