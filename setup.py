@@ -32,14 +32,16 @@ PY3 = sys.version_info[0] == 3
 
 # Apache Thrift does not yet support Python 3 (see THRIFT-1857).  We use
 # thriftpy as a stopgap replacement
-reqs = ['six', 'bitarray']
-if PY2:
-    packages = find_packages()
-    reqs.append('thrift<=0.9.3')
-elif PY3:
-    packages = find_packages(exclude=['impala._thrift_gen',
-                                      'impala._thrift_gen.*'])
-    reqs.append('thriftpy>=0.3.5')
+reqs = ['six', 'bitarray', 'thrift>=0.10.0']
+packages = find_packages(exclude=['impala._thrift_gen',
+                                  'impala._thrift_gen.*'])
+# if PY2:
+#     packages = find_packages()
+#     reqs.append('thrift<=0.9.3')
+# elif PY3:
+#     packages = find_packages(exclude=['impala._thrift_gen',
+#                                       'impala._thrift_gen.*'])
+#     reqs.append('thriftpy>=0.3.5')
 
 
 import versioneer  # noqa

@@ -744,25 +744,25 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
     sock = get_socket(host, port, use_ssl, ca_cert)
     if timeout is not None:
         timeout = timeout * 1000.  # TSocket expects millis
-    if six.PY2:
-        sock.setTimeout(timeout)
-    elif six.PY3:
-        try:
-            # thriftpy has a release where set_timeout is missing
-            sock.set_timeout(timeout)
-        except AttributeError:
-            sock.socket_timeout = timeout
-            sock.connect_timeout = timeout
+    # if six.PY2:
+    sock.setTimeout(timeout)
+    # elif six.PY3:
+    #     try:
+    #         # thriftpy has a release where set_timeout is missing
+    #         sock.set_timeout(timeout)
+    #     except AttributeError:
+    #         sock.socket_timeout = timeout
+    #         sock.connect_timeout = timeout
     transport = get_transport(sock, host, kerberos_service_name,
                               auth_mechanism, user, password)
     transport.open()
     protocol = TBinaryProtocol(transport)
-    if six.PY2:
-        # ThriftClient == ImpalaHiveServer2Service.Client
-        service = ThriftClient(protocol)
-    elif six.PY3:
-        # ThriftClient == TClient
-        service = ThriftClient(ImpalaHiveServer2Service, protocol)
+    # if six.PY2:
+    #     # ThriftClient == ImpalaHiveServer2Service.Client
+    service = ThriftClient(protocol)
+    # elif six.PY3:
+    #     # ThriftClient == TClient
+    #     service = ThriftClient(ImpalaHiveServer2Service, protocol)
     log.debug('sock=%s transport=%s protocol=%s service=%s', sock, transport,
               protocol, service)
 
@@ -932,17 +932,17 @@ class ThriftRPC(object):
         tries_left = self.retries
         while tries_left > 0:
             try:
-                log.debug('Attempting to open transport (tries_left=%s)',
+                log.info('Attempting to open transport (tries_left=%s)',
                           tries_left)
                 open_transport(transport)
-                log.debug('Transport opened')
+                log.info('Transport opened')
                 func = getattr(self.client, func_name)
                 return func(request)
             except socket.error:
-                log.exception('Failed to open transport (tries_left=%s)',
+                log.info('Failed to open transport (tries_left=%s)',
                               tries_left)
             except TTransportException:
-                log.exception('Failed to open transport (tries_left=%s)',
+                log.info('Failed to open transport (tries_left=%s)',
                               tries_left)
             except Exception:
                 raise
@@ -965,10 +965,10 @@ class ThriftRPC(object):
 
 
 def open_transport(transport):
-    if six.PY2 and not transport.isOpen():
+    if not transport.isOpen(): # six.PY2 and
         transport.open()
-    elif six.PY3 and not transport.is_open():
-        transport.open()
+    # elif six.PY3 and not transport.is_open():
+    #     transport.open()
 
 
 class HS2Service(ThriftRPC):
@@ -993,6 +993,7 @@ class HS2Service(ThriftRPC):
                               username=user,
                               configuration=configuration)
         resp = self._rpc('OpenSession', req)
+        print("Session", resp, resp.sessionHandle)
         return HS2Session(self, resp.sessionHandle,
                           resp.configuration,
                           resp.serverProtocolVersion)

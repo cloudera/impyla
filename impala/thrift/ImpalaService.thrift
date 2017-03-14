@@ -1,20 +1,23 @@
-// Copyright 2012 Cloudera Inc.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 namespace py impala._thrift_gen.ImpalaService
 namespace cpp impala
-namespace java com.cloudera.impala.thrift
+namespace java org.apache.impala.thrift
 
 include "ExecStats.thrift"
 include "Status.thrift"
@@ -28,9 +31,8 @@ include "TCLIService.thrift"
 // The valid keys are listed in this enum. They map to TQueryOptions.
 // Note: If you add an option or change the default, you also need to update:
 // - ImpalaInternalService.thrift: TQueryOptions
-// - ImpaladClientExecutor.getBeeswaxQueryConfigurations()
-// - ImpalaServer::SetQueryOptions()
-// - ImpalaServer::TQueryOptionsToMap()
+// - SetQueryOption(), SetQueryOptions()
+// - TQueryOptionsToMap()
 enum TImpalaQueryOptions {
   // if true, abort execution on the first error
   ABORT_ON_ERROR,
@@ -99,6 +101,9 @@ enum TImpalaQueryOptions {
   // Leave blank to use default.
   COMPRESSION_CODEC,
 
+  // Mode for compressing sequence files; either BLOCK, RECORD, or DEFAULT
+  SEQ_COMPRESSION_MODE,
+
   // HBase scan query option. If set and > 0, HBASE_CACHING is the value for
   // "hbase.client.Scan.setCaching()" when querying HBase table. Otherwise, use backend
   // default.
@@ -130,49 +135,163 @@ enum TImpalaQueryOptions {
   REQUEST_POOL,
 
   // Per-host virtual CPU cores required for query (only relevant with RM).
+  // TODO: IMPALA-3271: retire at compatibility-breaking version
   V_CPU_CORES,
 
   // Max time in milliseconds the resource broker should wait for
   // a resource request to be granted by Llama/Yarn (only relevant with RM).
+  // TODO: IMPALA-3271: retire at compatibility-breaking version
   RESERVATION_REQUEST_TIMEOUT,
 
-  // if true, disables cached reads
+  // if true, disables cached reads. This option has no effect if REPLICA_PREFERENCE is
+  // configured.
+  // TODO: IMPALA-4306: retire at compatibility-breaking version
   DISABLE_CACHED_READS,
 
   // Temporary testing flag
   DISABLE_OUTERMOST_TOPN,
 
   // Size of initial memory reservation when RM is enabled
+  // TODO: IMPALA-3271: retire at compatibility-breaking version
   RM_INITIAL_MEM,
 
   // Time, in s, before a query will be timed out if it is inactive. May not exceed
   // --idle_query_timeout if that flag > 0.
-  QUERY_TIMEOUT_S
+  QUERY_TIMEOUT_S,
 
   // Test hook for spill to disk operators
   MAX_BLOCK_MGR_MEMORY,
 
   // Transforms all count(distinct) aggregations into NDV()
-  APPX_COUNT_DISTINCT
+  APPX_COUNT_DISTINCT,
 
   // If true, allows Impala to internally disable spilling for potentially
   // disastrous query plans. Impala will excercise this option if a query
   // has no plan hints, and at least one table is missing relevant stats.
-  DISABLE_UNSAFE_SPILLS
+  DISABLE_UNSAFE_SPILLS,
+
+  // If the number of rows that are processed for a single query is below the
+  // threshold, it will be executed on the coordinator only with codegen disabled
+  EXEC_SINGLE_NODE_ROWS_THRESHOLD,
+
+  // If true, use the table's metadata to produce the partition columns instead of table
+  // scans whenever possible. This option is opt-in by default as this optimization may
+  // produce different results than the scan based approach in some edge cases.
+  OPTIMIZE_PARTITION_KEY_SCANS,
+
+  // Prefered memory distance of replicas. This parameter determines the pool of replicas
+  // among which scans will be scheduled in terms of the distance of the replica storage
+  // from the impalad.
+  REPLICA_PREFERENCE,
+
+  // Enables random backend selection during scheduling.
+  SCHEDULE_RANDOM_REPLICA,
+
+  // For scan nodes with any conjuncts, use codegen to evaluate the conjuncts if
+  // the number of rows * number of operators in the conjuncts exceeds this threshold.
+  SCAN_NODE_CODEGEN_THRESHOLD,
+
+  // If true, the planner will not generate plans with streaming preaggregations.
+  DISABLE_STREAMING_PREAGGREGATIONS,
+
+  RUNTIME_FILTER_MODE,
+
+  // Size (in bytes) of a runtime Bloom Filter. Will be rounded up to nearest power of
+  // two.
+  RUNTIME_BLOOM_FILTER_SIZE,
+
+  // Time (in ms) to wait in scans for partition filters to arrive.
+  RUNTIME_FILTER_WAIT_TIME_MS,
+
+  // If true, disable application of runtime filters to individual rows.
+  DISABLE_ROW_RUNTIME_FILTERING,
+
+  // Maximum number of runtime filters allowed per query.
+  MAX_NUM_RUNTIME_FILTERS,
+
+  // If true, use UTF-8 annotation for string columns. Note that char and varchar columns
+  // always use the annotation.
+  PARQUET_ANNOTATE_STRINGS_UTF8,
+
+  // Determines how to resolve Parquet files' schemas in the absence of field IDs (which
+  // is always, since fields IDs are NYI). Valid values are "position" and "name".
+  PARQUET_FALLBACK_SCHEMA_RESOLUTION,
+
+  // Multi-threaded execution: degree of parallelism = number of active threads per
+  // backend
+  MT_DOP,
+
+  // If true, INSERT writes to S3 go directly to their final location rather than being
+  // copied there by the coordinator. We cannot do this for INSERT OVERWRITES because for
+  // those queries, the coordinator deletes all files in the final location before copying
+  // the files there.
+  // TODO: Find a way to get this working for INSERT OVERWRITEs too.
+  S3_SKIP_INSERT_STAGING
+
+  // Maximum runtime filter size, in bytes.
+  RUNTIME_FILTER_MAX_SIZE,
+
+  // Minimum runtime filter size, in bytes.
+  RUNTIME_FILTER_MIN_SIZE,
+
+  // Prefetching behavior during hash tables' building and probing.
+  PREFETCH_MODE,
+
+  // Additional strict handling of invalid data parsing and type conversions.
+  STRICT_MODE,
+
+  // A limit on the amount of scratch directory space that can be used;
+  // Unspecified or a limit of -1 means no limit;
+  // Otherwise specified in the same way as MEM_LIMIT.
+  SCRATCH_LIMIT,
+
+  // Indicates whether the FE should rewrite Exprs for optimization purposes.
+  // It's sometimes useful to disable rewrites for testing, e.g., expr-test.cc.
+  ENABLE_EXPR_REWRITES,
+
+  // Indicates whether to use the new decimal semantics, which includes better
+  // rounding and output types for multiply / divide
+  DECIMAL_V2,
+
+  // Indicates whether to use dictionary filtering for Parquet files
+  PARQUET_DICTIONARY_FILTERING,
+
+  // Policy for resolving nested array fields in Parquet files.
+  // An Impala array type can have several different representations in
+  // a Parquet schema (three, two, or one level). There is fundamental ambiguity
+  // between the two and three level encodings with index-based field resolution.
+  // The ambiguity can manually be resolved using this query option, or by using
+  // PARQUET_FALLBACK_SCHEMA_RESOLUTION=name.
+  // The value TWO_LEVEL_THEN_THREE_LEVEL was the default mode since Impala 2.3.
+  // It is preserved as the default for compatibility.
+  // TODO: Remove the TWO_LEVEL_THEN_THREE_LEVEL mode completely or at least make
+  // it non-default in a compatibility breaking release.
+  PARQUET_ARRAY_RESOLUTION
 }
 
-// The summary of an insert.
+// The summary of a DML statement.
+// TODO: Rename to reflect that this is for all DML.
 struct TInsertResult {
-  // Number of appended rows per modified partition. Only applies to HDFS tables.
-  // The keys represent partitions to create, coded as k1=v1/k2=v2/k3=v3..., with the
-  // root in an unpartitioned table being the empty string.
-  1: required map<string, i64> rows_appended
+  // Number of modified rows per partition. Only applies to HDFS and Kudu tables.
+  // The keys represent partitions to create, coded as k1=v1/k2=v2/k3=v3..., with
+  // the root in an unpartitioned table being the empty string.
+  1: required map<string, i64> rows_modified
+
+  // Number of row operations attempted but not completed due to non-fatal errors
+  // reported by the storage engine that Impala treats as warnings. Only applies to Kudu
+  // tables. This includes errors due to duplicate/missing primary keys, nullability
+  // constraint violations, and primary keys in uncovered partition ranges.
+  // TODO: Provide a detailed breakdown of these counts by error. IMPALA-4416.
+  2: optional i64 num_row_errors
 }
 
 // Response from a call to PingImpalaService
 struct TPingImpalaServiceResp {
   // The Impala service's version string.
   1: string version
+
+  // The Impalad's webserver address.
+  2: string webserver_address
 }
 
 // Parameters for a ResetTable request which will invalidate a table's metadata.
@@ -248,7 +367,6 @@ struct TGetRuntimeProfileResp {
 
   2: optional string profile
 }
-
 
 service ImpalaHiveServer2Service extends TCLIService.TCLIService {
   // Returns the exec summary for the given query

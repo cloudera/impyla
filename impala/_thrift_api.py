@@ -31,67 +31,67 @@ from impala.util import get_logger_and_init_null
 log = get_logger_and_init_null(__name__)
 
 
-if six.PY2:
-    # pylint: disable=import-error,unused-import
-    # import Apache Thrift code
-    from thrift.transport.TSocket import TSocket
-    from thrift.transport.TTransport import (
-        TBufferedTransport, TTransportException)
-    from thrift.Thrift import TApplicationException
-    from thrift.protocol.TBinaryProtocol import (
-        TBinaryProtocolAccelerated as TBinaryProtocol)
+# if six.PY2:
+# pylint: disable=import-error,unused-import
+# import Apache Thrift code
+from thrift.transport.TSocket import TSocket
+from thrift.transport.TTransport import (
+    TBufferedTransport, TTransportException)
+from thrift.Thrift import TApplicationException
+from thrift.protocol.TBinaryProtocol import (
+    TBinaryProtocolAccelerated as TBinaryProtocol)
 
-    # import HS2 codegen objects
-    from impala._thrift_gen.TCLIService.ttypes import (
-        TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
-        TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
-        TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
-        TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
-        TGetOperationStatusReq, TOperationState, TCancelOperationReq,
-        TCloseOperationReq, TGetLogReq, TProtocolVersion)
-    from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
-        TGetRuntimeProfileReq, TGetExecSummaryReq)
-    from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
-    from impala._thrift_gen.ExecStats.ttypes import TExecStats
-    ThriftClient = ImpalaHiveServer2Service.Client
+# import HS2 codegen objects
+from impala._thrift_gen.TCLIService.ttypes import (
+    TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
+    TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
+    TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
+    TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
+    TGetOperationStatusReq, TOperationState, TCancelOperationReq,
+    TCloseOperationReq, TGetLogReq, TProtocolVersion)
+from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
+    TGetRuntimeProfileReq, TGetExecSummaryReq)
+from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
+from impala._thrift_gen.ExecStats.ttypes import TExecStats
+ThriftClient = ImpalaHiveServer2Service.Client
 
 
-if six.PY3:
-    # import thriftpy code
-    from thriftpy import load
-    from thriftpy.thrift import TClient, TApplicationException
-    # TODO: reenable cython
-    # from thriftpy.protocol import TBinaryProtocol
-    from thriftpy.protocol.binary import TBinaryProtocol  # noqa
-    from thriftpy.transport import TSocket, TTransportException  # noqa
-    # TODO: reenable cython
-    # from thriftpy.transport import TBufferedTransport
-    from thriftpy.transport.buffered import TBufferedTransport  # noqa
-    thrift_dir = os.path.join(os.path.dirname(__file__), 'thrift')
-
-    # dynamically load the HS2 modules
-    ExecStats = load(os.path.join(thrift_dir, 'ExecStats.thrift'),
-                     include_dirs=[thrift_dir])
-    TCLIService = load(os.path.join(thrift_dir, 'TCLIService.thrift'),
-                       include_dirs=[thrift_dir])
-    ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
-                         include_dirs=[thrift_dir])
-    sys.modules[ExecStats.__name__] = ExecStats
-    sys.modules[TCLIService.__name__] = TCLIService
-    sys.modules[ImpalaService.__name__] = ImpalaService
-
-    # import the HS2 objects
-    from TCLIService import (  # noqa
-        TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
-        TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
-        TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
-        TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
-        TGetOperationStatusReq, TOperationState, TCancelOperationReq,
-        TCloseOperationReq, TGetLogReq, TProtocolVersion)
-    from ImpalaService import (  # noqa
-        TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service)
-    from ExecStats import TExecStats  # noqa
-    ThriftClient = TClient
+# if six.PY3:
+#     # import thriftpy code
+#     from thriftpy import load
+#     from thriftpy.thrift import TClient, TApplicationException
+#     # TODO: reenable cython
+#     # from thriftpy.protocol import TBinaryProtocol
+#     from thriftpy.protocol.binary import TBinaryProtocol  # noqa
+#     from thriftpy.transport import TSocket, TTransportException  # noqa
+#     # TODO: reenable cython
+#     # from thriftpy.transport import TBufferedTransport
+#     from thriftpy.transport.buffered import TBufferedTransport  # noqa
+#     thrift_dir = os.path.join(os.path.dirname(__file__), 'thrift')
+#
+#     # dynamically load the HS2 modules
+#     ExecStats = load(os.path.join(thrift_dir, 'ExecStats.thrift'),
+#                      include_dirs=[thrift_dir])
+#     TCLIService = load(os.path.join(thrift_dir, 'TCLIService.thrift'),
+#                        include_dirs=[thrift_dir])
+#     ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
+#                          include_dirs=[thrift_dir])
+#     sys.modules[ExecStats.__name__] = ExecStats
+#     sys.modules[TCLIService.__name__] = TCLIService
+#     sys.modules[ImpalaService.__name__] = ImpalaService
+#
+#     # import the HS2 objects
+#     from TCLIService import (  # noqa
+#         TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
+#         TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
+#         TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
+#         TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
+#         TGetOperationStatusReq, TOperationState, TCancelOperationReq,
+#         TCloseOperationReq, TGetLogReq, TProtocolVersion)
+#     from ImpalaService import (  # noqa
+#         TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service)
+#     from ExecStats import TExecStats  # noqa
+#     ThriftClient = TClient
 
 
 def get_socket(host, port, use_ssl, ca_cert):
@@ -100,18 +100,18 @@ def get_socket(host, port, use_ssl, ca_cert):
               host, port, use_ssl, ca_cert)
 
     if use_ssl:
-        if six.PY2:
-            from thrift.transport.TSSLSocket import TSSLSocket
-            if ca_cert is None:
-                return TSSLSocket(host, port, validate=False)
-            else:
-                return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
+        # if six.PY2:
+        from thrift.transport.TSSLSocket import TSSLSocket
+        if ca_cert is None:
+            return TSSLSocket(host, port, validate=False)
         else:
-            from thriftpy.transport.sslsocket import TSSLSocket
-            if ca_cert is None:
-                return TSSLSocket(host, port, validate=False)
-            else:
-                return TSSLSocket(host, port, validate=True, cafile=ca_cert)
+            return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
+        # else:
+        #     from thriftpy.transport.sslsocket import TSSLSocket
+        #     if ca_cert is None:
+        #         return TSSLSocket(host, port, validate=False)
+        #     else:
+        #         return TSSLSocket(host, port, validate=True, cafile=ca_cert)
     else:
         return TSocket(host, port)
 
