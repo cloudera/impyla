@@ -134,6 +134,7 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
 
     # Set defaults for PLAIN SASL / LDAP connections.
     if auth_mechanism in ['LDAP', 'PLAIN']:
+        auth_mechanism = 'PLAIN'
         if user is None:
             user = getpass.getuser()
             log.debug('get_transport: user=%s', user)
