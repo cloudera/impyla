@@ -131,6 +131,17 @@ class ImpalaDialect(DefaultDialect):
         import impala.dbapi
         return impala.dbapi
 
+    def create_connect_args(self, url):
+        kwargs = {
+            'host': url.host,
+            'port': url.port,
+            'user': url.username,
+            'password': url.password,
+            'database': url.database,
+        }
+        kwargs.update(url.query)
+        return ([], kwargs)
+
     def initialize(self, connection):
         self.default_schema_name = connection.connection.default_db
 
