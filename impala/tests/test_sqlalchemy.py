@@ -30,8 +30,11 @@ def test_sqlalchemy_compilation():
                     Column('col1', STRING),
                     Column('col2', TINYINT),
                     Column('col3', INT),
-                    Column('col4', DOUBLE))
+                    Column('col4', DOUBLE),
+                    impala_partition_by='HASH PARTITIONS 16',
+                    impala_stored_as='KUDU')
     observed = str(CreateTable(mytable, bind=engine))
     expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
-                '\n\tcol3 INT, \n\tcol4 DOUBLE\n)\n\n')
+                '\n\tcol3 INT, \n\tcol4 DOUBLE\n)'
+                '\nPARTITION BY HASH PARTITIONS 16\nSTORED AS KUDU\n\n')
     assert expected == observed

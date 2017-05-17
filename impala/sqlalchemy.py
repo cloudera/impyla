@@ -20,7 +20,8 @@ import re
 
 from sqlalchemy.dialects import registry
 from sqlalchemy.engine.default import DefaultDialect
-from sqlalchemy.sql.compiler import IdentifierPreparer, GenericTypeCompiler
+from sqlalchemy.sql.compiler import (DDLCompiler, GenericTypeCompiler,
+                                     IdentifierPreparer)
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
                               DECIMAL, Integer, Float, String)
 
@@ -42,6 +43,21 @@ class DOUBLE(Float):
 
 class STRING(String):
     __visit_name__ = 'STRING'
+
+
+class ImpalaDDLCompiler(DDLCompiler):
+    def post_create_table(self, table):
+        """Build table-level CREATE options."""
+
+        table_opts = []
+
+        if 'impala_partition_by' in table.kwargs:
+            table_opts.append('PARTITION BY %s' % table.kwargs.get('impala_partition_by'))
+
+        if 'impala_stored_as' in table.kwargs:
+            table_opts.append('STORED AS %s' % table.kwargs.get('impala_stored_as'))
+
+        return '\n%s' % '\n'.join(table_opts)
 
 
 class ImpalaTypeCompiler(GenericTypeCompiler):
@@ -123,6 +139,7 @@ class ImpalaDialect(DefaultDialect):
     supports_native_enum = False
     supports_default_values = False
     returns_unicode_strings = True
+    ddl_compiler = ImpalaDDLCompiler
     type_compiler = ImpalaTypeCompiler
 
     @classmethod
