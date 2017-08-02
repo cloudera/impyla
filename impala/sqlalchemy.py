@@ -57,6 +57,11 @@ class ImpalaDDLCompiler(DDLCompiler):
         if 'impala_stored_as' in table.kwargs:
             table_opts.append('STORED AS %s' % table.kwargs.get('impala_stored_as'))
 
+        if 'impala_table_properties' in table.kwargs:
+            table_properties = ["'{0}' = '{1}'".format(property_, value)
+                                for property_, value
+                                in table.kwargs.get('impala_table_properties', {}).items()]
+            table_opts.append('TBLPROPERTIES (%s)' % ', '.join(table_properties))
         return '\n%s' % '\n'.join(table_opts)
 
 
