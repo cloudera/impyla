@@ -152,7 +152,7 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
 
         def sasl_factory():
             sasl_client = sasl.Client()
-            sasl_client.setAttr('host', host)
+            sasl_client.setAttr('host', 'hadoop')
             sasl_client.setAttr('service', kerberos_service_name)
             if auth_mechanism.upper() in ['PLAIN', 'LDAP']:
                 sasl_client.setAttr('username', user)
