@@ -114,6 +114,23 @@ for row in cursor:
     process(row)
 ```
 
+Furthermore the `Cursor` object returns you information about the columns
+returned in the query. This is useful to export your data as a csv file.
+
+```python
+import csv
+
+cursor.execute('SELECT * FROM mytable LIMIT 100')
+columns = [datum[0] for datum in cursor.description]
+targetfile = '/tmp/foo.csv'
+
+with open(targetfile, 'w', newline='') as outcsv:
+    writer = csv.writer(outcsv, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL, lineterminator='\n')
+    writer.writerow(columns)
+    for row in cursor:
+        writer.writerow(row)
+```
+
 You can also get back a pandas DataFrame object
 
 ```python
