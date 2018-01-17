@@ -1,4 +1,6 @@
 # impyla
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcloudera%2Fimpyla.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcloudera%2Fimpyla?ref=badge_shield)
+
 
 Python client for HiveServer2 implementations (e.g., Impala, Hive) for
 distributed query engines.
@@ -135,3 +137,7 @@ df = as_pandas(cur)
 [sqlalchemy]: http://www.sqlalchemy.org/
 [ibis]: http://www.ibis-project.org/
 [python-sasl-cython]: https://github.com/laserson/python-sasl/tree/cython/sasl
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcloudera%2Fimpyla.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcloudera%2Fimpyla?ref=badge_large)
