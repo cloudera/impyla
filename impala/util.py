@@ -39,7 +39,7 @@ def get_logger_and_init_null(logger_name):
 log = get_logger_and_init_null(__name__)
 
 
-def as_pandas(cursor):
+def as_pandas(cursor, coerce_float=False):
     """Return a pandas `DataFrame` out of an impyla cursor.
 
     This will pull the entire result set into memory.  For richer pandas-like
@@ -49,6 +49,10 @@ def as_pandas(cursor):
     ----------
     cursor : `HiveServer2Cursor`
         The cursor object that has a result set waiting to be fetched.
+        
+    coerce_float : bool, optional
+        Attempt to convert values of non-string, non-numeric objects to floating 
+        point.
 
     Returns
     -------
@@ -56,7 +60,8 @@ def as_pandas(cursor):
     """
     from pandas import DataFrame  # pylint: disable=import-error
     names = [metadata[0] for metadata in cursor.description]
-    return DataFrame.from_records(cursor.fetchall(), columns=names)
+    return DataFrame.from_records(cursor.fetchall(), columns=names, 
+                                  coerce_float=coerce_float)
 
 
 def _random_id(prefix='', length=8):
