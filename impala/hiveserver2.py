@@ -736,12 +736,12 @@ def threaded(func):
     raise NotImplementedError
 
 
-def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
-            user=None, password=None, kerberos_service_name='impala',
+def connect(host, port, timeout=None, use_ssl=False, ca_cert=None, user=None,
+            validate=True, password=None, kerberos_service_name='impala',
             auth_mechanism=None):
     log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
              'mechanism', host, port, auth_mechanism)
-    sock = get_socket(host, port, use_ssl, ca_cert)
+    sock = get_socket(host, port, use_ssl, ca_cert, validate)
     if timeout is not None:
         timeout = timeout * 1000.  # TSocket expects millis
     if six.PY2:
