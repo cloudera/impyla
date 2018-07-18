@@ -30,7 +30,7 @@ Required:
 
 * `six`, `bit_array`
 
-* `thrift` (on Python 2.x) or `thriftpy` (on Python 3.x)
+* `thrift`
 
 For Hive and/or Kerberos support:
 
