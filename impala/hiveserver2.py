@@ -193,6 +193,11 @@ class HiveServer2Cursor(Cursor):
         return self._rowcount
 
     @property
+    def lastrowid(self):
+        # PEP 249
+        return None
+
+    @property
     def query_string(self):
         return self._last_operation_string
 
