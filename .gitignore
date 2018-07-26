@@ -38,3 +38,5 @@ coverage.xml
 
 udf-scratch/
 .idea/
+
+/venv/
