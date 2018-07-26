@@ -342,7 +342,7 @@ class HiveServer2Cursor(Cursor):
 
             op = self.session.execute(self._last_operation_string,
                                       configuration,
-                                      async=True)
+                                      run_async=True)
             self._last_operation = op
 
         self._execute_async(op)
@@ -1024,11 +1024,11 @@ class HS2Session(ThriftRPC):
         req = TCloseSessionReq(sessionHandle=self.handle)
         self._rpc('CloseSession', req)
 
-    def execute(self, statement, configuration=None, async=False):
+    def execute(self, statement, configuration=None, run_async=False):
         req = TExecuteStatementReq(sessionHandle=self.handle,
                                    statement=statement,
                                    confOverlay=configuration,
-                                   runAsync=async)
+                                   runAsync=run_async)
         return self._operation('ExecuteStatement', req)
 
     def get_databases(self, schema='.*'):
