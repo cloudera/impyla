@@ -176,11 +176,28 @@ class ImpalaDialect(DefaultDialect):
         cursor.fetchall()
         column_info = []
         for col in schema:
-            column_info.append({
-                'name': col[0],
-                'type': _impala_type_to_sqlalchemy_type[col[1]],
-                'nullable': True,
-                'autoincrement': False})
+            try:
+                column_info.append({
+                    'name': col[0],
+                    'type': _impala_type_to_sqlalchemy_type[col[1]],
+                    'nullable': True,
+                    'autoincrement': False})
+            except KeyError as e:
+                if col[1] == 'VARCHAR':
+                    column_info.append({
+                        'name': col[0],
+                        'type': _impala_type_to_sqlalchemy_type['STRING'],
+                        'nullable': True,
+                        'autoincrement': False})
+                elif col[1] == 'DATE':
+                    col[1] = 'TIMESTAMP'
+                    column_info.append({
+                        'name': col[0],
+                        'type': _impala_type_to_sqlalchemy_type['TIMESTAMP'],
+                        'nullable': True,
+                        'autoincrement': False})
+                else:
+                    raise(e)
         return column_info
 
     def get_pk_constraint(self, connection, table_name, schema=None, **kw):
