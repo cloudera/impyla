@@ -1,5 +1,4 @@
-bitarray==0.8.3
 ply==3.11
 six==1.11.0
 thrift==0.11.0
-thriftpy==0.3.9
+thriftpy2==0.3.11
