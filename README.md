@@ -50,7 +50,7 @@ Optional:
 
 ### Installation
 
-Install the latest release (`0.13.1`) with `pip`:
+Install the latest release with `pip`:
 
 ```bash
 pip install impyla
