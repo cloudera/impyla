@@ -32,13 +32,10 @@ Required:
 
 * `thrift`
 
-For Hive and/or Kerberos support:
-
-```
-pip install thrift_sasl==0.2.1
-```
 
 Optional:
+
+* `thrift_sasl==0.2.1` for hive and/or Kerberos support:
 
 * `pandas` for conversion to `DataFrame` objects; but see the [Ibis project][ibis] instead
 
