@@ -36,7 +36,6 @@ For Hive and/or Kerberos support:
 
 ```
 pip install thrift_sasl==0.2.1
-pip install sasl
 ```
 
 Optional:
