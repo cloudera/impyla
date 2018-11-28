@@ -140,14 +140,9 @@ df = as_pandas(cur)
 [pandas]: http://pandas.pydata.org/
 [sklearn]: http://scikit-learn.org/
 [matplotlib]: http://matplotlib.org/
-[madlib]: http://madlib.net/
-[madlibport]: https://github.com/bitfort/madlibport
-[numba]: http://numba.pydata.org/
-[llvm]: http://llvm.org/
 [pytest]: http://pytest.org/latest/
 [sqlalchemy]: http://www.sqlalchemy.org/
 [ibis]: http://www.ibis-project.org/
-[python-sasl-cython]: https://github.com/laserson/python-sasl/tree/cython/sasl
 
 # How do I contribute code?
 You need to first sign and return an
