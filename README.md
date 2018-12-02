@@ -32,14 +32,10 @@ Required:
 
 * `thrift`
 
-For Hive and/or Kerberos support:
-
-```
-pip install thrift_sasl==0.2.1
-pip install sasl
-```
 
 Optional:
+
+* `thrift_sasl==0.2.1` for hive and/or Kerberos support:
 
 * `pandas` for conversion to `DataFrame` objects; but see the [Ibis project][ibis] instead
 
@@ -50,7 +46,7 @@ Optional:
 
 ### Installation
 
-Install the latest release (`0.13.1`) with `pip`:
+Install the latest release with `pip`:
 
 ```bash
 pip install impyla
@@ -144,14 +140,9 @@ df = as_pandas(cur)
 [pandas]: http://pandas.pydata.org/
 [sklearn]: http://scikit-learn.org/
 [matplotlib]: http://matplotlib.org/
-[madlib]: http://madlib.net/
-[madlibport]: https://github.com/bitfort/madlibport
-[numba]: http://numba.pydata.org/
-[llvm]: http://llvm.org/
 [pytest]: http://pytest.org/latest/
 [sqlalchemy]: http://www.sqlalchemy.org/
 [ibis]: http://www.ibis-project.org/
-[python-sasl-cython]: https://github.com/laserson/python-sasl/tree/cython/sasl
 
 # How do I contribute code?
 You need to first sign and return an
