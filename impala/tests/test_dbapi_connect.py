@@ -26,7 +26,7 @@ import pytest
 
 from impala.dbapi import connect
 from impala.util import _random_id
-from impala.tests.util import ImpylaTestEnv
+from impala.tests.util import ImpylaTestEnv, SocketTracker
 
 
 ENV = ImpylaTestEnv()
@@ -85,3 +85,22 @@ class ImpalaConnectionTests(unittest.TestCase):
     def test_hive_nosasl_connect(self):
         self.connection = connect(ENV.host, ENV.hive_port, timeout=5)
         self._execute_queries(self.connection)
+
+class ImpalaSocketTests(unittest.TestCase):
+    
+    def run_a_query(self):
+        with connect(ENV.host, ENV.port) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute('select 1 as a_number')
+                return cursor.fetchall()
+    
+    def test_socket_leak(self):
+        with SocketTracker() as sockets:
+            # there should be no open sockets prior to running query
+            assert len(sockets.open_sockets) == 0, 'Expected 0 open sockets, but saw {}'.format(
+                sockets.open_sockets)
+            # run a query!
+            self.run_a_query()
+            # the "run_query" method should have caused all sockets to close
+            assert len(sockets.open_sockets) == 0, 'Expected 0 open sockets, but saw {}'.format(
+                sockets.open_sockets)
