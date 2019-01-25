@@ -33,7 +33,7 @@
 //   new word (with no underscores), and end with the word "Service".
 
 namespace py impala._thrift_gen.TCLIService
-namespace java org.apache.hive.service.cli.thrift
+namespace java org.apache.hive.service.rpc.thrift
 namespace cpp apache.hive.service.cli.thrift
 
 // List of protocol versions. A new token should be
@@ -1055,10 +1055,6 @@ struct TFetchResultsReq {
   // Max number of rows that should be returned in
   // the rowset.
   3: required i64 maxRows
-
-  // The type of a fetch results request.
-  // 0 represents Query output. 1 represents Log. 
-  4: optional i16 fetchType
 }
 
 struct TFetchResultsResp {

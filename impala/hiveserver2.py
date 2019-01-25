@@ -37,8 +37,8 @@ from impala._thrift_api import (
     TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq, TGetSchemasReq,
     TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq, TOperationState,
     TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion,
-    TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service,
-    TExecStats, ThriftClient, TApplicationException)
+    TGetRuntimeProfileReq, TRuntimeProfileFormat, TGetExecSummaryReq,
+    ImpalaHiveServer2Service, TExecStats, ThriftClient, TApplicationException)
 
 
 log = get_logger_and_init_null(__name__)
@@ -566,8 +566,8 @@ class HiveServer2Cursor(Cursor):
     def get_log(self):
         return self._last_operation.get_log()
 
-    def get_profile(self):
-        return self._last_operation.get_profile()
+    def get_profile(self, profile_format=TRuntimeProfileFormat.STRING):
+        return self._last_operation.get_profile(profile_format=profile_format)
 
     def get_summary(self):
         return self._last_operation.get_summary()
@@ -1143,10 +1143,13 @@ class Operation(ThriftRPC):
         req = TCloseOperationReq(operationHandle=self.handle)
         self._rpc('CloseOperation', req)
 
-    def get_profile(self):
+    def get_profile(self, profile_format=TRuntimeProfileFormat.STRING):
         req = TGetRuntimeProfileReq(operationHandle=self.handle,
-                                    sessionHandle=self.session.handle)
+                                    sessionHandle=self.session.handle,
+                                    format=profile_format)
         resp = self._rpc('GetRuntimeProfile', req)
+        if profile_format == TRuntimeProfileFormat.THRIFT:
+            return resp.thrift_profile
         return resp.profile
 
     def get_summary(self):

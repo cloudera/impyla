@@ -1,26 +1,34 @@
-// Copyright 2012 Cloudera Inc.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 namespace py impala._thrift_gen.Types
 namespace cpp impala
-namespace java com.cloudera.impala.thrift
+namespace java org.apache.impala.thrift
 
 typedef i64 TTimestamp
+typedef i32 TFragmentIdx
 typedef i32 TPlanNodeId
+typedef i32 TDataSinkId
 typedef i32 TTupleId
 typedef i32 TSlotId
 typedef i32 TTableId
+typedef i32 TJoinTableId
+
+// TODO: Consider moving unrelated enums to better locations.
 
 enum TPrimitiveType {
   INVALID_TYPE,
@@ -36,12 +44,11 @@ enum TPrimitiveType {
   DATETIME,
   TIMESTAMP,
   STRING,
-  // Unsupported types
-  BINARY,
+  BINARY, // Unsupported
   DECIMAL,
-  // CHAR(n). Currently only supported in UDAs
   CHAR,
-  VARCHAR
+  VARCHAR,
+  FIXED_UDA_INTERMEDIATE,
 }
 
 enum TTypeNodeType {
@@ -95,7 +102,8 @@ enum TStmtType {
   DML, // Data modification e.g. INSERT
   EXPLAIN,
   LOAD, // Statement type for LOAD commands
-  SET
+  SET,
+  ADMIN_FN // Admin function, e.g. ": shutdown()".
 }
 
 // Level of verboseness for "explain" output.
@@ -104,6 +112,26 @@ enum TExplainLevel {
   STANDARD,
   EXTENDED,
   VERBOSE
+}
+
+enum TRuntimeFilterMode {
+  // No filters are computed in the FE or the BE.
+  OFF,
+
+  // Only broadcast filters are computed in the BE, and are only published to the local
+  // fragment.
+  LOCAL,
+
+  // All fiters are computed in the BE, and are published globally.
+  GLOBAL
+}
+
+enum TPrefetchMode {
+  // No prefetching at all.
+  NONE,
+
+  // Prefetch the hash table buckets.
+  HT_BUCKET
 }
 
 // A TNetworkAddress is the standard host, port representation of a
@@ -131,8 +159,8 @@ enum TFunctionBinaryType {
   // depending on the query option.
   BUILTIN,
 
-  // Hive UDFs, loaded from *.jar
-  HIVE,
+  // Java UDFs, loaded from *.jar
+  JAVA,
 
   // Native-interface, precompiled UDFs loaded from *.so
   NATIVE,
@@ -159,33 +187,51 @@ struct TScalarFunction {
 
 struct TAggregateFunction {
   1: required TColumnType intermediate_type
-  2: required string update_fn_symbol
-  3: required string init_fn_symbol
-  4: optional string serialize_fn_symbol
-  5: optional string merge_fn_symbol
-  6: optional string finalize_fn_symbol
+  2: required bool is_analytic_only_fn
+  3: required string update_fn_symbol
+  4: required string init_fn_symbol
+  5: optional string serialize_fn_symbol
+  6: optional string merge_fn_symbol
+  7: optional string finalize_fn_symbol
   8: optional string get_value_fn_symbol
   9: optional string remove_fn_symbol
-
-  7: optional bool ignores_distinct
+  10: optional bool ignores_distinct
 }
 
-// Represents a function in the Catalog.
+// Represents a function in the Catalog or a query plan, or may be used
+// in a minimal form in order to simply specify a function (e.g. when
+// included in a minimal catalog update or a TGetPartialCatalogInfo request).
+//
+// In the case of this latter 'specifier' use case, only the name must be
+// set.
 struct TFunction {
   // Fully qualified function name.
   1: required TFunctionName name
 
+  // -------------------------------------------------------------------------
+  // The following fields are always set, unless this TFunction is being used
+  // as a name-only "specifier".
+  // -------------------------------------------------------------------------
+
   // Type of the udf. e.g. hive, native, ir
-  2: required TFunctionBinaryType binary_type
+  2: optional TFunctionBinaryType binary_type
 
   // The types of the arguments to the function
-  3: required list<TColumnType> arg_types
+  3: optional list<TColumnType> arg_types
 
   // Return type for the function.
-  4: required TColumnType ret_type
+  4: optional TColumnType ret_type
 
   // If true, this function takes var args.
-  5: required bool has_var_args
+  5: optional bool has_var_args
+
+  // -------------------------------------------------------------------------
+  // The following fields are truly optional, even in "full" function objects.
+  //
+  // Note that TFunction objects are persisted in the user's metastore, so
+  // in many cases these fields are optional because they have been added
+  // incrementally across releases of Impala.
+  // -------------------------------------------------------------------------
 
   // Optional comment to attach to the function
   6: optional string comment
@@ -199,5 +245,18 @@ struct TFunction {
   // One of these should be set.
   9: optional TScalarFunction scalar_fn
   10: optional TAggregateFunction aggregate_fn
-}
 
+  // True for builtins or user-defined functions persisted by the catalog
+  11: optional bool is_persistent
+
+  // Last modified time of the 'hdfs_location'. Set by the coordinator to record
+  // the mtime its aware of for the lib. Executors expect that the lib they use
+  // has the same mtime as the coordinator's. An mtime of -1 makes the mtime check
+  // a no-op.
+  // Not set when stored in the catalog.
+  12: optional i64 last_modified_time
+
+
+  // NOTE: when adding fields to this struct, do not renumber the field IDs or
+  // add new required fields. This struct is serialized into user metastores.
+}
