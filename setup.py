@@ -40,7 +40,7 @@ setup(
     packages=find_packages(),
     install_package_data=True,
     package_data={'impala.thrift': ['*.thrift']},
-    install_requires=['six', 'bitarray', 'thrift>=0.9.3'],
+    install_requires=['six', 'bitarray', 'thriftpy2'],
     keywords=('cloudera impala python hadoop sql hdfs mpp spark pydata '
               'pandas distributed db api pep 249 hive hiveserver2 hs2'),
     license='Apache License, Version 2.0',
