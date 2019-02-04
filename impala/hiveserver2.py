@@ -51,12 +51,14 @@ class HiveServer2Connection(Connection):
     # HiveServer2Connection objects are associated with a TCLIService.Client
     # thrift service
     # it's instantiated with an alive TCLIService.Client
-
-    def __init__(self, service, default_db=None):
+    impersonate=None
+    
+    def __init__(self, service, default_db=None, impersonate=None):
         log.debug('HiveServer2Connection(service=%s, default_db=%s)', service,
                   default_db)
         self.service = service
         self.default_db = default_db
+        self.impersonate=impersonate
 
     def close(self):
         """Close the session and the Thrift transport."""
@@ -121,6 +123,12 @@ class HiveServer2Connection(Connection):
             user = getpass.getuser()
 
         log.debug('.cursor(): getting new session_handle')
+
+        if self.impersonate != None:
+          log.debug('Impersonating user %s' % self.impersonate)
+          configuration = {
+            'impala.doas.user': self.impersonate
+          }
 
         session = self.service.open_session(user, configuration)
 
