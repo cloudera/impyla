@@ -262,10 +262,9 @@ class HiveServer2Cursor(Cursor):
     def cancel_operation(self, reset_state=True):
         if self._last_operation_active:
             log.info('Canceling active operation')
-            resp = self._last_operation.cancel()
+            self._last_operation.cancel()
             if reset_state:
                 self._reset_state()
-            return resp
 
     def close_operation(self):
         if self._last_operation_active:
@@ -972,10 +971,10 @@ class ThriftRPC(object):
         return self._get_operation(resp.operationHandle)
 
     def _log_request(self, kind, request):
-        log.info('%s: req=%s', kind, request)
+        log.debug('%s: req=%s', kind, request)
 
     def _log_response(self, kind, response):
-        log.info('%s: resp=%s', kind, response)
+        log.debug('%s: resp=%s', kind, response)
 
 
 def open_transport(transport):
