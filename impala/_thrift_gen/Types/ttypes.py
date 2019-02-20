@@ -103,18 +103,20 @@ class TStmtType(object):
   DDL = 1
   DML = 2
   EXPLAIN = 3
-  LOAD = 4
-  SET = 5
-  ADMIN_FN = 6
+  TESTCASE = 4
+  LOAD = 5
+  SET = 6
+  ADMIN_FN = 7
 
   _VALUES_TO_NAMES = {
     0: "QUERY",
     1: "DDL",
     2: "DML",
     3: "EXPLAIN",
-    4: "LOAD",
-    5: "SET",
-    6: "ADMIN_FN",
+    4: "TESTCASE",
+    5: "LOAD",
+    6: "SET",
+    7: "ADMIN_FN",
   }
 
   _NAMES_TO_VALUES = {
@@ -122,9 +124,10 @@ class TStmtType(object):
     "DDL": 1,
     "DML": 2,
     "EXPLAIN": 3,
-    "LOAD": 4,
-    "SET": 5,
-    "ADMIN_FN": 6,
+    "TESTCASE": 4,
+    "LOAD": 5,
+    "SET": 6,
+    "ADMIN_FN": 7,
   }
 
 class TExplainLevel(object):

@@ -174,6 +174,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('  ClearFileMetadataResult clear_file_metadata(ClearFileMetadataRequest req)')
   print('  CacheFileMetadataResult cache_file_metadata(CacheFileMetadataRequest req)')
   print('  string get_metastore_db_uuid()')
+  print('  GetPartitionsResponse get_partitions_with_specs(GetPartitionsRequest request)')
   print('  string getName()')
   print('  string getVersion()')
   print('  fb_status getStatus()')
@@ -1142,6 +1143,12 @@ elif cmd == 'get_metastore_db_uuid':
     print('get_metastore_db_uuid requires 0 args')
     sys.exit(1)
   pp.pprint(client.get_metastore_db_uuid())
+
+elif cmd == 'get_partitions_with_specs':
+  if len(args) != 1:
+    print('get_partitions_with_specs requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.get_partitions_with_specs(eval(args[0]),))
 
 elif cmd == 'getName':
   if len(args) != 0:

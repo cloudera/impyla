@@ -255,6 +255,7 @@ class TTimeSeriesCounter(object):
    - unit
    - period_ms
    - values
+   - start_index
   """
 
   thrift_spec = (
@@ -263,13 +264,15 @@ class TTimeSeriesCounter(object):
     (2, TType.I32, 'unit', None, None, ), # 2
     (3, TType.I32, 'period_ms', None, None, ), # 3
     (4, TType.LIST, 'values', (TType.I64,None), None, ), # 4
+    (5, TType.I64, 'start_index', None, None, ), # 5
   )
 
-  def __init__(self, name=None, unit=None, period_ms=None, values=None,):
+  def __init__(self, name=None, unit=None, period_ms=None, values=None, start_index=None,):
     self.name = name
     self.unit = unit
     self.period_ms = period_ms
     self.values = values
+    self.start_index = start_index
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -305,6 +308,11 @@ class TTimeSeriesCounter(object):
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
+      elif fid == 5:
+        if ftype == TType.I64:
+          self.start_index = iprot.readI64()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -334,6 +342,10 @@ class TTimeSeriesCounter(object):
         oprot.writeI64(iter20)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
+    if self.start_index is not None:
+      oprot.writeFieldBegin('start_index', TType.I64, 5)
+      oprot.writeI64(self.start_index)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -355,6 +367,7 @@ class TTimeSeriesCounter(object):
     value = (value * 31) ^ hash(self.unit)
     value = (value * 31) ^ hash(self.period_ms)
     value = (value * 31) ^ hash(self.values)
+    value = (value * 31) ^ hash(self.start_index)
     return value
 
   def __repr__(self):
@@ -979,15 +992,18 @@ class TRuntimeProfileForest(object):
   """
   Attributes:
    - profile_trees
+   - host_profile
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.LIST, 'profile_trees', (TType.STRUCT,(TRuntimeProfileTree, TRuntimeProfileTree.thrift_spec)), None, ), # 1
+    (2, TType.STRUCT, 'host_profile', (TRuntimeProfileTree, TRuntimeProfileTree.thrift_spec), None, ), # 2
   )
 
-  def __init__(self, profile_trees=None,):
+  def __init__(self, profile_trees=None, host_profile=None,):
     self.profile_trees = profile_trees
+    self.host_profile = host_profile
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1009,6 +1025,12 @@ class TRuntimeProfileForest(object):
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.host_profile = TRuntimeProfileTree()
+          self.host_profile.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -1026,6 +1048,10 @@ class TRuntimeProfileForest(object):
         iter94.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
+    if self.host_profile is not None:
+      oprot.writeFieldBegin('host_profile', TType.STRUCT, 2)
+      self.host_profile.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -1038,6 +1064,7 @@ class TRuntimeProfileForest(object):
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.profile_trees)
+    value = (value * 31) ^ hash(self.host_profile)
     return value
 
   def __repr__(self):

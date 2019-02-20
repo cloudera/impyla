@@ -351,7 +351,33 @@ enum TImpalaQueryOptions {
   // An opaque string, not used by Impala itself, that can be used to identify
   // the client, like a User-Agent in HTTP. Drivers should set this to
   // their version number. May also be used by tests to help identify queries.
-  CLIENT_IDENTIFIER
+  CLIENT_IDENTIFIER,
+
+  // Probability to enable tracing of resource usage consumption on all fragment instance
+  // executors of a query. Must be between 0 and 1 inclusive, 0 means no query will be
+  // traced, 1 means all queries will be traced.
+  RESOURCE_TRACE_RATIO,
+
+  // The maximum number of executor candidates to consider when scheduling remote
+  // HDFS ranges. When non-zero, the scheduler generates a consistent set of
+  // executor candidates based on the filename and offset. This algorithm is designed
+  // to avoid changing file to node mappings when nodes come and go. It then picks from
+  // among the candidates by the same method used for local scan ranges. Limiting the
+  // number of nodes that can read a single file provides a type of simulated locality.
+  // This increases the efficiency of file-related caches (e.g. the HDFS file handle
+  // cache). If set to 0, the number of executor candidates is unlimited, and remote
+  // ranges will be scheduled across all executors.
+  NUM_REMOTE_EXECUTOR_CANDIDATES,
+
+  // A limit on the number of rows produced by the query. The query will be
+  // canceled if the query is still executing after this limit is hit. A value
+  // of 0 means there is no limit on the number of rows produced.
+  NUM_ROWS_PRODUCED_LIMIT
+
+  // Set when attempting to load a planner testcase. Typically used by developers for
+  // debugging a testcase. Should not be set in user clusters. If set, a warning
+  // is emitted in the query runtime profile.
+  PLANNER_TESTCASE_MODE
 }
 
 // The summary of a DML statement.

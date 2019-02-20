@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Copyright 2014 Cloudera Inc.
+# Copyright 2019 Cloudera Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,13 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -euo pipefail
+
 function die() {
     echo $1 >&2
     exit 1
 }
 
-[ -n "$IMPALA_REPO" ] || die "Need to set IMPALA_REPO"
-[ -n "$IMPYLA_REPO" ] || die "Need to set IMPYLA_REPO"
+[ -n "${IMPALA_REPO:-}" ] || die "Need to set IMPALA_REPO"
+[ -n "${IMPYLA_REPO:-}" ] || die "Need to set IMPYLA_REPO"
 
 source $IMPALA_REPO/bin/impala-config.sh
 
@@ -45,7 +47,7 @@ grep -v 'namespace py beeswaxd' $IMPALA_REPO/common/thrift/beeswax.thrift \
 
 # hive_metastore.thrift assumes a directory structure for fb303.thrift, so we
 # change the include statement here
-cat $IMPALA_TOOLCHAIN/cdh_components/hive-$IMPALA_HIVE_VERSION/src/metastore/if/hive_metastore.thrift \
+cat $HIVE_SRC_DIR/metastore/if/hive_metastore.thrift \
         | sed 's/share\/fb303\/if\///g' \
         > $IMPYLA_REPO/impala/thrift/hive_metastore.thrift
 

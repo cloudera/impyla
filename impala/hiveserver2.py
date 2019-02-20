@@ -259,11 +259,13 @@ class HiveServer2Cursor(Cursor):
         if exc_info:
             six.reraise(*exc_info)
 
-    def cancel_operation(self):
+    def cancel_operation(self, reset_state=True):
         if self._last_operation_active:
             log.info('Canceling active operation')
-            self._last_operation.cancel()
-            self._reset_state()
+            resp = self._last_operation.cancel()
+            if reset_state:
+                self._reset_state()
+            return resp
 
     def close_operation(self):
         if self._last_operation_active:
@@ -394,6 +396,8 @@ class HiveServer2Cursor(Cursor):
             time.sleep(self._get_sleep_interval(loop_start))
 
     def status(self):
+        if self._last_operation is None:
+            raise ProgrammingError("Operation state is not available")
         return self._last_operation.get_status()
 
     def execution_failed(self):
@@ -564,9 +568,13 @@ class HiveServer2Cursor(Cursor):
         return self.session.ping()
 
     def get_log(self):
+        if self._last_operation is None:
+            raise ProgrammingError("Operation state is not available")
         return self._last_operation.get_log()
 
     def get_profile(self, profile_format=TRuntimeProfileFormat.STRING):
+        if self._last_operation is None:
+            raise ProgrammingError("Operation state is not available")
         return self._last_operation.get_profile(profile_format=profile_format)
 
     def get_summary(self):
@@ -964,10 +972,10 @@ class ThriftRPC(object):
         return self._get_operation(resp.operationHandle)
 
     def _log_request(self, kind, request):
-        log.debug('%s: req=%s', kind, request)
+        log.info('%s: req=%s', kind, request)
 
     def _log_response(self, kind, response):
-        log.debug('%s: resp=%s', kind, response)
+        log.info('%s: resp=%s', kind, response)
 
 
 def open_transport(transport):
@@ -1118,6 +1126,10 @@ class Operation(ThriftRPC):
         resp = self._rpc('GetOperationStatus', req)
         return TOperationState._VALUES_TO_NAMES[resp.operationState]
 
+    def get_state(self):
+        req = TGetOperationStatusReq(operationHandle=self.handle)
+        return self._rpc('GetOperationStatus', req)
+
     def get_log(self, max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
         try:
             req = TGetLogReq(operationHandle=self.handle)
@@ -1137,11 +1149,11 @@ class Operation(ThriftRPC):
 
     def cancel(self):
         req = TCancelOperationReq(operationHandle=self.handle)
-        self._rpc('CancelOperation', req)
+        return self._rpc('CancelOperation', req)
 
     def close(self):
         req = TCloseOperationReq(operationHandle=self.handle)
-        self._rpc('CloseOperation', req)
+        return self._rpc('CloseOperation', req)
 
     def get_profile(self, profile_format=TRuntimeProfileFormat.STRING):
         req = TGetRuntimeProfileReq(operationHandle=self.handle,
