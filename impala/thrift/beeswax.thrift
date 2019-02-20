@@ -1,22 +1,21 @@
-/*
- * Licensed to Cloudera, Inc. under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  Cloudera, Inc. licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Interface for interacting with Beeswax Server
- */
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+// Interface for interacting with Beeswax Server
 
 namespace py impala._thrift_gen.beeswax
 namespace java com.cloudera.beeswax.api
@@ -94,13 +93,26 @@ exception BeeswaxException {
 }
 
 exception QueryNotFoundException {
-} 
+}
+
+// Impala extension:
+// Levels to use when displaying query options from Impala shell. REMOVED options should
+// not be displayed in the shell, but setting them is a warning rather than an error.
+enum TQueryOptionLevel {
+  REGULAR,
+  ADVANCED,
+  DEVELOPMENT,
+  DEPRECATED,
+  REMOVED
+}
 
 /** Represents a Hadoop-style configuration variable. */
 struct ConfigVariable {
   1: string key,
   2: string value,
-  3: string description
+  3: string description,
+  // For displaying purposes in Impala shell
+  4: optional TQueryOptionLevel level
 }
 
 service BeeswaxService {

@@ -54,6 +54,7 @@ if six.PY2:
     from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
     from impala._thrift_gen.ExecStats.ttypes import TExecStats
     ThriftClient = ImpalaHiveServer2Service.Client
+    from impala._thrift_gen.RuntimeProfile.ttypes import TRuntimeProfileFormat
 
 
 if six.PY3:
@@ -76,9 +77,12 @@ if six.PY3:
                        include_dirs=[thrift_dir])
     ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
                          include_dirs=[thrift_dir])
+    RuntimeProfile = load(os.path.join(thrift_dir, 'RuntimeProfile.thrift'),
+                          include_dirs=[thrift_dir])
     sys.modules[ExecStats.__name__] = ExecStats
     sys.modules[TCLIService.__name__] = TCLIService
     sys.modules[ImpalaService.__name__] = ImpalaService
+    sys.modules[RuntimeProfile.__name__] = RuntimeProfile
 
     # import the HS2 objects
     from TCLIService import (  # noqa
@@ -91,6 +95,7 @@ if six.PY3:
     from ImpalaService import (  # noqa
         TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service)
     from ExecStats import TExecStats  # noqa
+    from RuntimeProfile import TRuntimeProfileFormat
     ThriftClient = TClient
 
 
