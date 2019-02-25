@@ -24,11 +24,11 @@ class TUnit(object):
   BYTES_PER_SECOND = 4
   TIME_NS = 5
   DOUBLE_VALUE = 6
-  BASIS_POINTS = 7
-  NONE = 8
-  TIME_MS = 9
-  TIME_S = 10
-  TIME_US = 11
+  NONE = 7
+  TIME_MS = 8
+  TIME_S = 9
+  TIME_US = 10
+  BASIS_POINTS = 11
 
   _VALUES_TO_NAMES = {
     0: "UNIT",
@@ -38,11 +38,11 @@ class TUnit(object):
     4: "BYTES_PER_SECOND",
     5: "TIME_NS",
     6: "DOUBLE_VALUE",
-    7: "BASIS_POINTS",
-    8: "NONE",
-    9: "TIME_MS",
-    10: "TIME_S",
-    11: "TIME_US",
+    7: "NONE",
+    8: "TIME_MS",
+    9: "TIME_S",
+    10: "TIME_US",
+    11: "BASIS_POINTS",
   }
 
   _NAMES_TO_VALUES = {
@@ -53,11 +53,11 @@ class TUnit(object):
     "BYTES_PER_SECOND": 4,
     "TIME_NS": 5,
     "DOUBLE_VALUE": 6,
-    "BASIS_POINTS": 7,
-    "NONE": 8,
-    "TIME_MS": 9,
-    "TIME_S": 10,
-    "TIME_US": 11,
+    "NONE": 7,
+    "TIME_MS": 8,
+    "TIME_S": 9,
+    "TIME_US": 10,
+    "BASIS_POINTS": 11,
   }
 
 class TMetricKind(object):

@@ -253,6 +253,9 @@ struct Database {
   5: optional PrincipalPrivilegeSet privileges,
   6: optional string ownerName,
   7: optional PrincipalType ownerType
+  // field id is 9 to keep backwards compatibility when we rebase to Hive 3.0 which has
+  // catalogname as field id 8
+  9: optional i32 createTime               // creation time of database in seconds since epoch
 }
 
 // This object holds the information needed by SerDes
@@ -803,7 +806,8 @@ struct CurrentNotificationEventId {
 }
 
 struct InsertEventRequestData {
-    1: required list<string> filesAdded
+    1: required list<string> filesAdded,
+    2: optional bool replace
 }
 
 union FireEventRequestData {

@@ -2420,6 +2420,7 @@ class Database(object):
    - privileges
    - ownerName
    - ownerType
+   - createTime
   """
 
   thrift_spec = (
@@ -2431,9 +2432,11 @@ class Database(object):
     (5, TType.STRUCT, 'privileges', (PrincipalPrivilegeSet, PrincipalPrivilegeSet.thrift_spec), None, ), # 5
     (6, TType.STRING, 'ownerName', None, None, ), # 6
     (7, TType.I32, 'ownerType', None, None, ), # 7
+    None, # 8
+    (9, TType.I32, 'createTime', None, None, ), # 9
   )
 
-  def __init__(self, name=None, description=None, locationUri=None, parameters=None, privileges=None, ownerName=None, ownerType=None,):
+  def __init__(self, name=None, description=None, locationUri=None, parameters=None, privileges=None, ownerName=None, ownerType=None, createTime=None,):
     self.name = name
     self.description = description
     self.locationUri = locationUri
@@ -2441,6 +2444,7 @@ class Database(object):
     self.privileges = privileges
     self.ownerName = ownerName
     self.ownerType = ownerType
+    self.createTime = createTime
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2493,6 +2497,11 @@ class Database(object):
           self.ownerType = iprot.readI32()
         else:
           iprot.skip(ftype)
+      elif fid == 9:
+        if ftype == TType.I32:
+          self.createTime = iprot.readI32()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2535,6 +2544,10 @@ class Database(object):
       oprot.writeFieldBegin('ownerType', TType.I32, 7)
       oprot.writeI32(self.ownerType)
       oprot.writeFieldEnd()
+    if self.createTime is not None:
+      oprot.writeFieldBegin('createTime', TType.I32, 9)
+      oprot.writeI32(self.createTime)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -2551,6 +2564,7 @@ class Database(object):
     value = (value * 31) ^ hash(self.privileges)
     value = (value * 31) ^ hash(self.ownerName)
     value = (value * 31) ^ hash(self.ownerType)
+    value = (value * 31) ^ hash(self.createTime)
     return value
 
   def __repr__(self):
@@ -11001,15 +11015,18 @@ class InsertEventRequestData(object):
   """
   Attributes:
    - filesAdded
+   - replace
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.LIST, 'filesAdded', (TType.STRING,None), None, ), # 1
+    (2, TType.BOOL, 'replace', None, None, ), # 2
   )
 
-  def __init__(self, filesAdded=None,):
+  def __init__(self, filesAdded=None, replace=None,):
     self.filesAdded = filesAdded
+    self.replace = replace
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -11030,6 +11047,11 @@ class InsertEventRequestData(object):
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.BOOL:
+          self.replace = iprot.readBool()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -11047,6 +11069,10 @@ class InsertEventRequestData(object):
         oprot.writeString(iter498)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
+    if self.replace is not None:
+      oprot.writeFieldBegin('replace', TType.BOOL, 2)
+      oprot.writeBool(self.replace)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -11059,6 +11085,7 @@ class InsertEventRequestData(object):
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.filesAdded)
+    value = (value * 31) ^ hash(self.replace)
     return value
 
   def __repr__(self):

@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 # Copyright 2019 Cloudera Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
+set -euxo pipefail
 
 function die() {
     echo $1 >&2
@@ -23,9 +23,12 @@ function die() {
 [ -n "${IMPALA_REPO:-}" ] || die "Need to set IMPALA_REPO"
 [ -n "${IMPYLA_REPO:-}" ] || die "Need to set IMPYLA_REPO"
 
+# impala-config.sh checks (and sets) some unset variables
+set +u
 source $IMPALA_REPO/bin/impala-config.sh
+set -u
 
-echo "copying thrift files from the main Impala repo"
+echo "Copying thrift files from the main Impala repo at $IMPALA_REPO"
 cp $IMPALA_REPO/common/thrift/hive-2-api/TCLIService.thrift $IMPYLA_REPO/impala/thrift
 cp $IMPALA_REPO/common/thrift/ImpalaService.thrift $IMPYLA_REPO/impala/thrift
 cp $IMPALA_REPO/common/thrift/ErrorCodes.thrift $IMPYLA_REPO/impala/thrift
@@ -51,9 +54,9 @@ cat $HIVE_SRC_DIR/metastore/if/hive_metastore.thrift \
         | sed 's/share\/fb303\/if\///g' \
         > $IMPYLA_REPO/impala/thrift/hive_metastore.thrift
 
-# we add "namespace py" statements to all the thrift files so we can get the
+# We add "namespace py" statements to all the thrift files so we can get the
 # appropriate directory structure
-echo "adding namespace py lines to thrift files"
+echo "Adding namespace py lines to thrift files"
 for THRIFT_FILE in $IMPYLA_REPO/impala/thrift/*.thrift; do
     FILE_NAME=$(basename $THRIFT_FILE)
     BASE_NAME=${FILE_NAME%.*}
@@ -73,9 +76,9 @@ for THRIFT_FILE in $IMPYLA_REPO/impala/thrift/*.thrift; do
     mv $IMPYLA_REPO/impala/thrift/temp.thrift $THRIFT_FILE
 done
 
-echo "generating thrift python modules"
+echo "Generating thrift python modules"
 THRIFT_BIN="$IMPALA_TOOLCHAIN/thrift-$IMPALA_THRIFT_VERSION/bin/thrift"
 $THRIFT_BIN -r --gen py:new_style -out $IMPYLA_REPO $IMPYLA_REPO/impala/thrift/ImpalaService.thrift
 
-echo "removing extraneous $IMPYLA_REPO/__init__.py"
+echo "Removing extraneous $IMPYLA_REPO/__init__.py"
 rm -f $IMPYLA_REPO/__init__.py

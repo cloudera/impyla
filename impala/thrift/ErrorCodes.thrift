@@ -157,7 +157,8 @@ enum TErrorCode {
   INACTIVE_QUERY_EXPIRED = 127,
   EXEC_TIME_LIMIT_EXCEEDED = 128,
   CPU_LIMIT_EXCEEDED = 129,
-  SCAN_BYTES_LIMIT_EXCEEDED = 130
+  SCAN_BYTES_LIMIT_EXCEEDED = 130,
+  ROWS_PRODUCED_LIMIT_EXCEEDED = 131
 }
 const list<string> TErrorMessage = [
   // OK
@@ -381,7 +382,7 @@ const list<string> TErrorMessage = [
   // THREAD_CREATION_FAILED
   "Failed to create thread $0 in category $1: $2",
   // DISK_IO_ERROR
-  "Disk I/O error: $0",
+  "Disk I/O error on $0: $1",
   // DATASTREAM_RECVR_CLOSED
   "DataStreamRecvr for fragment=$0, node=$1 is closed already",
   // BAD_PRINCIPAL_FORMAT
@@ -421,5 +422,7 @@ const list<string> TErrorMessage = [
   // CPU_LIMIT_EXCEEDED
   "Query $0 terminated due to CPU limit of $1",
   // SCAN_BYTES_LIMIT_EXCEEDED
-  "Query $0 terminated due to scan bytes limit of $1"
+  "Query $0 terminated due to scan bytes limit of $1",
+  // ROWS_PRODUCED_LIMIT_EXCEEDED
+  "Query $0 terminated due to rows produced limit of $1. Unset or increase NUM_ROWS_PRODUCED_LIMIT query option to produce more rows."
 ]
