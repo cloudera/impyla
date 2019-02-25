@@ -120,7 +120,7 @@ TErrorMessage = [
   "Rejected query from pool $0: $1",
   "Admission for query exceeded timeout $0ms in pool $1. Queued reason: $2",
   "Failed to create thread $0 in category $1: $2",
-  "Disk I/O error: $0",
+  "Disk I/O error on $0: $1",
   "DataStreamRecvr for fragment=$0, node=$1 is closed already",
   "Kerberos principal should be of the form: <service>/<hostname>@<realm> - got: $0",
   "The input size is too large for LZ4 compression: $0",
@@ -141,4 +141,5 @@ TErrorMessage = [
   "Query $0 expired due to execution time limit of $1",
   "Query $0 terminated due to CPU limit of $1",
   "Query $0 terminated due to scan bytes limit of $1",
+  "Query $0 terminated due to rows produced limit of $1. Unset or increase NUM_ROWS_PRODUCED_LIMIT query option to produce more rows.",
 ]
