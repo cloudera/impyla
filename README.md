@@ -81,7 +81,7 @@ To run the maximal set of tests, run
 
 ```bash
 cd path/to/impyla
-py.test --connect impyla
+py.test --connect impala
 ```
 
 Leave out the `--connect` option to skip tests for DB API compliance.
