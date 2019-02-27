@@ -99,7 +99,7 @@ if six.PY3:
     ThriftClient = TClient
 
 
-def get_socket(host, port, use_ssl, ca_cert):
+def get_socket(host, port, use_ssl, ca_cert, validate):
     # based on the Impala shell impl
     log.debug('get_socket: host=%s port=%s use_ssl=%s ca_cert=%s',
               host, port, use_ssl, ca_cert)
@@ -110,13 +110,13 @@ def get_socket(host, port, use_ssl, ca_cert):
             if ca_cert is None:
                 return TSSLSocket(host, port, validate=False)
             else:
-                return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
+                return TSSLSocket(host, port, validate=validate, ca_certs=ca_cert)
         else:
             from thriftpy.transport.sslsocket import TSSLSocket
             if ca_cert is None:
                 return TSSLSocket(host, port, validate=False)
             else:
-                return TSSLSocket(host, port, validate=True, cafile=ca_cert)
+                return TSSLSocket(host, port, validate=validate, cafile=ca_cert)
     else:
         return TSocket(host, port)
 

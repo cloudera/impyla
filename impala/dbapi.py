@@ -38,7 +38,8 @@ paramstyle = 'pyformat'
 
 
 def connect(host='localhost', port=21050, database=None, timeout=None,
-            use_ssl=False, ca_cert=None, auth_mechanism='NOSASL', user=None,
+            use_ssl=False, ca_cert=None, validate=True,
+            auth_mechanism='NOSASL', user=None,
             password=None, kerberos_service_name='impala', use_ldap=None,
             ldap_user=None, ldap_password=None, use_kerberos=None,
             protocol=None):
@@ -65,6 +66,8 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
         Local path to the the third-party CA certificate. If SSL is enabled but
         the certificate is not specified, the server certificate will not be
         validated.
+    validate : bool, optional
+         hostname should be checked or not for SSL connection
     auth_mechanism : {'NOSASL', 'PLAIN', 'GSSAPI', 'LDAP'}
         Specify the authentication mechanism. `'NOSASL'` for unsecured Impala.
         `'PLAIN'` for unsecured Hive (because Hive requires the SASL
@@ -141,8 +144,8 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
                 "supported".format(protocol))
 
     service = hs2.connect(host=host, port=port,
-                          timeout=timeout, use_ssl=use_ssl,
-                          ca_cert=ca_cert, user=user, password=password,
+                          timeout=timeout, use_ssl=use_ssl, ca_cert=ca_cert,
+                          validate=validate, user=user, password=password,
                           kerberos_service_name=kerberos_service_name,
                           auth_mechanism=auth_mechanism)
     return hs2.HiveServer2Connection(service, default_db=database)
