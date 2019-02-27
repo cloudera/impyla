@@ -87,13 +87,13 @@ class ImpalaConnectionTests(unittest.TestCase):
         self._execute_queries(self.connection)
 
 class ImpalaSocketTests(unittest.TestCase):
-    
+
     def run_a_query(self):
         with connect(ENV.host, ENV.port) as connection:
             with connection.cursor() as cursor:
                 cursor.execute('select 1 as a_number')
                 return cursor.fetchall()
-    
+
     def test_socket_leak(self):
         with SocketTracker() as sockets:
             # there should be no open sockets prior to running query
