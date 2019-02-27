@@ -168,7 +168,7 @@ class HiveServer2Cursor(Cursor):
         self._closed = False
 
     def __del__(self):
-        if self._closed == True:
+        if self._closed:
             return
         try:
            self.close_operation()
