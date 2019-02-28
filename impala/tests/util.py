@@ -15,6 +15,7 @@
 import os
 import sys
 import six
+import socket
 
 
 identity = lambda x: x
@@ -59,3 +60,25 @@ class ImpylaTestEnv(object):
         kvs = ['{0}={1}'.format(k, v)
                for (k, v) in six.iteritems(self.__dict__)]
         return 'ImpylaTestEnv(\n    {0})'.format(',\n    '.join(kvs))
+
+class SocketTracker(object):
+    def __init__(self):
+        self.open_sockets = set()
+        self.socket_constructor = socket.socket.__init__
+        self.socket_close = socket.socket.close
+
+    def __enter__(self):
+        def constructor(*args, **kwargs):
+            self.open_sockets.add(args[0])
+            return self.socket_constructor(*args, **kwargs)
+
+        def close(*args, **kwargs):
+            self.open_sockets.remove(args[0])
+            return self.socket_close(*args, **kwargs)
+        socket.socket.__init__ = constructor
+        socket.socket.close = close
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        socket.socket.__init__ = self.socket_constructor
+        socket.socket.close = self.socket_close

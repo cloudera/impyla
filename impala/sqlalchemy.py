@@ -19,7 +19,8 @@ from __future__ import absolute_import
 import re
 
 from sqlalchemy.dialects import registry
-from sqlalchemy.engine.default import DefaultDialect
+
+from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.sql.compiler import (DDLCompiler, GenericTypeCompiler,
                                      IdentifierPreparer)
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
@@ -129,6 +130,12 @@ _impala_type_to_sqlalchemy_type = {
     'STRING': STRING,
     'DECIMAL': DECIMAL}
 
+class ImpalaExecutionContext(DefaultExecutionContext):
+       def create_cursor(self):
+           self._is_server_side = False
+           cursor_configuration = self.execution_options.get('cursor_configuration', {})
+           return self._dbapi_connection.cursor(configuration=cursor_configuration)
+
 
 class ImpalaDialect(DefaultDialect):
     name = 'impala'
@@ -146,6 +153,7 @@ class ImpalaDialect(DefaultDialect):
     returns_unicode_strings = True
     ddl_compiler = ImpalaDDLCompiler
     type_compiler = ImpalaTypeCompiler
+    execution_ctx_cls = ImpalaExecutionContext
 
     @classmethod
     def dbapi(cls):
@@ -173,6 +181,10 @@ class ImpalaDialect(DefaultDialect):
         if schema is not None:
             query += ' IN %s' % schema
         return [tup[0] for tup in connection.execute(query).fetchall()]
+
+    def get_schema_names(self, connection, **kw):
+        rp = connection.execute("SHOW SCHEMAS")
+        return [r[0] for r in rp]
 
     def get_columns(self, connection, table_name, schema=None, **kwargs):
         # pylint: disable=unused-argument

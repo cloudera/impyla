@@ -24,9 +24,10 @@ def decimal_table(cur):
                  f2 decimal(7, 5),
                  f3 decimal(38, 17))""".format(table_name)
     cur.execute(ddl)
-    yield table_name
-    xddl = "DROP TABLE {0}".format(table_name)
-    cur.execute(xddl)
+    try:
+        yield table_name
+    finally:
+        cur.execute("DROP TABLE {0}".format(table_name))
 
 
 @pytest.mark.connect

@@ -91,6 +91,9 @@ class Cursor(object):
     def rowcount(self):
         raise NotImplementedError
 
+    def lastrowid(self):
+        raise NotImplementedError
+
     def query_string(self):
         raise NotImplementedError
 
