@@ -157,8 +157,8 @@ We use Github issues to track bugs for this project. Find an issue that you woul
 work on (or file one if you have discovered a new issue!). If no-one is working on it,
 assign it to yourself only if you intend to work on it shortly.
 
-It’s a good idea to discuss your intended approach on the issue. You are much more
-likely to have your patch reviewed and committed if you’ve already got buy-in from the
+It's a good idea to discuss your intended approach on the issue. You are much more
+likely to have your patch reviewed and committed if you've already got buy-in from the
 impyla community before you start.
 
 ## Fix
@@ -169,7 +169,7 @@ and does not include tests, it will generally not be accepted. If you are unsure
 write tests for a particular component, please ask on the issue for guidance.
 
 Second, please keep your patch narrowly targeted to the problem described by the issue.
-It’s better for everyone if we maintain discipline about the scope of each patch. In
+It's better for everyone if we maintain discipline about the scope of each patch. In
 general, if you find a bug while working on a specific feature, file a issue for the bug,
 check if you can assign it to yourself and fix it independently of the feature. This helps
 us to differentiate between bug fixes and features and allows us to build stable
