@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # This package is here to clean up references to thrift, because we're using
-# thriftpy for Py3 at the moment.  This should all be temporary, as Apache
+# thriftpy2 for Py3 at the moment.  This should all be temporary, as Apache
 # Thrift gains Py3 compatibility.
 
 # pylint: disable=wrong-import-position
@@ -58,16 +58,16 @@ if six.PY2:
 
 
 if six.PY3:
-    # import thriftpy code
-    from thriftpy import load
-    from thriftpy.thrift import TClient, TApplicationException
+    # import thriftpy2 code
+    from thriftpy2 import load
+    from thriftpy2.thrift import TClient, TApplicationException
     # TODO: reenable cython
-    # from thriftpy.protocol import TBinaryProtocol
-    from thriftpy.protocol.binary import TBinaryProtocol  # noqa
-    from thriftpy.transport import TSocket, TTransportException  # noqa
+    # from thriftpy2.protocol import TBinaryProtocol
+    from thriftpy2.protocol.binary import TBinaryProtocol  # noqa
+    from thriftpy2.transport import TSocket, TTransportException  # noqa
     # TODO: reenable cython
-    # from thriftpy.transport import TBufferedTransport
-    from thriftpy.transport.buffered import TBufferedTransport  # noqa
+    # from thriftpy2.transport import TBufferedTransport
+    from thriftpy2.transport.buffered import TBufferedTransport  # noqa
     thrift_dir = os.path.join(os.path.dirname(__file__), 'thrift')
 
     # dynamically load the HS2 modules
@@ -112,7 +112,7 @@ def get_socket(host, port, use_ssl, ca_cert):
             else:
                 return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
         else:
-            from thriftpy.transport.sslsocket import TSSLSocket
+            from thriftpy2.transport.sslsocket import TSSLSocket
             if ca_cert is None:
                 return TSSLSocket(host, port, validate=False)
             else:
