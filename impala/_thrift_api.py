@@ -149,7 +149,7 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
                 # PLAIN always requires a password for HS2.
                 password = 'password'
             log.debug('get_transport: password=%s', password)
-
+        auth_mechanism = 'PLAIN'  # sasl doesn't know mechanism LDAP
     # Initializes a sasl client
     from thrift_sasl import TSaslClientTransport
     try:
@@ -169,6 +169,7 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
         from impala.sasl_compat import PureSASLClient
 
         def sasl_factory():
-            return PureSASLClient(host, username=user, password=password, service=kerberos_service_name)
+            return PureSASLClient(host, username=user, password=password,
+                                  service=kerberos_service_name)
 
     return TSaslClientTransport(sasl_factory, auth_mechanism, socket)

@@ -755,7 +755,7 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
             auth_mechanism=None):
     log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
-             'mechanism', host, port, auth_mechanism)
+              'mechanism', host, port, auth_mechanism)
     sock = get_socket(host, port, use_ssl, ca_cert)
     if timeout is not None:
         timeout = timeout * 1000.  # TSocket expects millis
