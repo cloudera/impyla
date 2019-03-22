@@ -20,13 +20,13 @@
 
 from __future__ import absolute_import
 
+import getpass
 import os
 import sys
+
 import six
-import getpass
 
 from impala.util import get_logger_and_init_null
-
 
 log = get_logger_and_init_null(__name__)
 
@@ -94,7 +94,7 @@ if six.PY3:
     ThriftClient = TClient
 
 
-def get_socket(host, port, use_ssl, ca_cert, validate):
+def get_socket(host, port, use_ssl, ca_cert, ssl_verify_cert):
     # based on the Impala shell impl
     log.debug('get_socket: host=%s port=%s use_ssl=%s ca_cert=%s',
               host, port, use_ssl, ca_cert)
@@ -103,15 +103,15 @@ def get_socket(host, port, use_ssl, ca_cert, validate):
         if six.PY2:
             from thrift.transport.TSSLSocket import TSSLSocket
             if ca_cert is None:
-                return TSSLSocket(host, port, validate=False)
+                return TSSLSocket(host, port, ssl_verify_cert=False)
             else:
-                return TSSLSocket(host, port, validate=validate, ca_certs=ca_cert)
+                return TSSLSocket(host, port, ssl_verify_cert=ssl_verify_cert, ca_certs=ca_cert)
         else:
             from thriftpy.transport.sslsocket import TSSLSocket
             if ca_cert is None:
-                return TSSLSocket(host, port, validate=False)
+                return TSSLSocket(host, port, ssl_verify_cert=False)
             else:
-                return TSSLSocket(host, port, validate=validate, cafile=ca_cert)
+                return TSSLSocket(host, port, ssl_verify_cert=ssl_verify_cert, cafile=ca_cert)
     else:
         return TSocket(host, port)
 
