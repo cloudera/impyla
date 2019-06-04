@@ -336,10 +336,15 @@ class HiveServer2Cursor(Cursor):
         """
         log.debug('Executing query %s', operation)
 
+        paramstyle = None
+        if configuration:
+            paramstyle = configuration.pop('paramstyle', None)
+
         def op():
             if parameters:
                 self._last_operation_string = _bind_parameters(operation,
-                                                               parameters)
+                                                               parameters,
+                                                               paramstyle)
             else:
                 self._last_operation_string = operation
 
@@ -757,12 +762,12 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
     log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
               'mechanism', host, port, auth_mechanism)
     sock = get_socket(host, port, use_ssl, ca_cert)
-    
+
     if krb_host:
         kerberos_host = krb_host
     else:
         kerberos_host = host
-    
+
     if timeout is not None:
         timeout = timeout * 1000.  # TSocket expects millis
     if six.PY2:
