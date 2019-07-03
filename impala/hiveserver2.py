@@ -92,8 +92,6 @@ class HiveServer2Connection(Connection):
             expensive.) Only applies when using HS2 protocol versions > 6.
         dictify : bool, optional
             When `True` cursor will return key value pairs instead of rows.
-        batch_cursor : bool, optional
-            When `True` cursor will return CBatches directly rather than rows.
         fetch_error : bool, optional
             In versions of impala prior to 2.7.0, when an operation fails and
             the impalad returns an error state, the error message is not always
