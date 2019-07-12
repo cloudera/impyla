@@ -19,8 +19,10 @@ from __future__ import absolute_import
 import re
 
 from sqlalchemy.dialects import registry
-from sqlalchemy.engine.default import DefaultDialect
-from sqlalchemy.sql.compiler import IdentifierPreparer, GenericTypeCompiler
+
+from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
+from sqlalchemy.sql.compiler import (DDLCompiler, GenericTypeCompiler,
+                                     IdentifierPreparer)
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
                               DECIMAL, Integer, Float, String)
 
@@ -42,6 +44,26 @@ class DOUBLE(Float):
 
 class STRING(String):
     __visit_name__ = 'STRING'
+
+
+class ImpalaDDLCompiler(DDLCompiler):
+    def post_create_table(self, table):
+        """Build table-level CREATE options."""
+
+        table_opts = []
+
+        if 'impala_partition_by' in table.kwargs:
+            table_opts.append('PARTITION BY %s' % table.kwargs.get('impala_partition_by'))
+
+        if 'impala_stored_as' in table.kwargs:
+            table_opts.append('STORED AS %s' % table.kwargs.get('impala_stored_as'))
+
+        if 'impala_table_properties' in table.kwargs:
+            table_properties = ["'{0}' = '{1}'".format(property_, value)
+                                for property_, value
+                                in table.kwargs.get('impala_table_properties', {}).items()]
+            table_opts.append('TBLPROPERTIES (%s)' % ', '.join(table_properties))
+        return '\n%s' % '\n'.join(table_opts)
 
 
 class ImpalaTypeCompiler(GenericTypeCompiler):
@@ -108,6 +130,12 @@ _impala_type_to_sqlalchemy_type = {
     'STRING': STRING,
     'DECIMAL': DECIMAL}
 
+class ImpalaExecutionContext(DefaultExecutionContext):
+       def create_cursor(self):
+           self._is_server_side = False
+           cursor_configuration = self.execution_options.get('cursor_configuration', {})
+           return self._dbapi_connection.cursor(configuration=cursor_configuration)
+
 
 class ImpalaDialect(DefaultDialect):
     name = 'impala'
@@ -123,13 +151,26 @@ class ImpalaDialect(DefaultDialect):
     supports_native_enum = False
     supports_default_values = False
     returns_unicode_strings = True
+    ddl_compiler = ImpalaDDLCompiler
     type_compiler = ImpalaTypeCompiler
+    execution_ctx_cls = ImpalaExecutionContext
 
     @classmethod
     def dbapi(cls):
         # pylint: disable=method-hidden
         import impala.dbapi
         return impala.dbapi
+
+    def create_connect_args(self, url):
+        kwargs = {
+            'host': url.host,
+            'port': url.port,
+            'user': url.username,
+            'password': url.password,
+            'database': url.database,
+        }
+        kwargs.update(url.query)
+        return ([], kwargs)
 
     def initialize(self, connection):
         self.default_schema_name = connection.connection.default_db
@@ -151,6 +192,10 @@ class ImpalaDialect(DefaultDialect):
         if schema is not None:
             query += ' IN %s' % schema
         return [tup[0] for tup in connection.execute(query).fetchall()]
+
+    def get_schema_names(self, connection, **kw):
+        rp = connection.execute("SHOW SCHEMAS")
+        return [r[0] for r in rp]
 
     def get_columns(self, connection, table_name, schema=None, **kwargs):
         # pylint: disable=unused-argument

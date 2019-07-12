@@ -14,8 +14,6 @@
 
 from __future__ import absolute_import
 
-import sys
-
 import ez_setup
 ez_setup.use_setuptools()
 
@@ -26,25 +24,7 @@ def readme():
     with open('README.md', 'r') as ip:
         return ip.read()
 
-
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-
-# Apache Thrift does not yet support Python 3 (see THRIFT-1857).  We use
-# thriftpy as a stopgap replacement
-reqs = ['six', 'bitarray']
-if PY2:
-    packages = find_packages()
-    reqs.append('thrift<=0.9.3')
-elif PY3:
-    packages = find_packages(exclude=['impala._thrift_gen',
-                                      'impala._thrift_gen.*'])
-    reqs.append('thriftpy>=0.3.5')
-    reqs.append('thrift_sasl==0.2.1')
-
-
 import versioneer  # noqa
-
 
 setup(
     name='impyla',
@@ -57,10 +37,15 @@ setup(
     author='Uri Laserson',
     author_email='laserson@cloudera.com',
     url='https://github.com/cloudera/impyla',
-    packages=packages,
+    packages=find_packages(),
     install_package_data=True,
     package_data={'impala.thrift': ['*.thrift']},
-    install_requires=reqs,
+    install_requires=['six', 'bitarray', 'thrift>=0.9.3'],
+    extras_require={
+        ":python_version>='3.0'": ["thriftpy2>=0.4.0,<0.5.0",
+                                   "thrift_sasl==0.2.1",
+                                   ],
+    },
     keywords=('cloudera impala python hadoop sql hdfs mpp spark pydata '
               'pandas distributed db api pep 249 hive hiveserver2 hs2'),
     license='Apache License, Version 2.0',

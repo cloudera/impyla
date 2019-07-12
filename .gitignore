@@ -38,3 +38,6 @@ coverage.xml
 
 udf-scratch/
 .idea/
+
+/venv/
+.mypy_cache/

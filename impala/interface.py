@@ -91,6 +91,9 @@ class Cursor(object):
     def rowcount(self):
         raise NotImplementedError
 
+    def lastrowid(self):
+        raise NotImplementedError
+
     def query_string(self):
         raise NotImplementedError
 
@@ -177,7 +180,7 @@ class Cursor(object):
             reraise(exc_type, exc_val, exc_tb)
 
 
-def _replace_numeric_markers(operation, string_parameters):
+def _replace_numeric_markers(operation, string_parameters, paramstyle):
     """
     Replaces qname, format, and numeric markers in the given operation, from
     the string_parameters list.
@@ -211,19 +214,30 @@ def _replace_numeric_markers(operation, string_parameters):
         return op
 
     # replace qmark parameters and format parameters
-    operation = replace_markers('?', operation, string_parameters)
-    operation = replace_markers(r'%s', operation, string_parameters)
+    # If paramstyle is explicitly specified don't try to substitue them all
+    if paramstyle == 'qmark' or paramstyle is None:
+        operation = replace_markers('?', operation, string_parameters)
+    if paramstyle == 'format' or paramstyle is None:
+        operation = replace_markers(r'%s', operation, string_parameters)
 
     # replace numbered parameters
-    # Go through them backwards so smaller numbers don't replace
-    # parts of larger ones
-    for index in range(len(string_parameters), 0, -1):
-        operation = operation.replace(':' + str(index),
-                                      string_parameters[index - 1])
+    if paramstyle == 'numeric' or paramstyle is None:
+        operation = re.sub(r'(:)(\d+)', r'{\2}', operation)
+        # offset by one
+        operation = operation.format(*[''] + string_parameters)
+
+    if paramstyle in {'named', 'pyformat'}:
+        raise ProgrammingError(
+            "paramstyle '%s' is not compatible with parameters passed as List."
+            "please you a dict for you parameters instead or specify"
+            " a different paramstyle",
+            paramstyle
+        )
+
     return operation
 
 
-def _bind_parameters_list(operation, parameters):
+def _bind_parameters_list(operation, parameters, paramstyle):
     string_parameters = []
     for value in parameters:
         if value is None:
@@ -234,7 +248,7 @@ def _bind_parameters_list(operation, parameters):
             string_parameters.append(str(value))
 
     # replace qmark and numeric parameters
-    return _replace_numeric_markers(operation, string_parameters)
+    return _replace_numeric_markers(operation, string_parameters, paramstyle)
 
 
 def _bind_parameters_dict(operation, parameters):
@@ -256,11 +270,11 @@ def _bind_parameters_dict(operation, parameters):
     return operation % string_parameters
 
 
-def _bind_parameters(operation, parameters):
+def _bind_parameters(operation, parameters, paramstyle=None):
     # If parameters is a list, assume either qmark, format, or numeric
     # format. If not, assume either named or pyformat parameters
     if isinstance(parameters, (list, tuple)):
-        return _bind_parameters_list(operation, parameters)
+        return _bind_parameters_list(operation, parameters, paramstyle)
     elif isinstance(parameters, dict):
         return _bind_parameters_dict(operation, parameters)
     else:

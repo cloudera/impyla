@@ -37,8 +37,8 @@ from impala._thrift_api import (
     TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq, TGetSchemasReq,
     TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq, TOperationState,
     TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion,
-    TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service,
-    TExecStats, ThriftClient, TApplicationException)
+    TGetRuntimeProfileReq, TRuntimeProfileFormat, TGetExecSummaryReq,
+    ImpalaHiveServer2Service, TExecStats, ThriftClient, TApplicationException)
 
 
 log = get_logger_and_init_null(__name__)
@@ -168,6 +168,8 @@ class HiveServer2Cursor(Cursor):
         self._closed = False
 
     def __del__(self):
+        if self._closed:
+            return
         try:
            self.close_operation()
         except Exception:
@@ -191,6 +193,11 @@ class HiveServer2Cursor(Cursor):
     def rowcount(self):
         # PEP 249
         return self._rowcount
+
+    @property
+    def lastrowid(self):
+        # PEP 249
+        return None
 
     @property
     def query_string(self):
@@ -254,11 +261,12 @@ class HiveServer2Cursor(Cursor):
         if exc_info:
             six.reraise(*exc_info)
 
-    def cancel_operation(self):
+    def cancel_operation(self, reset_state=True):
         if self._last_operation_active:
             log.info('Canceling active operation')
             self._last_operation.cancel()
-            self._reset_state()
+            if reset_state:
+                self._reset_state()
 
     def close_operation(self):
         if self._last_operation_active:
@@ -328,16 +336,21 @@ class HiveServer2Cursor(Cursor):
         """
         log.debug('Executing query %s', operation)
 
+        paramstyle = None
+        if configuration:
+            paramstyle = configuration.pop('paramstyle', None)
+
         def op():
             if parameters:
                 self._last_operation_string = _bind_parameters(operation,
-                                                               parameters)
+                                                               parameters,
+                                                               paramstyle)
             else:
                 self._last_operation_string = operation
 
             op = self.session.execute(self._last_operation_string,
                                       configuration,
-                                      async=True)
+                                      run_async=True)
             self._last_operation = op
 
         self._execute_async(op)
@@ -389,6 +402,8 @@ class HiveServer2Cursor(Cursor):
             time.sleep(self._get_sleep_interval(loop_start))
 
     def status(self):
+        if self._last_operation is None:
+            raise ProgrammingError("Operation state is not available")
         return self._last_operation.get_status()
 
     def execution_failed(self):
@@ -559,10 +574,14 @@ class HiveServer2Cursor(Cursor):
         return self.session.ping()
 
     def get_log(self):
+        if self._last_operation is None:
+            raise ProgrammingError("Operation state is not available")
         return self._last_operation.get_log()
 
-    def get_profile(self):
-        return self._last_operation.get_profile()
+    def get_profile(self, profile_format=TRuntimeProfileFormat.STRING):
+        if self._last_operation is None:
+            raise ProgrammingError("Operation state is not available")
+        return self._last_operation.get_profile(profile_format=profile_format)
 
     def get_summary(self):
         return self._last_operation.get_summary()
@@ -685,6 +704,7 @@ _TTypeId_to_TColumnValue_getters = {
     'ARRAY': operator.attrgetter('stringVal'),
     'STRUCT': operator.attrgetter('stringVal'),
     'UNIONTYPE': operator.attrgetter('stringVal'),
+    'NULL': operator.attrgetter('stringVal'),
     'DATE': operator.attrgetter('stringVal')
 }
 
@@ -738,10 +758,16 @@ def threaded(func):
 
 def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
-            auth_mechanism=None):
+            auth_mechanism=None, krb_host=None):
     log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
-             'mechanism', host, port, auth_mechanism)
+              'mechanism', host, port, auth_mechanism)
     sock = get_socket(host, port, use_ssl, ca_cert)
+
+    if krb_host:
+        kerberos_host = krb_host
+    else:
+        kerberos_host = host
+
     if timeout is not None:
         timeout = timeout * 1000.  # TSocket expects millis
     if six.PY2:
@@ -753,7 +779,7 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
         except AttributeError:
             sock.socket_timeout = timeout
             sock.connect_timeout = timeout
-    transport = get_transport(sock, host, kerberos_service_name,
+    transport = get_transport(sock, kerberos_host, kerberos_service_name,
                               auth_mechanism, user, password)
     transport.open()
     protocol = TBinaryProtocol(transport)
@@ -1019,11 +1045,11 @@ class HS2Session(ThriftRPC):
         req = TCloseSessionReq(sessionHandle=self.handle)
         self._rpc('CloseSession', req)
 
-    def execute(self, statement, configuration=None, async=False):
+    def execute(self, statement, configuration=None, run_async=False):
         req = TExecuteStatementReq(sessionHandle=self.handle,
                                    statement=statement,
                                    confOverlay=configuration,
-                                   runAsync=async)
+                                   runAsync=run_async)
         return self._operation('ExecuteStatement', req)
 
     def get_databases(self, schema='.*'):
@@ -1112,6 +1138,10 @@ class Operation(ThriftRPC):
         resp = self._rpc('GetOperationStatus', req)
         return TOperationState._VALUES_TO_NAMES[resp.operationState]
 
+    def get_state(self):
+        req = TGetOperationStatusReq(operationHandle=self.handle)
+        return self._rpc('GetOperationStatus', req)
+
     def get_log(self, max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
         try:
             req = TGetLogReq(operationHandle=self.handle)
@@ -1131,16 +1161,19 @@ class Operation(ThriftRPC):
 
     def cancel(self):
         req = TCancelOperationReq(operationHandle=self.handle)
-        self._rpc('CancelOperation', req)
+        return self._rpc('CancelOperation', req)
 
     def close(self):
         req = TCloseOperationReq(operationHandle=self.handle)
-        self._rpc('CloseOperation', req)
+        return self._rpc('CloseOperation', req)
 
-    def get_profile(self):
+    def get_profile(self, profile_format=TRuntimeProfileFormat.STRING):
         req = TGetRuntimeProfileReq(operationHandle=self.handle,
-                                    sessionHandle=self.session.handle)
+                                    sessionHandle=self.session.handle,
+                                    format=profile_format)
         resp = self._rpc('GetRuntimeProfile', req)
+        if profile_format == TRuntimeProfileFormat.THRIFT:
+            return resp.thrift_profile
         return resp.profile
 
     def get_summary(self):

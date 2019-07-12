@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # This package is here to clean up references to thrift, because we're using
-# thriftpy for Py3 at the moment.  This should all be temporary, as Apache
+# thriftpy2 for Py3 at the moment.  This should all be temporary, as Apache
 # Thrift gains Py3 compatibility.
 
 # pylint: disable=wrong-import-position
@@ -54,19 +54,20 @@ if six.PY2:
     from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
     from impala._thrift_gen.ExecStats.ttypes import TExecStats
     ThriftClient = ImpalaHiveServer2Service.Client
+    from impala._thrift_gen.RuntimeProfile.ttypes import TRuntimeProfileFormat
 
 
 if six.PY3:
-    # import thriftpy code
-    from thriftpy import load
-    from thriftpy.thrift import TClient, TApplicationException
+    # import thriftpy2 code
+    from thriftpy2 import load
+    from thriftpy2.thrift import TClient, TApplicationException
     # TODO: reenable cython
-    # from thriftpy.protocol import TBinaryProtocol
-    from thriftpy.protocol.binary import TBinaryProtocol  # noqa
-    from thriftpy.transport import TSocket, TTransportException  # noqa
+    # from thriftpy2.protocol import TBinaryProtocol
+    from thriftpy2.protocol.binary import TBinaryProtocol  # noqa
+    from thriftpy2.transport import TSocket, TTransportException  # noqa
     # TODO: reenable cython
-    # from thriftpy.transport import TBufferedTransport
-    from thriftpy.transport.buffered import TBufferedTransport  # noqa
+    # from thriftpy2.transport import TBufferedTransport
+    from thriftpy2.transport.buffered import TBufferedTransport  # noqa
     thrift_dir = os.path.join(os.path.dirname(__file__), 'thrift')
 
     # dynamically load the HS2 modules
@@ -76,9 +77,12 @@ if six.PY3:
                        include_dirs=[thrift_dir])
     ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
                          include_dirs=[thrift_dir])
+    RuntimeProfile = load(os.path.join(thrift_dir, 'RuntimeProfile.thrift'),
+                          include_dirs=[thrift_dir])
     sys.modules[ExecStats.__name__] = ExecStats
     sys.modules[TCLIService.__name__] = TCLIService
     sys.modules[ImpalaService.__name__] = ImpalaService
+    sys.modules[RuntimeProfile.__name__] = RuntimeProfile
 
     # import the HS2 objects
     from TCLIService import (  # noqa
@@ -91,6 +95,7 @@ if six.PY3:
     from ImpalaService import (  # noqa
         TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service)
     from ExecStats import TExecStats  # noqa
+    from RuntimeProfile import TRuntimeProfileFormat
     ThriftClient = TClient
 
 
@@ -107,7 +112,7 @@ def get_socket(host, port, use_ssl, ca_cert):
             else:
                 return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
         else:
-            from thriftpy.transport.sslsocket import TSSLSocket
+            from thriftpy2.transport.sslsocket import TSSLSocket
             if ca_cert is None:
                 return TSSLSocket(host, port, validate=False)
             else:
@@ -144,7 +149,7 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
                 # PLAIN always requires a password for HS2.
                 password = 'password'
             log.debug('get_transport: password=%s', password)
-
+        auth_mechanism = 'PLAIN'  # sasl doesn't know mechanism LDAP
     # Initializes a sasl client
     from thrift_sasl import TSaslClientTransport
     try:
@@ -164,6 +169,7 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
         from impala.sasl_compat import PureSASLClient
 
         def sasl_factory():
-            return PureSASLClient(host, username=user, password=password, service=kerberos_service_name)
+            return PureSASLClient(host, username=user, password=password,
+                                  service=kerberos_service_name)
 
     return TSaslClientTransport(sasl_factory, auth_mechanism, socket)

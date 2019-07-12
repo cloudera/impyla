@@ -1,5 +1,6 @@
 include ez_setup.py
 include README.md
 include LICENSE.txt
+include CHANGELOG.md
 include versioneer.py
 include impala/_version.py
