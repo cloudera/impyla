@@ -31,14 +31,15 @@ from impala.interface import Connection, Cursor, _bind_parameters
 from impala.error import (NotSupportedError, OperationalError,
                           ProgrammingError, HiveServer2Error)
 from impala._thrift_api import (
-    get_socket, get_transport, TTransportException, TBinaryProtocol,
-    TOpenSessionReq, TFetchResultsReq, TCloseSessionReq, TExecuteStatementReq,
-    TGetInfoReq, TGetInfoType, TTypeId, TFetchOrientation,
-    TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq, TGetSchemasReq,
-    TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq, TOperationState,
-    TCancelOperationReq, TCloseOperationReq, TGetLogReq, TProtocolVersion,
-    TGetRuntimeProfileReq, TRuntimeProfileFormat, TGetExecSummaryReq,
-    ImpalaHiveServer2Service, TExecStats, ThriftClient, TApplicationException)
+    get_socket, get_http_transport, get_transport, THttpClient,
+    TTransportException, TBinaryProtocol, TOpenSessionReq, TFetchResultsReq,
+    TCloseSessionReq, TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
+    TFetchOrientation, TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq,
+    TGetSchemasReq, TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq,
+    TOperationState, TCancelOperationReq, TCloseOperationReq, TGetLogReq,
+    TProtocolVersion, TGetRuntimeProfileReq, TRuntimeProfileFormat,
+    TGetExecSummaryReq, ImpalaHiveServer2Service, TExecStats, ThriftClient,
+    TApplicationException)
 
 
 log = get_logger_and_init_null(__name__)
@@ -758,30 +759,38 @@ def threaded(func):
 
 def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
-            auth_mechanism=None, krb_host=None):
+            auth_mechanism=None, krb_host=None, use_http_transport=True,
+            http_path=''):
     log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
               'mechanism', host, port, auth_mechanism)
-    sock = get_socket(host, port, use_ssl, ca_cert)
 
-    if krb_host:
-        kerberos_host = krb_host
+    if use_http_transport:
+        transport = get_http_transport(host, port, http_path=http_path,
+                                       use_ssl=use_ssl, ca_cert=ca_cert)
     else:
-        kerberos_host = host
+        sock = get_socket(host, port, use_ssl, ca_cert)
 
-    if timeout is not None:
-        timeout = timeout * 1000.  # TSocket expects millis
-    if six.PY2:
-        sock.setTimeout(timeout)
-    elif six.PY3:
-        try:
-            # thriftpy has a release where set_timeout is missing
-            sock.set_timeout(timeout)
-        except AttributeError:
-            sock.socket_timeout = timeout
-            sock.connect_timeout = timeout
-    transport = get_transport(sock, kerberos_host, kerberos_service_name,
-                              auth_mechanism, user, password)
-    transport.open()
+        if krb_host:
+            kerberos_host = krb_host
+        else:
+            kerberos_host = host
+
+        if timeout is not None:
+            timeout = timeout * 1000.  # TSocket expects millis
+        if six.PY2:
+            sock.setTimeout(timeout)
+        elif six.PY3:
+            try:
+                # thriftpy has a release where set_timeout is missing
+                sock.set_timeout(timeout)
+            except AttributeError:
+                sock.socket_timeout = timeout
+                sock.connect_timeout = timeout
+        log.debug('sock=%s', sock)
+        transport = get_transport(sock, kerberos_host, kerberos_service_name,
+                                auth_mechanism, user, password)
+        transport.open()
+
     protocol = TBinaryProtocol(transport)
     if six.PY2:
         # ThriftClient == ImpalaHiveServer2Service.Client
@@ -789,8 +798,8 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
     elif six.PY3:
         # ThriftClient == TClient
         service = ThriftClient(ImpalaHiveServer2Service, protocol)
-    log.debug('sock=%s transport=%s protocol=%s service=%s', sock, transport,
-              protocol, service)
+    log.debug('transport=%s protocol=%s service=%s', transport, protocol,
+              service)
 
     return HS2Service(service)
 
