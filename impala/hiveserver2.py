@@ -759,7 +759,7 @@ def threaded(func):
 
 def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
-            auth_mechanism=None, krb_host=None, use_http_transport=True,
+            auth_mechanism=None, krb_host=None, use_http_transport=False,
             http_path=''):
     log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
               'mechanism', host, port, auth_mechanism)

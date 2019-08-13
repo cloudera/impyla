@@ -41,7 +41,7 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
             use_ssl=False, ca_cert=None, auth_mechanism='NOSASL', user=None,
             password=None, kerberos_service_name='impala', use_ldap=None,
             ldap_user=None, ldap_password=None, use_kerberos=None,
-            protocol=None, krb_host=None, use_http_transport=True,
+            protocol=None, krb_host=None, use_http_transport=False,
             http_path=''):
     """Get a connection to HiveServer2 (HS2).
 
