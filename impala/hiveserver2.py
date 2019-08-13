@@ -765,8 +765,16 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
               'mechanism', host, port, auth_mechanism)
 
     if use_http_transport:
+        # TODO: Add server authentication with thrift 0.12
+        if ca_cert:
+            raise NotSupportedError("Server authentication is not supported " +
+                                    "with HTTP endpoints")
+        if krb_host:
+            raise NotSupportedError("Kerberos authentication is not " +
+                                    "supported with HTTP endpoints")
         transport = get_http_transport(host, port, http_path=http_path,
-                                       use_ssl=use_ssl, ca_cert=ca_cert)
+                                       use_ssl=use_ssl, ca_cert=ca_cert,
+                                       auth_mechanism=auth_mechanism)
     else:
         sock = get_socket(host, port, use_ssl, ca_cert)
 
