@@ -132,18 +132,15 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
     if use_ssl:
         url = 'https://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
-        # TODO: Add server authentication with thrift 0.12
+        # TODO(#362): Add server authentication with thrift 0.12.
         transport = THttpClient(url)
     else:
         url = 'http://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
         transport = THttpClient(url)
 
-    if auth_mechanism == 'NOSASL':
-        return transport
-
     # Set defaults for PLAIN SASL / LDAP connections.
-    if auth_mechanism in ['LDAP', 'PLAIN']:
+    if auth_mechanism in ['PLAIN', 'LDAP']:
         if user is None:
             user = getpass.getuser()
             log.debug('get_http_transport: user=%s', user)
@@ -153,13 +150,13 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
             else:
                 # PLAIN always requires a password for HS2.
                 password = 'password'
-            log.debug('get_http_transport: password=%s', password)
+        log.debug('get_http_transport: password=%s', password)
         auth_mechanism = 'PLAIN'  # sasl doesn't know mechanism LDAP
         # Set the BASIC auth header
-        auth = base64.encodestring(
-            '%s:%s' % (self.user, self.ldap_password)).strip('\n')
-        transport.setCustomHeaders({'Authorization': 'Basic ' % auth})
-        return transport
+        auth = base64.encodestring('%s:%s' % (user, password)).strip('\n')
+        transport.setCustomHeaders({'Authorization': 'Basic %s' % auth})
+
+    return transport
 
 def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
                   user=None, password=None):

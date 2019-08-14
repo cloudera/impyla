@@ -765,7 +765,7 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
               'mechanism', host, port, auth_mechanism)
 
     if use_http_transport:
-        # TODO: Add server authentication with thrift 0.12
+        # TODO(#362): Add server authentication with thrift 0.12.
         if ca_cert:
             raise NotSupportedError("Server authentication is not supported " +
                                     "with HTTP endpoints")
@@ -774,6 +774,7 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
                                     "supported with HTTP endpoints")
         transport = get_http_transport(host, port, http_path=http_path,
                                        use_ssl=use_ssl, ca_cert=ca_cert,
+                                       user=user, password=password,
                                        auth_mechanism=auth_mechanism)
     else:
         sock = get_socket(host, port, use_ssl, ca_cert)
@@ -797,8 +798,8 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
         log.debug('sock=%s', sock)
         transport = get_transport(sock, kerberos_host, kerberos_service_name,
                                 auth_mechanism, user, password)
-        transport.open()
 
+    transport.open()
     protocol = TBinaryProtocol(transport)
     if six.PY2:
         # ThriftClient == ImpalaHiveServer2Service.Client
