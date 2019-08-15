@@ -437,11 +437,11 @@ class HiveServer2Cursor(Cursor):
             return 0.5
         return 1.0
 
-    def executemany(self, operation, seq_of_parameters):
+    def executemany(self, operation, seq_of_parameters, configuration=None):
         # PEP 249
         log.debug('Attempting to execute %s queries', len(seq_of_parameters))
         for parameters in seq_of_parameters:
-            self.execute(operation, parameters)
+            self.execute(operation, parameters, configuration)
             if self.has_result_set:
                 raise ProgrammingError("Operations that have result sets are "
                                        "not allowed with executemany.")
