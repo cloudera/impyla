@@ -20,10 +20,12 @@
 
 from __future__ import absolute_import
 
-import os
-import sys
-import six
+import base64
 import getpass
+import os
+import six
+import ssl
+import sys
 
 from impala.util import get_logger_and_init_null
 
@@ -34,6 +36,7 @@ log = get_logger_and_init_null(__name__)
 if six.PY2:
     # pylint: disable=import-error,unused-import
     # import Apache Thrift code
+    from thrift.transport.THttpClient import THttpClient
     from thrift.transport.TSocket import TSocket
     from thrift.transport.TTransport import (
         TBufferedTransport, TTransportException)
@@ -120,6 +123,40 @@ def get_socket(host, port, use_ssl, ca_cert):
     else:
         return TSocket(host, port)
 
+def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
+                       ca_cert=None, auth_mechanism='NOSASL', user=None,
+                       password=None):
+    # TODO: support timeout
+    if timeout is not None:
+        log.error('get_http_transport does not support a timeout')
+    if use_ssl:
+        url = 'https://%s:%s/%s' % (host, port, http_path)
+        log.debug('get_http_transport url=%s', url)
+        # TODO(#362): Add server authentication with thrift 0.12.
+        transport = THttpClient(url)
+    else:
+        url = 'http://%s:%s/%s' % (host, port, http_path)
+        log.debug('get_http_transport url=%s', url)
+        transport = THttpClient(url)
+
+    # Set defaults for PLAIN SASL / LDAP connections.
+    if auth_mechanism in ['PLAIN', 'LDAP']:
+        if user is None:
+            user = getpass.getuser()
+            log.debug('get_http_transport: user=%s', user)
+        if password is None:
+            if auth_mechanism == 'LDAP':
+                password = ''
+            else:
+                # PLAIN always requires a password for HS2.
+                password = 'password'
+        log.debug('get_http_transport: password=%s', password)
+        auth_mechanism = 'PLAIN'  # sasl doesn't know mechanism LDAP
+        # Set the BASIC auth header
+        auth = base64.encodestring('%s:%s' % (user, password)).strip('\n')
+        transport.setCustomHeaders({'Authorization': 'Basic %s' % auth})
+
+    return transport
 
 def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
                   user=None, password=None):
