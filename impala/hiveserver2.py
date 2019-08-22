@@ -194,6 +194,26 @@ class HiveServer2Cursor(Cursor):
         return self._rowcount
 
     @property
+    def rowcounts(self):
+        # Work around to get the number of rows modified for Inserts/Update/Delte statements
+        modifiedRows, errorRows = -1, -1
+        if self._last_operation_active:
+            logList = self.get_profile().split('\n')
+            resultDict = {}
+            subs = ['NumModifiedRows', 'NumRowErrors']
+            resultSet = [s for s in logList if any(item in s for item in subs)]
+            if resultSet:
+                for items in resultSet:
+                    key, value = items.split(':')
+                    key, value = key.strip(), value.strip()
+                    resultDict[key] = value
+
+                modifiedRows = int(resultDict.get('NumModifiedRows', -1))
+                errorRows = int(resultDict.get('NumRowErrors', -1))
+
+        return (modifiedRows, errorRows)      
+      
+    @property
     def lastrowid(self):
         # PEP 249
         return None
