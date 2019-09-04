@@ -63,6 +63,7 @@ if six.PY2:
 if six.PY3:
     # import thriftpy2 code
     from thriftpy2 import load
+    from thrift.transport.THttpClient import THttpClient
     from thriftpy2.thrift import TClient, TApplicationException
     # TODO: reenable cython
     # from thriftpy2.protocol import TBinaryProtocol
