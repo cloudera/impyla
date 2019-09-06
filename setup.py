@@ -32,6 +32,7 @@ setup(
     cmdclass=versioneer.get_cmdclass(),
     description='Python client for the Impala distributed query engine',
     long_description=readme(),
+    long_description_content_type='text/markdown',
     maintainer='Wes McKinney',
     maintainer_email='wes.mckinney@twosigma.com',
     author='Uri Laserson',
