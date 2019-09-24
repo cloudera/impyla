@@ -1,7 +1,22 @@
 Changelog
 =========
 
-0.15a1
+0.16.0
+------
+* **Improvements**
+  - Add HTTP endpoint support (#359)
+  - Add rowcounts property to cursor object to return the number of rows affected (#346)
+
+* **Bug Fixes**
+  - Set long_description_content_type to markdown in setup.py (#364)
+  - Fix ImportError 'THttpClient' in python3+ (#363)
+  - Enable executemany() to pass parameter configuration to inner execute() (#361)
+  - Minor docstring corrections (#355)
+  - Make thriftpy2 range locked, not specific-version locked (#353)
+  - Fixed numeric parameter substitution bug (#348)
+  - Add thrift_sasl as an official dependency (#273)
+
+0.15.0
 ------
 * **Improvements**
   - Selectively install thriftpy2 requirement based on python version (#342)
