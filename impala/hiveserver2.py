@@ -480,8 +480,10 @@ class HiveServer2Cursor(Cursor):
 
 
     def fetchcbatch(self):
-        '''Return a CBatch object of any data currently in the buffer or
-           if no data currently in buffer then fetch a batch'''
+        '''Return a CBatch object containing the next rows to be fetched. If data is
+           currently buffered, returns that data, otherwise fetches the next batch.
+           Returns None if no more rows are currently available. Note that if None
+           is returned, more rows may still be available in future.'''
         if not self._last_operation.is_columnar:
             raise NotSupportedError("Server does not support columnar "
                                     "fetching")
@@ -566,26 +568,29 @@ class HiveServer2Cursor(Cursor):
         return self.__next__()
 
     def __next__(self):
-        if not self.has_result_set:
-            raise ProgrammingError(
-                "Trying to fetch results on an operation with no results.")
-        if len(self._buffer) > 0:
-            log.debug('__next__: popping row out of buffer')
-            return self._buffer.pop()
-        elif self._last_operation_active:
-            log.debug('__next__: buffer empty and op is active => fetching '
-                      'more data')
-            self._buffer = self._last_operation.fetch(self.description,
-                                                      self.buffersize,
-                                                      convert_types=self.convert_types)
-            if len(self._buffer) == 0:
-                log.debug('__next__: no more data to fetch')
+        while True:
+            if not self.has_result_set:
+                raise ProgrammingError(
+                    "Trying to fetch results on an operation with no results.")
+            if len(self._buffer) > 0:
+                log.debug('__next__: popping row out of buffer')
+                return self._buffer.pop()
+            elif self._last_operation_active:
+                log.debug('__next__: buffer empty and op is active => fetching '
+                          'more data')
+                self._buffer = self._last_operation.fetch(self.description,
+                                                          self.buffersize,
+                                                          convert_types=self.convert_types)
+                if len(self._buffer) > 0:
+                  log.debug('__next__: popping row out of buffer')
+                  return self._buffer.pop()
+                if not self._buffer.expect_more_rows:
+                    log.debug('__next__: no more data to fetch')
+                    raise StopIteration
+                # If we didn't get rows, but more are expected, need to iterate again.
+            else:
+                log.debug('__next__: buffer empty')
                 raise StopIteration
-            log.debug('__next__: popping row out of buffer')
-            return self._buffer.pop()
-        else:
-            log.debug('__next__: buffer empty')
-            raise StopIteration
 
     def ping(self):
         """Checks connection to server by requesting some info."""
@@ -893,7 +898,8 @@ class Column(object):
 
 class CBatch(Batch):
 
-    def __init__(self, trowset, schema, convert_types=True):
+    def __init__(self, trowset, expect_more_rows, schema, convert_types=True):
+        self.expect_more_rows = expect_more_rows
         self.schema = schema
         tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
                  for (i, col) in enumerate(trowset.columns)]
@@ -950,8 +956,9 @@ class CBatch(Batch):
 
 
 class RBatch(Batch):
-    def __init__(self, trowset, schema):
+    def __init__(self, trowset, expect_more_rows, schema):
         log.debug('RBatch: input TRowSet: %s', trowset)
+        self.expect_more_rows = expect_more_rows
         self.schema = schema
         self.rows = []
         for trow in trowset.rows:
@@ -1233,16 +1240,16 @@ class Operation(ThriftRPC):
                                orientation=orientation,
                                maxRows=max_rows)
         resp = self._rpc('FetchResults', req)
-        return self._wrap_results(resp.results, schema,
+        return self._wrap_results(resp.results, resp.hasMoreRows, schema,
                                   convert_types=convert_types)
 
-    def _wrap_results(self, results, schema, convert_types=True):
+    def _wrap_results(self, results, expect_more_rows, schema, convert_types=True):
         if self.is_columnar:
             log.debug('fetch_results: constructing CBatch')
-            return CBatch(results, schema, convert_types=convert_types)
+            return CBatch(results, expect_more_rows, schema, convert_types=convert_types)
         else:
             log.debug('fetch_results: constructing RBatch')
-            return RBatch(results, schema)
+            return RBatch(results, expect_more_rows, schema)
 
     @property
     def is_columnar(self):
