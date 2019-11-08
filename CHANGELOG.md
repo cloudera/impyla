@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.16.1
+------
+* **Bug Fixes**
+  - Fix an issue whereby impyla incorrectly assumes there's no more data to fetch (#369)
+
 0.16.0
 ------
 * **Improvements**
