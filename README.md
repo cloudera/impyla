@@ -37,7 +37,7 @@ Required:
 
 Optional:
 
-* `thrift_sasl>=0.2.1` for hive and/or Kerberos support. This also requires a SASL
+* `thrift_sasl==0.4.2` for hive and/or Kerberos support. This also requires a SASL
    library to be installed on your system - see [System SASL](#system-sasl)
 
 * `kerberos>=1.3.0` for Kerberos over HTTP support.
