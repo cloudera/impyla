@@ -45,7 +45,7 @@ setup(
     extras_require={
         ":python_version>='3.0'": ["thriftpy2>=0.4.0,<0.5.0",
                                    ],
-        "kerberos": ["thrift_sasl==0.2.1",
+        "kerberos": ["thrift_sasl==0.4.0",
                     ],
     },
     keywords=('cloudera impala python hadoop sql hdfs mpp spark pydata '
@@ -58,6 +58,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5'
+        'Programming Language :: Python :: 3.6'
     ],
     entry_points={
         'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect']},
