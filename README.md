@@ -35,7 +35,7 @@ Required:
 
 Optional:
 
-* `thrift_sasl==0.2.1` for hive and/or Kerberos support:
+* `thrift_sasl==0.4.0` for hive and/or Kerberos support:
 
 * `pandas` for conversion to `DataFrame` objects; but see the [Ibis project][ibis] instead
 
