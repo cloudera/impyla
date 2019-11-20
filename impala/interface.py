@@ -226,10 +226,10 @@ def _replace_numeric_markers(operation, string_parameters, paramstyle):
         # offset by one
         operation = operation.format(*[''] + string_parameters)
 
-    if paramstyle in {'named', 'pyformat'}:
+    if paramstyle in ['named', 'pyformat']:
         raise ProgrammingError(
             "paramstyle '%s' is not compatible with parameters passed as List."
-            "please you a dict for you parameters instead or specify"
+            "please use a dict for you parameters instead or specify"
             " a different paramstyle",
             paramstyle
         )
