@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.16.2
+------
+* **Bug Fixes**
+  - Fix an issue that prevented use of Impyla with Python 2.6 (#375)
+
 0.16.1
 ------
 * **Bug Fixes**
