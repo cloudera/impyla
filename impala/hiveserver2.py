@@ -211,8 +211,8 @@ class HiveServer2Cursor(Cursor):
                 modifiedRows = int(resultDict.get('NumModifiedRows', -1))
                 errorRows = int(resultDict.get('NumRowErrors', -1))
 
-        return (modifiedRows, errorRows)      
-      
+        return (modifiedRows, errorRows)
+
     @property
     def lastrowid(self):
         # PEP 249
@@ -1034,9 +1034,19 @@ class ThriftRPC(object):
 
 
 def open_transport(transport):
-    if six.PY2 and not transport.isOpen():
-        transport.open()
-    elif six.PY3 and not transport.is_open():
+    """
+    Open transport, accounting for API differences between thrift versus thriftpy2,
+    as well as TBufferedTransport versus THttpClient.
+    """
+    # python2 and thrift, or any THttpClient
+    if 'isOpen' in dir(transport):
+        transport_is_open = transport.isOpen()
+
+    # python3 and thriftpy2 (for TBufferedTransport only)
+    if 'is_open' in dir(transport):
+        transport_is_open = transport.is_open()
+
+    if not transport_is_open:
         transport.open()
 
 

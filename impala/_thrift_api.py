@@ -61,9 +61,9 @@ if six.PY2:
 
 
 if six.PY3:
-    # import thriftpy2 code
+    # When using python 3, import from thriftpy2 rather than thrift
     from thriftpy2 import load
-    from thrift.transport.THttpClient import THttpClient
+    from thriftpy2.http import THttpClient
     from thriftpy2.thrift import TClient, TApplicationException
     # TODO: reenable cython
     # from thriftpy2.protocol import TBinaryProtocol
@@ -124,6 +124,7 @@ def get_socket(host, port, use_ssl, ca_cert):
     else:
         return TSocket(host, port)
 
+
 def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
                        ca_cert=None, auth_mechanism='NOSASL', user=None,
                        password=None):
@@ -154,10 +155,13 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
         log.debug('get_http_transport: password=%s', password)
         auth_mechanism = 'PLAIN'  # sasl doesn't know mechanism LDAP
         # Set the BASIC auth header
-        auth = base64.encodestring('%s:%s' % (user, password)).strip('\n')
+        user_password = '%s:%s'.encode() % (user.encode(), password.encode())
+        auth = base64.encodestring(user_password).decode().strip('\n')
+
         transport.setCustomHeaders({'Authorization': 'Basic %s' % auth})
 
     return transport
+
 
 def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
                   user=None, password=None):
