@@ -156,7 +156,10 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
         auth_mechanism = 'PLAIN'  # sasl doesn't know mechanism LDAP
         # Set the BASIC auth header
         user_password = '%s:%s'.encode() % (user.encode(), password.encode())
-        auth = base64.encodestring(user_password).decode().strip('\n')
+        try:
+            auth = base64.encodebytes(user_password).decode().strip('\n')
+        except AttributeError:
+            auth = base64.encodestring(user_password).decode().strip('\n')
 
         transport.setCustomHeaders({'Authorization': 'Basic %s' % auth})
 
