@@ -18,7 +18,6 @@ import datetime
 import re
 import six
 from six import reraise
-from six.moves import range
 
 from impala.util import _escape
 from impala.error import (  # pylint: disable=unused-import
