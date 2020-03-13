@@ -107,7 +107,7 @@ The `Cursor` object also exposes the iterator interface, which is buffered
 ```python
 cursor.execute('SELECT * FROM mytable LIMIT 100')
 for row in cursor:
-    process(row)
+    print(row)
 ```
 
 Furthermore the `Cursor` object returns you information about the columns
