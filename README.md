@@ -127,7 +127,8 @@ with open(targetfile, 'w', newline='') as outcsv:
         writer.writerow(row)
 ```
 
-You can also get back a pandas DataFrame object
+#### Pandas
+You can get back the cursor data as pandas DataFrame object.
 
 ```python
 from impala.util import as_pandas
@@ -135,6 +136,16 @@ df = as_pandas(cur)
 # carry df through scikit-learn, for example
 ```
 
+#### Json
+You also can get back the cursor as list of dict. Useful for build APIs that returs JSON objects.
+
+```python
+import json
+from impala.util import as_dict
+
+result = as_dict(cur)
+data = json.dumps(result)
+```
 
 [pep249]: http://legacy.python.org/dev/peps/pep-0249/
 [pandas]: http://pandas.pydata.org/
