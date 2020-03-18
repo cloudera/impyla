@@ -137,13 +137,13 @@ df = as_pandas(cur)
 ```
 
 #### Json
-You also can get back the cursor as list of dict. Useful for build APIs that returs JSON objects.
+You also can get back the cursor as list of dict. Useful for build APIs that returns JSON objects.
 
 ```python
 import json
 from impala.util import as_dict
 
-result = as_dict(cur)
+result = as_dict(cur)   
 data = json.dumps(result)
 ```
 
