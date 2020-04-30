@@ -403,6 +403,7 @@ class HiveServer2Cursor(Cursor):
         while True:
             req = TGetOperationStatusReq(operationHandle=self._last_operation.handle)
             resp = self._last_operation._rpc('GetOperationStatus', req)
+            self._last_operation.update_has_result_set(resp)
             operation_state = TOperationState._VALUES_TO_NAMES[resp.operationState]
 
             log.debug('_wait_to_finish: waited %s seconds so far',
@@ -1179,21 +1180,34 @@ class Operation(ThriftRPC):
         self.session = session
         self.handle = handle
         self._schema = None
+        self._state_has_result_set = None
         ThriftRPC.__init__(self, self.session.client, retries=retries)
 
     @property
     def has_result_set(self):
-        return self.handle.hasResultSet
+        # When HIVE_CLI_SERVICE_PROTOCOL_V10 or later API is used and async compilation is
+        # enabled, self.handle.hasResultSet is not set any longer.
+        # In this case self._state_has_result_set should be used instead.
+        if self._state_has_result_set is not None:
+            return self._state_has_result_set
+        else:
+            return self.handle.hasResultSet
+
+    def update_has_result_set(self, state):
+        self._state_has_result_set = state.hasResultSet
 
     def get_status(self):
         # pylint: disable=protected-access
         req = TGetOperationStatusReq(operationHandle=self.handle)
         resp = self._rpc('GetOperationStatus', req)
+        self.update_has_result_set(resp)
         return TOperationState._VALUES_TO_NAMES[resp.operationState]
 
     def get_state(self):
         req = TGetOperationStatusReq(operationHandle=self.handle)
-        return self._rpc('GetOperationStatus', req)
+        resp = self._rpc('GetOperationStatus', req)
+        self.update_has_result_set(resp)
+        return resp
 
     def get_log(self, max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
         try:
@@ -1239,7 +1253,7 @@ class Operation(ThriftRPC):
               orientation=TFetchOrientation.FETCH_NEXT,
               convert_types=True):
         if not self.has_result_set:
-            log.debug('fetch_results: operation_handle.hasResultSet=False')
+            log.debug('fetch_results: has_result_set=False')
             return None
 
         # the schema is necessary to pull the proper values (i.e., coalesce)
@@ -1267,8 +1281,8 @@ class Operation(ThriftRPC):
         return _is_columnar_protocol(protocol)
 
     def get_result_schema(self):
-        if not self.handle.hasResultSet:
-            log.debug('get_result_schema: handle.hasResultSet=False')
+        if not self.has_result_set:
+            log.debug('get_result_schema: has_result_set=False')
             return None
 
         req = TGetResultSetMetadataReq(operationHandle=self.handle)
