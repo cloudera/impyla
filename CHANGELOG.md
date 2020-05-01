@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.16a3
+------
+* **Improvements**
+  - Better documentation regarding SASL prerequisites (#394)
+
+* **Bug Fixes**
+  - Fix compatibility with Python 3.9 (#386)
+  - Fix interoperability with Hive client version >= V10 (#396) (#397)
+  - Fix documentation bug reL cursor iteration (#388)
+  - Fix connecting over HTTP using Python 3 (#378)
+
 0.16.2
 ------
 * **Bug Fixes**
