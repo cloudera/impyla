@@ -969,6 +969,9 @@ struct TGetOperationStatusResp {
 
   // Error message
   5: optional string errorMessage
+
+  // If the operation has the result
+  9: optional bool hasResultSet
 }
 
 

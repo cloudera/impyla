@@ -5626,6 +5626,7 @@ class TGetOperationStatusResp(object):
    - sqlState
    - errorCode
    - errorMessage
+   - hasResultSet
   """
 
   thrift_spec = (
@@ -5635,14 +5636,19 @@ class TGetOperationStatusResp(object):
     (3, TType.STRING, 'sqlState', None, None, ), # 3
     (4, TType.I32, 'errorCode', None, None, ), # 4
     (5, TType.STRING, 'errorMessage', None, None, ), # 5
+    None, # 6
+    None, # 7
+    None, # 8
+    (9, TType.BOOL, 'hasResultSet', None, None, ), # 9
   )
 
-  def __init__(self, status=None, operationState=None, sqlState=None, errorCode=None, errorMessage=None,):
+  def __init__(self, status=None, operationState=None, sqlState=None, errorCode=None, errorMessage=None, hasResultSet=None,):
     self.status = status
     self.operationState = operationState
     self.sqlState = sqlState
     self.errorCode = errorCode
     self.errorMessage = errorMessage
+    self.hasResultSet = hasResultSet
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -5679,6 +5685,11 @@ class TGetOperationStatusResp(object):
           self.errorMessage = iprot.readString()
         else:
           iprot.skip(ftype)
+      elif fid == 9:
+        if ftype == TType.BOOL:
+          self.hasResultSet = iprot.readBool()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -5709,6 +5720,10 @@ class TGetOperationStatusResp(object):
       oprot.writeFieldBegin('errorMessage', TType.STRING, 5)
       oprot.writeString(self.errorMessage)
       oprot.writeFieldEnd()
+    if self.hasResultSet is not None:
+      oprot.writeFieldBegin('hasResultSet', TType.BOOL, 9)
+      oprot.writeBool(self.hasResultSet)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -5725,6 +5740,7 @@ class TGetOperationStatusResp(object):
     value = (value * 31) ^ hash(self.sqlState)
     value = (value * 31) ^ hash(self.errorCode)
     value = (value * 31) ^ hash(self.errorMessage)
+    value = (value * 31) ^ hash(self.hasResultSet)
     return value
 
   def __repr__(self):
