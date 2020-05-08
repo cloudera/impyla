@@ -23,10 +23,17 @@ from __future__ import absolute_import
 import base64
 import getpass
 import os
+from io import BytesIO
+
+from six.moves import urllib
+from six.moves import http_client
+import warnings
+
 import six
 import ssl
 import sys
 
+from impala.error import HttpError
 from impala.util import get_logger_and_init_null
 
 
@@ -36,10 +43,9 @@ log = get_logger_and_init_null(__name__)
 if six.PY2:
     # pylint: disable=import-error,unused-import
     # import Apache Thrift code
-    from thrift.transport.THttpClient import THttpClient
     from thrift.transport.TSocket import TSocket
     from thrift.transport.TTransport import (
-        TBufferedTransport, TTransportException)
+        TBufferedTransport, TTransportException, TTransportBase)
     from thrift.Thrift import TApplicationException
     from thrift.protocol.TBinaryProtocol import (
         TBinaryProtocolAccelerated as TBinaryProtocol)
@@ -63,12 +69,11 @@ if six.PY2:
 if six.PY3:
     # When using python 3, import from thriftpy2 rather than thrift
     from thriftpy2 import load
-    from thriftpy2.http import THttpClient
     from thriftpy2.thrift import TClient, TApplicationException
     # TODO: reenable cython
     # from thriftpy2.protocol import TBinaryProtocol
     from thriftpy2.protocol.binary import TBinaryProtocol  # noqa
-    from thriftpy2.transport import TSocket, TTransportException  # noqa
+    from thriftpy2.transport import (TSocket, TTransportException, TTransportBase) # noqa
     # TODO: reenable cython
     # from thriftpy2.transport import TBufferedTransport
     from thriftpy2.transport.buffered import TBufferedTransport  # noqa
@@ -103,6 +108,184 @@ if six.PY3:
     ThriftClient = TClient
 
 
+class ImpalaHttpClient(TTransportBase):
+  """Http implementation of TTransport base."""
+
+  # When sending requests larger than this size, include the 'Expect: 100-continue' header
+  # to indicate to the server to validate the request before reading the contents. This
+  # value was chosen to match curl's behavior. See Section 8.2.3 of RFC2616.
+  MIN_REQUEST_SIZE_FOR_EXPECT = 1024
+
+  def __init__(self, uri_or_host, port=None, path=None, cafile=None, cert_file=None,
+               key_file=None, ssl_context=None):
+    """ImpalaHttpClient supports two different types of construction:
+
+    ImpalaHttpClient(host, port, path) - deprecated
+    ImpalaHttpClient(uri, [port=<n>, path=<s>, cafile=<filename>, cert_file=<filename>,
+        key_file=<filename>, ssl_context=<context>])
+
+    Only the second supports https.  To properly authenticate against the server,
+    provide the client's identity by specifying cert_file and key_file.  To properly
+    authenticate the server, specify either cafile or ssl_context with a CA defined.
+    NOTE: if both cafile and ssl_context are defined, ssl_context will override cafile.
+    """
+    if port is not None:
+      warnings.warn(
+        "Please use the ImpalaHttpClient('http{s}://host:port/path') constructor",
+        DeprecationWarning,
+        stacklevel=2)
+      self.host = uri_or_host
+      self.port = port
+      assert path
+      self.path = path
+      self.scheme = 'http'
+    else:
+      parsed = urllib.parse.urlparse(uri_or_host)
+      self.scheme = parsed.scheme
+      assert self.scheme in ('http', 'https')
+      if self.scheme == 'http':
+        self.port = parsed.port or http_client.HTTP_PORT
+      elif self.scheme == 'https':
+        self.port = parsed.port or http_client.HTTPS_PORT
+        self.certfile = cert_file
+        self.keyfile = key_file
+        self.context = ssl.create_default_context(cafile=cafile) \
+          if (cafile and not ssl_context) else ssl_context
+      self.host = parsed.hostname
+      self.path = parsed.path
+      if parsed.query:
+        self.path += '?%s' % parsed.query
+    try:
+      proxy = urllib.request.getproxies()[self.scheme]
+    except KeyError:
+      proxy = None
+    else:
+      if urllib.request.proxy_bypass(self.host):
+        proxy = None
+    if proxy:
+      parsed = urllib.parse.urlparse(proxy)
+      self.realhost = self.host
+      self.realport = self.port
+      self.host = parsed.hostname
+      self.port = parsed.port
+      self.proxy_auth = self.basic_proxy_auth_header(parsed)
+    else:
+      self.realhost = self.realport = self.proxy_auth = None
+    self.__wbuf = BytesIO()
+    self.__http = None
+    self.__http_response = None
+    self.__timeout = None
+    self.__custom_headers = None
+
+  @staticmethod
+  def basic_proxy_auth_header(proxy):
+    if proxy is None or not proxy.username:
+      return None
+    ap = "%s:%s" % (urllib.parse.unquote(proxy.username),
+                    urllib.parse.unquote(proxy.password))
+    cr = base64.b64encode(ap).strip()
+    return "Basic " + cr
+
+  def using_proxy(self):
+    return self.realhost is not None
+
+  def open(self):
+    if self.scheme == 'http':
+      self.__http = http_client.HTTPConnection(self.host, self.port,
+                                               timeout=self.__timeout)
+    elif self.scheme == 'https':
+      self.__http = http_client.HTTPSConnection(self.host, self.port,
+                                                key_file=self.keyfile,
+                                                cert_file=self.certfile,
+                                                timeout=self.__timeout,
+                                                context=self.context)
+    if self.using_proxy():
+      self.__http.set_tunnel(self.realhost, self.realport,
+                             {"Proxy-Authorization": self.proxy_auth})
+
+  def close(self):
+    self.__http.close()
+    self.__http = None
+    self.__http_response = None
+
+  def isOpen(self):
+    return self.__http is not None
+
+  def is_open(self):
+    return self.__http is not None
+
+  def setTimeout(self, ms):
+    if ms is None:
+      self.__timeout = None
+    else:
+      self.__timeout = ms / 1000.0
+
+  def setCustomHeaders(self, headers):
+    self.__custom_headers = headers
+
+  def read(self, sz):
+    return self.__http_response.read(sz)
+
+  def write(self, buf):
+    self.__wbuf.write(buf)
+
+  def flush(self):
+    if self.isOpen():
+      self.close()
+    self.open()
+
+    # Pull data out of buffer
+    data = self.__wbuf.getvalue()
+    self.__wbuf = BytesIO()
+
+    # HTTP request
+    if self.using_proxy() and self.scheme == "http":
+      # need full URL of real host for HTTP proxy here (HTTPS uses CONNECT tunnel)
+      self.__http.putrequest('POST', "http://%s:%s%s" %
+                             (self.realhost, self.realport, self.path))
+    else:
+      self.__http.putrequest('POST', self.path)
+
+    # Write headers
+    self.__http.putheader('Content-Type', 'application/x-thrift')
+    data_len = len(data)
+    self.__http.putheader('Content-Length', str(data_len))
+    if data_len > ImpalaHttpClient.MIN_REQUEST_SIZE_FOR_EXPECT:
+      # Add the 'Expect' header to large requests. Note that we do not explicitly wait for
+      # the '100 continue' response before sending the data - HTTPConnection simply
+      # ignores these types of responses, but we'll get the right behavior anyways.
+      self.__http.putheader("Expect", "100-continue")
+    if self.using_proxy() and self.scheme == "http" and self.proxy_auth is not None:
+      self.__http.putheader("Proxy-Authorization", self.proxy_auth)
+
+    if not self.__custom_headers or 'User-Agent' not in self.__custom_headers:
+      user_agent = 'Python/ImpalaHttpClient'
+      script = os.path.basename(sys.argv[0])
+      if script:
+        user_agent = '%s (%s)' % (user_agent, urllib.parse.quote(script))
+      self.__http.putheader('User-Agent', user_agent)
+
+    if self.__custom_headers:
+      for key, val in six.iteritems(self.__custom_headers):
+        self.__http.putheader(key, val)
+
+    self.__http.endheaders()
+
+    # Write payload
+    self.__http.send(data)
+
+    # Get reply to flush the request
+    self.__http_response = self.__http.getresponse()
+    self.code = self.__http_response.status
+    self.message = self.__http_response.reason
+    self.headers = self.__http_response.msg
+
+    if self.code >= 300:
+      # Report any http response code that is not 1XX (informational response) or
+      # 2XX (successful).
+      raise HttpError(self.code, self.message)
+
+
 def get_socket(host, port, use_ssl, ca_cert):
     # based on the Impala shell impl
     log.debug('get_socket: host=%s port=%s use_ssl=%s ca_cert=%s',
@@ -135,11 +318,11 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
         url = 'https://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
         # TODO(#362): Add server authentication with thrift 0.12.
-        transport = THttpClient(url)
+        transport = ImpalaHttpClient(url)
     else:
         url = 'http://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
-        transport = THttpClient(url)
+        transport = ImpalaHttpClient(url)
 
     # Set defaults for PLAIN SASL / LDAP connections.
     if auth_mechanism in ['PLAIN', 'LDAP']:
