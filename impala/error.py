@@ -68,6 +68,15 @@ class RPCError(Error):
 class HiveServer2Error(RPCError):
     pass
 
+class HttpError(RPCError):
+    """An error containing an http response code"""
+    def __init__(self, code, message):
+        self.code = code
+        self.message = message
+
+    def __str__(self):
+        return "HTTP code {}: {}".format(self.code, self.message)
+
 
 class BeeswaxError(RPCError):
     pass
