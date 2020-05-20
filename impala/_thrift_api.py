@@ -107,7 +107,8 @@ if six.PY3:
     from RuntimeProfile import TRuntimeProfileFormat
     ThriftClient = TClient
 
-
+# ImpalaHttpClient is copied from Impala Shell.
+# The implementations should be kept in sync as much as possible.
 class ImpalaHttpClient(TTransportBase):
   """Http implementation of TTransport base."""
 
@@ -226,6 +227,9 @@ class ImpalaHttpClient(TTransportBase):
   def read(self, sz):
     return self.__http_response.read(sz)
 
+  def readBody(self):
+    return self.__http_response.read()
+
   def write(self, buf):
     self.__wbuf.write(buf)
 
@@ -283,7 +287,8 @@ class ImpalaHttpClient(TTransportBase):
     if self.code >= 300:
       # Report any http response code that is not 1XX (informational response) or
       # 2XX (successful).
-      raise HttpError(self.code, self.message)
+      body = self.readBody()
+      raise HttpError(self.code, self.message, body)
 
 
 def get_socket(host, port, use_ssl, ca_cert):

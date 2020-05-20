@@ -49,6 +49,7 @@ def http_503_server():
       # Respond with 503.
       self.send_response(code=http_client.SERVICE_UNAVAILABLE, message="Service Unavailable")
       self.end_headers()
+      self.wfile.write("extra text".encode('utf-8'))
 
   class TestHTTPServer503(object):
     def __init__(self):
@@ -88,6 +89,7 @@ class TestHttpConnect(object):
     except HttpError as e:
       assert str(e) == "HTTP code 503: Service Unavailable"
       assert e.code == http_client.SERVICE_UNAVAILABLE
+      assert e.body.decode("utf-8") == "extra text"
 
 
 def get_unused_port():
