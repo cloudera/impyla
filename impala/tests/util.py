@@ -50,6 +50,8 @@ class ImpylaTestEnv(object):
         self.hive_user = get_env_var('IMPYLA_TEST_HIVE_USER', identity,
                                      'cloudera')
 
+        self.skip_hive_tests = get_env_var('IMPYLA_SKIP_HIVE_TESTS', bool, False)
+
         if auth_mech is not None:
             self.auth_mech = auth_mech
         else:
