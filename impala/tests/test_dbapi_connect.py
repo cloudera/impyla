@@ -65,6 +65,7 @@ class ImpalaConnectionTests(unittest.TestCase):
         self.connection = connect(ENV.host, ENV.port, timeout=5)
         self._execute_queries(self.connection)
 
+    @pytest.mark.skipif(ENV.skip_hive_tests, reason="Skipping hive tests")
     def test_hive_plain_connect(self):
         self.connection = connect(ENV.host, ENV.hive_port,
                                   auth_mechanism="PLAIN",

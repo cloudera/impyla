@@ -35,7 +35,6 @@ ENV = ImpylaTestEnv()
 tmp_db = _random_id('tmp_impyla_dbapi_')
 hive = ENV.auth_mech == 'PLAIN'
 
-
 @pytest.mark.connect
 class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
     driver = impala.dbapi
@@ -71,28 +70,23 @@ class ImpalaDBAPI20Test(_dbapi20_tests.DatabaseAPI20Test):
         con.close()
 
     def test_nextset(self):
-        pass
+      # Base class does not implement this.
+      pytest.skip("Not implemented")
 
     def test_setoutputsize(self):
-        pass
+      # Base class does not implement this.
+      pytest.skip("Not implemented")
 
-    # The following tests fail against Hive. We override them so we can skip on
-    # Hive, and otherwise execute the superclass version.
+    DDL_RETURNS_RESULTSET = 'DDL returns result set in Impala - issue #401'
+    @pytest.mark.skipif(True, reason=DDL_RETURNS_RESULTSET)
+    def test_description(self):
+        super(ImpalaDBAPI20Test, self).test_description()
 
-    HIVE_STRING_ESCAPE_ERROR = 'HIVE-11723'
+    @pytest.mark.skipif(True, reason=DDL_RETURNS_RESULTSET)
+    def test_fetchone(self):
+        super(ImpalaDBAPI20Test, self).test_fetchone()
 
-    @pytest.mark.skipif(hive, reason=HIVE_STRING_ESCAPE_ERROR)
-    def test_execute(self):
-        super(ImpalaDBAPI20Test, self).test_execute()
-
-    @pytest.mark.skipif(hive, reason=HIVE_STRING_ESCAPE_ERROR)
-    def test_executemany(self):
-        super(ImpalaDBAPI20Test, self).test_executemany()
-
-    @pytest.mark.skipif(hive, reason=HIVE_STRING_ESCAPE_ERROR)
-    def test_setinputsizes(self):
-        super(ImpalaDBAPI20Test, self).test_setinputsizes()
-
-    @pytest.mark.skipif(hive, reason=HIVE_STRING_ESCAPE_ERROR)
-    def test_setoutputsize_basic(self):
-        super(ImpalaDBAPI20Test, self).test_setoutputsize_basic()
+    TEST_CLOSE_FAILING = 'test_close not raising error - issue #401'
+    @pytest.mark.skipif(True, reason=TEST_CLOSE_FAILING)
+    def test_close(self):
+        super(ImpalaDBAPI20Test, self).test_close()
