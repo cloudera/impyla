@@ -80,31 +80,33 @@ if six.PY3:
     thrift_dir = os.path.join(os.path.dirname(__file__), 'thrift')
 
     # dynamically load the HS2 modules
+    # Put them under the impala module to avoid conflicts with PyHive and other packages
+    # (see #277).
     ExecStats = load(os.path.join(thrift_dir, 'ExecStats.thrift'),
-                     include_dirs=[thrift_dir])
+                     include_dirs=[thrift_dir], module_name="impala.ExecStats_thrift")
     TCLIService = load(os.path.join(thrift_dir, 'TCLIService.thrift'),
-                       include_dirs=[thrift_dir])
+                       include_dirs=[thrift_dir], module_name="impala.TCLIService_thrift")
     ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
-                         include_dirs=[thrift_dir])
+                         include_dirs=[thrift_dir], module_name="impala.ImpalaService_thrift")
     RuntimeProfile = load(os.path.join(thrift_dir, 'RuntimeProfile.thrift'),
-                          include_dirs=[thrift_dir])
+                          include_dirs=[thrift_dir], module_name="impala.RuntimeProfile_thrift")
     sys.modules[ExecStats.__name__] = ExecStats
     sys.modules[TCLIService.__name__] = TCLIService
     sys.modules[ImpalaService.__name__] = ImpalaService
     sys.modules[RuntimeProfile.__name__] = RuntimeProfile
 
     # import the HS2 objects
-    from TCLIService import (  # noqa
+    from impala.TCLIService_thrift import (  # noqa
         TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
         TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
         TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
         TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
         TGetOperationStatusReq, TOperationState, TCancelOperationReq,
         TCloseOperationReq, TGetLogReq, TProtocolVersion)
-    from ImpalaService import (  # noqa
+    from impala.ImpalaService_thrift import (  # noqa
         TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service)
-    from ExecStats import TExecStats  # noqa
-    from RuntimeProfile import TRuntimeProfileFormat
+    from impala.ExecStats_thrift import TExecStats  # noqa
+    from impala.RuntimeProfile_thrift import TRuntimeProfileFormat
     ThriftClient = TClient
 
 # ImpalaHttpClient is copied from Impala Shell.
