@@ -28,9 +28,11 @@ Required:
 
 * Python 2.6+ or 3.3+
 
-* `six`, `bit_array`
+* `six`, `bitarray`
 
-* `thrift`
+* `thrift` for Python 2.x
+
+* `thriftpy2` for Python 3+
 
 
 Optional:
