@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import pytest
 from pytest import yield_fixture
 
@@ -47,3 +48,23 @@ def test_cursor_description_precision_scale(cur, decimal_table):
     observed = [(t[4], t[5]) for t in cur.description]
     for (exp, obs) in zip(expected, observed):
         assert exp == obs
+
+@yield_fixture(scope='module')
+def date_table(cur):
+    table_name = 'tmp_date_table'
+    ddl = """CREATE TABLE {0} (d date)""".format(table_name)
+    cur.execute(ddl)
+    try:
+        yield table_name
+    finally:
+        cur.execute("DROP TABLE {0}".format(table_name))
+
+
+@pytest.mark.connect
+def test_date_basic(cur, date_table):
+    """Insert and read back a couple of data values in a wide range."""
+    cur.execute('''insert into {0}
+                   values (date "0001-01-01"), (date "1999-9-9")'''.format(date_table))
+    cur.execute('select d from {0} order by d'.format(date_table))
+    results = cur.fetchall()
+    assert results == [(datetime.date(1, 1, 1),), (datetime.date(1999, 9, 9),)]
