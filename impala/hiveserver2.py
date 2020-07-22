@@ -777,14 +777,13 @@ def _parse_timestamp(value):
     return value
 
 def _parse_date(value):
-    input_value = value
     if value:
         match = _DATE_PATTERN.match(value)
-        return datetime.date(int(match.group(1)), int(match.group(2)), int(match.group(3)))
-    else:
-        raise Exception(
-            'Cannot convert "{}" into a date'.format(value))
-    log.debug('%s => %s', input_value, value)
+        if match:
+          return datetime.date(int(match.group(1)), int(match.group(2)), int(match.group(3)))
+        else:
+            raise Exception(
+                'Cannot convert "{}" into a date'.format(value))
     return value
 
 
