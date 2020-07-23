@@ -753,6 +753,8 @@ def err_if_rpc_not_ok(resp):
 # If present, the trailing 3 digits will be ignored without warning.
 _TIMESTAMP_PATTERN = re.compile(r'(\d+-\d+-\d+ \d+:\d+:\d+(\.\d{,6})?)')
 
+# Regex to extract year/month/date from date.
+_DATE_PATTERN = re.compile(r'(\d+)-(\d+)-(\d+)')
 
 def _parse_timestamp(value):
     input_value = value
@@ -772,6 +774,16 @@ def _parse_timestamp(value):
     else:
         value = None
     log.debug('%s => %s', input_value, value)
+    return value
+
+def _parse_date(value):
+    if value:
+        match = _DATE_PATTERN.match(value)
+        if match:
+          return datetime.date(int(match.group(1)), int(match.group(2)), int(match.group(3)))
+        else:
+            raise Exception(
+                'Cannot convert "{}" into a date'.format(value))
     return value
 
 
@@ -939,10 +951,12 @@ class CBatch(Batch):
             for i in range(len(values)):
                 values[i] = (None if is_null[i] else
                              _parse_timestamp(values[i]))
-        if type_ == 'DECIMAL':
+        elif type_ == 'DECIMAL':
             for i in range(len(values)):
                 values[i] = (None if is_null[i] else Decimal(values[i]))
-
+        elif type_ == 'DATE':
+            for i in range(len(values)):
+                values[i] = (None if is_null[i] else _parse_date(values[i]))
         return values
 
     def __len__(self):

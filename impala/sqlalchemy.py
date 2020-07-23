@@ -24,7 +24,8 @@ from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.sql.compiler import (DDLCompiler, GenericTypeCompiler,
                                      IdentifierPreparer)
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
-                              DECIMAL, Integer, Float, String)
+                              DECIMAL, Integer, Float, String, VARCHAR,
+                              DATE)
 
 
 registry.register('impala', 'impala.sqlalchemy', 'ImpalaDialect')
@@ -128,7 +129,10 @@ _impala_type_to_sqlalchemy_type = {
     'FLOAT': FLOAT,
     'DOUBLE': DOUBLE,
     'STRING': STRING,
-    'DECIMAL': DECIMAL}
+    'DECIMAL': DECIMAL,
+    'VARCHAR': VARCHAR,
+    'DATE': DATE
+    }
 
 class ImpalaExecutionContext(DefaultExecutionContext):
        def create_cursor(self):

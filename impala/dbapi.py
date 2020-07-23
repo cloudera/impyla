@@ -173,6 +173,7 @@ BINARY = _DBAPITypeObject('BINARY')
 NUMBER = _DBAPITypeObject('BOOLEAN', 'TINYINT', 'SMALLINT', 'INT', 'BIGINT',
                           'FLOAT', 'DOUBLE', 'DECIMAL')
 DATETIME = _DBAPITypeObject('TIMESTAMP')
+DATE = _DBAPITypeObject('DATE')
 ROWID = _DBAPITypeObject()
 
 Date = datetime.date
