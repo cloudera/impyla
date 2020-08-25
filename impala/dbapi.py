@@ -42,7 +42,7 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
             password=None, kerberos_service_name='impala', use_ldap=None,
             ldap_user=None, ldap_password=None, use_kerberos=None,
             protocol=None, krb_host=None, use_http_transport=False,
-            http_path=''):
+            http_path='', auth_cookie_name=None):
     """Get a connection to HiveServer2 (HS2).
 
     These options are largely compatible with the impala-shell command line
@@ -80,6 +80,14 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
         `'impala'` by default.
     use_ldap : bool, optional
         Specify `auth_mechanism='LDAP'` instead.
+    use_http_transport: bool optional
+        Set it to True to use http transport of False to use binary transport.
+    http_path: str, optional
+        Specify the path in the http URL. Used only when `use_http_transport` is True.
+    auth_cookie_name: str, optional
+        Specify the name of the cookie used for cookie-based authentication. Used only
+        when `use_http_transport` is True.
+        Currently cookie-based authentication is only supported for GSSAPI over http.
 
         .. deprecated:: 0.11.0
     ldap_user : str, optional
@@ -147,7 +155,8 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
                           kerberos_service_name=kerberos_service_name,
                           auth_mechanism=auth_mechanism, krb_host=krb_host,
                           use_http_transport=use_http_transport,
-                          http_path=http_path)
+                          http_path=http_path,
+                          auth_cookie_name=auth_cookie_name)
     return hs2.HiveServer2Connection(service, default_db=database)
 
 

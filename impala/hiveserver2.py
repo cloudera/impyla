@@ -796,29 +796,30 @@ def threaded(func):
 def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
             auth_mechanism=None, krb_host=None, use_http_transport=False,
-            http_path=''):
+            http_path='', auth_cookie_name=None):
     log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
               'mechanism', host, port, auth_mechanism)
+
+    if krb_host:
+        kerberos_host = krb_host
+    else:
+        kerberos_host = host
 
     if use_http_transport:
         # TODO(#362): Add server authentication with thrift 0.12.
         if ca_cert:
             raise NotSupportedError("Server authentication is not supported " +
                                     "with HTTP endpoints")
-        if krb_host:
-            raise NotSupportedError("Kerberos authentication is not " +
-                                    "supported with HTTP endpoints")
+
         transport = get_http_transport(host, port, http_path=http_path,
                                        use_ssl=use_ssl, ca_cert=ca_cert,
+                                       auth_mechanism=auth_mechanism,
                                        user=user, password=password,
-                                       auth_mechanism=auth_mechanism)
+                                       kerberos_host=kerberos_host,
+                                       kerberos_service_name=kerberos_service_name,
+                                       auth_cookie_name=auth_cookie_name)
     else:
         sock = get_socket(host, port, use_ssl, ca_cert)
-
-        if krb_host:
-            kerberos_host = krb_host
-        else:
-            kerberos_host = host
 
         if timeout is not None:
             timeout = timeout * 1000.  # TSocket expects millis
