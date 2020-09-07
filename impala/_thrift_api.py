@@ -272,6 +272,9 @@ class ImpalaHttpClient(TTransportBase):
       self.__auth_cookie = None
     return self.__auth_cookie
 
+  def isAuthCookieSet(self):
+    return self.__auth_cookie is not None
+
   def deleteAuthCookie(self):
     self.__auth_cookie = None
     self.__auth_cookie_expiry = None
@@ -344,7 +347,7 @@ class ImpalaHttpClient(TTransportBase):
     # A '401 Unauthorized' response might mean that we tried cookie-based authentication
     # with an expired cookie.
     # Delete the cookie and try again.
-    if self.code == 401 and self.getAuthCookie():
+    if self.code == 401 and self.isAuthCookieSet():
       log.debug('Received "401 Unauthorized" response. '
                 'Delete auth cookie and then retry.')
       self.deleteAuthCookie()
@@ -433,7 +436,6 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
                 return {"Authorization": "Negotiate " + negotiate_details}
 
         transport.setGetCustomHeadersFunc(get_auth_headers)
-        transport.refreshCustomHeaders()
 
     return transport
 
