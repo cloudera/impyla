@@ -24,11 +24,10 @@ import base64
 import datetime
 import getpass
 import os
+import os.path
 from io import BytesIO
 
-from six.moves import urllib
-from six.moves import http_client
-from six.moves import http_cookies
+from six.moves import urllib, http_client
 import warnings
 
 import six
@@ -37,6 +36,7 @@ import sys
 
 from impala.error import HttpError
 from impala.util import get_logger_and_init_null
+from impala.util import get_first_matching_cookie, get_cookie_expiry
 
 
 log = get_logger_and_init_null(__name__)
@@ -122,19 +122,20 @@ class ImpalaHttpClient(TTransportBase):
   MIN_REQUEST_SIZE_FOR_EXPECT = 1024
 
   def __init__(self, uri_or_host, port=None, path=None, cafile=None, cert_file=None,
-               key_file=None, ssl_context=None, auth_cookie_name=None):
+               key_file=None, ssl_context=None, auth_cookie_names=None):
     """ImpalaHttpClient supports two different types of construction:
 
     ImpalaHttpClient(host, port, path) - deprecated
     ImpalaHttpClient(uri, [port=<n>, path=<s>, cafile=<filename>, cert_file=<filename>,
-        key_file=<filename>, ssl_context=<context>, auth_cookie_name=<cookiename>])
+        key_file=<filename>, ssl_context=<context>, auth_cookie_names=<cookienamelist>])
 
     Only the second supports https.  To properly authenticate against the server,
     provide the client's identity by specifying cert_file and key_file.  To properly
     authenticate the server, specify either cafile or ssl_context with a CA defined.
     NOTE: if both cafile and ssl_context are defined, ssl_context will override cafile.
-    auth_cookie_name is used to specify the name of the cookie used for cookie-based
-    authentication.
+    auth_cookie_names is used to specify the list of possible cookie names used for
+    cookie-based authentication. If there's only one name in the cookie name list, a str
+    value can be specified instead of the list.
     """
     if port is not None:
       warnings.warn(
@@ -178,7 +179,7 @@ class ImpalaHttpClient(TTransportBase):
       self.proxy_auth = self.basic_proxy_auth_header(parsed)
     else:
       self.realhost = self.realport = self.proxy_auth = None
-    self.__auth_cookie_name = auth_cookie_name
+    self.__auth_cookie_names = auth_cookie_names
     self.__auth_cookie = None
     self.__auth_cookie_expiry = None
     self.__wbuf = BytesIO()
@@ -242,29 +243,11 @@ class ImpalaHttpClient(TTransportBase):
       self.__custom_headers = self.__get_custom_headers_func(self.getAuthCookie())
 
   def setAuthCookie(self):
-    if self.__auth_cookie_name:
-      if 'Set-Cookie' in self.headers:
-        cookies = http_cookies.SimpleCookie()
-        try:
-          cookies.load(self.headers['Set-Cookie'])
-        except:
-          return
-
-        if self.__auth_cookie_name in cookies:
-          c = cookies[self.__auth_cookie_name]
-          path = self.path if self.path.startswith('/') else '/%s' % self.path
-          if 'path' not in c or not c['path'] or c['path'] == '/' or c['path'] == path:
-            self.__auth_cookie = c
-            if 'max-age' not in c or not c['max-age']:
-              self.__auth_cookie_expiry = None
-            else:
-              try:
-                max_age_sec = int(c['max-age'])
-                self.__auth_cookie_expiry = \
-                    datetime.datetime.now() + datetime.timedelta(0, max_age_sec)
-              except:
-                self.__auth_cookie_expiry = None
-          # TODO: implement support for 'Eexpires' cookie attribute as well.
+    if self.__auth_cookie_names:
+      c = get_first_matching_cookie(self.__auth_cookie_names, self.path, self.headers)
+      if c:
+        self.__auth_cookie = c
+        self.__auth_cookie_expiry = get_cookie_expiry(c)
 
   def getAuthCookie(self):
     if self.__auth_cookie and self.__auth_cookie_expiry and \
@@ -385,7 +368,7 @@ def get_socket(host, port, use_ssl, ca_cert):
 def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
                        ca_cert=None, auth_mechanism='NOSASL', user=None,
                        password=None, kerberos_host=None, kerberos_service_name=None,
-                       auth_cookie_name=None):
+                       auth_cookie_names=None):
     # TODO: support timeout
     if timeout is not None:
         log.error('get_http_transport does not support a timeout')
@@ -393,11 +376,11 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
         url = 'https://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
         # TODO(#362): Add server authentication with thrift 0.12.
-        transport = ImpalaHttpClient(url, auth_cookie_name=auth_cookie_name)
+        transport = ImpalaHttpClient(url, auth_cookie_names=auth_cookie_names)
     else:
         url = 'http://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
-        transport = ImpalaHttpClient(url, auth_cookie_name=auth_cookie_name)
+        transport = ImpalaHttpClient(url, auth_cookie_names=auth_cookie_names)
 
     if auth_mechanism in ['PLAIN', 'LDAP']:
         # Set defaults for PLAIN SASL / LDAP connections.

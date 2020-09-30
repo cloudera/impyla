@@ -19,6 +19,9 @@ import logging
 import string
 import random
 import six
+import datetime
+import os.path
+from six.moves import http_cookies
 
 
 try:
@@ -162,3 +165,52 @@ def warn_deprecate(functionality='This', alternative=None):
     if alternative:
         msg += "; Please use {0} instead.".format(alternative)
     warnings.warn(msg, Warning)
+
+
+# Cookie-related utils
+
+
+def cookie_matches_path(c, path):
+    if 'path' not in c or not c['path']:
+        return True
+    cookie_path = c['path'].strip()
+    if not cookie_path.startswith('/'):
+        cookie_path = '/' + cookie_path
+    cookie_path = os.path.normpath(cookie_path)
+    if cookie_path == '/':
+        return True
+    if not path.startswith('/'):
+        path = '/' + path
+    path = os.path.normpath(path)
+    return path == cookie_path or path.startswith(cookie_path + '/')
+
+
+def get_cookie_expiry(c):
+    if 'max-age' in c and c['max-age']:
+        try:
+            max_age_sec = int(c['max-age'])
+            return datetime.datetime.now() + datetime.timedelta(seconds=max_age_sec)
+        except:
+            pass
+    # TODO: implement support for 'expires' cookie attribute as well.
+    return None
+
+
+def get_first_matching_cookie(cookie_names, path, resp_headers):
+    if 'Set-Cookie' not in resp_headers:
+        return None
+
+    cookies = http_cookies.SimpleCookie()
+    try:
+        cookies.load(resp_headers['Set-Cookie'])
+    except:
+        return None
+
+    if isinstance(cookie_names, six.string_types):
+        cookie_names = [cookie_names]
+    for cn in cookie_names:
+        if cn in cookies:
+            c = cookies[cn]
+            if c and cookie_matches_path(c, path):
+                return c
+    return None
