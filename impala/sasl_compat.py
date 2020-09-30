@@ -7,7 +7,7 @@ def error_catcher(self, Exc = Exception):
         self.error = None
         yield
     except Exc as e:
-        self.error = e.message
+        self.error = str(e)
 
 
 class PureSASLClient(SASLClient):
