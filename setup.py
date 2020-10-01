@@ -46,6 +46,7 @@ setup(
         ":python_version>='3.0'": ["thriftpy2>=0.4.0,<0.5.0",
                                    ],
         "kerberos": ["thrift_sasl==0.2.1",
+                     "kerberos>=1.3.0",
                     ],
     },
     keywords=('cloudera impala python hadoop sql hdfs mpp spark pydata '
