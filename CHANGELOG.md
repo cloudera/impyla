@@ -1,6 +1,23 @@
 Changelog
 =========
 
+0.17a1
+------
+* **Improvements**
+  - Implement GSSAPI authentication over http transport. (#415)
+  - Vendor thrift classes with Python 3 #277 (#404)
+  - Add HTTP code handling to THttpClient (#380)
+  - Disable failing tests - #401 (#402)
+
+* **Bug Fixes**
+  - Fix #418, no 'message', just cast to string (#419)
+  - Fix DATE, VARCHAR handling: #410 (#411)
+
+0.16.3
+------
+* **Bug Fixes**
+  - Fix specifying dependency on thrift package
+
 0.16a3
 ------
 * **Improvements**
