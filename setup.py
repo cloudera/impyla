@@ -41,8 +41,9 @@ setup(
     packages=find_packages(),
     install_package_data=True,
     package_data={'impala.thrift': ['*.thrift']},
-    install_requires=['six', 'bitarray', 'thrift>=0.9.3'],
+    install_requires=['six', 'bitarray'],
     extras_require={
+        ":python_version<'3.0'": ["thrift==0.9.3"],
         ":python_version>='3.0'": ["thriftpy2>=0.4.0,<0.5.0",
                                    ],
         "kerberos": ["thrift_sasl==0.2.1",
