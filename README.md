@@ -30,7 +30,7 @@ Required:
 
 * `six`, `bitarray`
 
-* `thrift` for Python 2.x
+* `thrift==0.9.3` for Python 2.x
 
 * `thriftpy2` for Python 3+
 
