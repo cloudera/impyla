@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.16.3
+------
+* **Bug Fixes**
+  - Fix thrift package requirement
+
 0.16a3
 ------
 * **Improvements**
