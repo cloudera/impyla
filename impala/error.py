@@ -70,10 +70,11 @@ class HiveServer2Error(RPCError):
 
 class HttpError(RPCError):
     """An error containing an http response code"""
-    def __init__(self, code, message, body):
+    def __init__(self, code, message, body, http_headers):
         self.code = code
         self.message = message
         self.body = body
+        self.http_headers = http_headers
 
     def __str__(self):
         # Don't try to print the body as we don't know what format it is.

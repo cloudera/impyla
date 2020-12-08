@@ -14,8 +14,9 @@
 
 from __future__ import absolute_import, print_function
 
-import os
 import sys
+
+from impala.error import NotSupportedError
 
 if sys.version_info[:2] <= (2, 6):
     import unittest2 as unittest
@@ -86,6 +87,15 @@ class ImpalaConnectionTests(unittest.TestCase):
     def test_hive_nosasl_connect(self):
         self.connection = connect(ENV.host, ENV.hive_port, timeout=5)
         self._execute_queries(self.connection)
+
+    def test_bad_auth(self):
+        """Test some simple error messages"""
+        try:
+            connect(ENV.host, ENV.port, auth_mechanism="foo")
+            assert False, "should have got exception"
+        except NotSupportedError as e:
+            assert 'Unsupported authentication mechanism: FOO' in str(e)
+
 
 class ImpalaSocketTests(unittest.TestCase):
 

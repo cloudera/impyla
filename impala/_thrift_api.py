@@ -340,7 +340,7 @@ class ImpalaHttpClient(TTransportBase):
       # Report any http response code that is not 1XX (informational response) or
       # 2XX (successful).
       body = self.readBody()
-      raise HttpError(self.code, self.message, body)
+      raise HttpError(self.code, self.message, body, self.headers)
 
 
 def get_socket(host, port, use_ssl, ca_cert):

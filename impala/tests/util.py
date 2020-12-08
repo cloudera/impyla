@@ -25,13 +25,14 @@ def get_env_var(name, coercer, default):
     if name in os.environ:
         return coercer(os.environ[name])
     else:
-        sys.stderr.write("{0} not set; using {1!r}".format(name, default))
+        sys.stderr.write("{0} not set; using {1!r}\n".format(name, default))
         return default
 
 
 class ImpylaTestEnv(object):
 
-    def __init__(self, host=None, port=None, hive_port=None, auth_mech=None):
+    def __init__(self, host=None, port=None, hive_port=None, auth_mech=None,
+                 http_port=None):
         if host is not None:
             self.host = host
         else:
@@ -41,6 +42,11 @@ class ImpylaTestEnv(object):
             self.port = port
         else:
             self.port = get_env_var('IMPYLA_TEST_PORT', int, 21050)
+
+        if http_port is not None:
+            self.http_port = http_port
+        else:
+            self.http_port = get_env_var('IMPYLA_TEST_HTTP_PORT', int, 28000)
 
         if hive_port is not None:
             self.hive_port = hive_port

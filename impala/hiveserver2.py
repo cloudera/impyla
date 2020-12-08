@@ -14,25 +14,21 @@
 
 from __future__ import absolute_import
 
-import six
-import time
 import getpass
-import datetime
-import socket
-import operator
 import re
-import sys
-from six.moves import range
-from bitarray import bitarray
+import socket
 
-from impala.compat import Decimal
-from impala.util import get_logger_and_init_null
-from impala.interface import Connection, Cursor, _bind_parameters
-from impala.error import (NotSupportedError, OperationalError,
-                          ProgrammingError, HiveServer2Error)
+import datetime
+import operator
+import six
+import sys
+import time
+from bitarray import bitarray
+from six.moves import range
+
 from impala._thrift_api import (
-    get_socket, get_http_transport, get_transport, ImpalaHttpClient,
-    TTransportException, TBinaryProtocol, TOpenSessionReq, TFetchResultsReq,
+    get_socket, get_http_transport, get_transport, TTransportException, TBinaryProtocol, TOpenSessionReq,
+    TFetchResultsReq,
     TCloseSessionReq, TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
     TFetchOrientation, TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq,
     TGetSchemasReq, TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq,
@@ -40,7 +36,11 @@ from impala._thrift_api import (
     TProtocolVersion, TGetRuntimeProfileReq, TRuntimeProfileFormat,
     TGetExecSummaryReq, ImpalaHiveServer2Service, TExecStats, ThriftClient,
     TApplicationException)
-
+from impala.compat import Decimal
+from impala.error import (NotSupportedError, OperationalError,
+                          ProgrammingError, HiveServer2Error, HttpError)
+from impala.interface import Connection, Cursor, _bind_parameters
+from impala.util import get_logger_and_init_null
 
 log = get_logger_and_init_null(__name__)
 
@@ -402,7 +402,7 @@ class HiveServer2Cursor(Cursor):
         loop_start = time.time()
         while True:
             req = TGetOperationStatusReq(operationHandle=self._last_operation.handle)
-            resp = self._last_operation._rpc('GetOperationStatus', req)
+            resp = self._last_operation._rpc('GetOperationStatus', req, True)
             self._last_operation.update_has_result_set(resp)
             operation_state = TOperationState._VALUES_TO_NAMES[resp.operationState]
 
@@ -796,7 +796,7 @@ def threaded(func):
 def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
             auth_mechanism=None, krb_host=None, use_http_transport=False,
-            http_path='', auth_cookie_names=None):
+            http_path='', auth_cookie_names=None, retries=3):
     log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
               'mechanism', host, port, auth_mechanism)
 
@@ -847,7 +847,7 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
     log.debug('transport=%s protocol=%s service=%s', transport, protocol,
               service)
 
-    return HS2Service(service)
+    return HS2Service(service, retries=retries)
 
 
 def _is_columnar_protocol(hs2_protocol_version):
@@ -1003,18 +1003,19 @@ class ThriftRPC(object):
         self.client = client
         self.retries = retries
 
-    def _rpc(self, func_name, request):
+    def _rpc(self, func_name, request, retry_on_http_error=False):
         self._log_request(func_name, request)
-        response = self._execute(func_name, request)
+        response = self._execute(func_name, request, retry_on_http_error)
         self._log_response(func_name, response)
         err_if_rpc_not_ok(response)
         return response
 
-    def _execute(self, func_name, request):
+    def _execute(self, func_name, request, retry_on_http_error=False):
         # pylint: disable=protected-access
         # get the thrift transport
         transport = self.client._iprot.trans
         tries_left = self.retries
+        last_http_exception = None
         while tries_left > 0:
             try:
                 log.debug('Attempting to open transport (tries_left=%s)',
@@ -1026,20 +1027,50 @@ class ThriftRPC(object):
             except socket.error:
                 log.exception('Failed to open transport (tries_left=%s)',
                               tries_left)
+                last_http_exception = None
             except TTransportException:
                 log.exception('Failed to open transport (tries_left=%s)',
                               tries_left)
+                last_http_exception = None
+            except HttpError as h:
+                if not retry_on_http_error:
+                    log.debug('Caught HttpError %s %s in %s which is not retryable',
+                              h, str(h.body or ''), func_name)
+                    raise
+                last_http_exception = h
+                if tries_left > 1:
+                    retry_secs = None
+                    retry_after = h.http_headers.get('Retry-After', None)
+                    if retry_after:
+                        try:
+                            retry_secs = int(retry_after)
+                        except ValueError:
+                            retry_secs = None
+                    if retry_secs:
+                        log.debug("sleeping after seeing Retry-After value of %d", retry_secs)
+                        log.debug('Caught HttpError %s %s in %s (tries_left=%s), retry after %d secs',
+                                  h, str(h.body or ''), func_name, tries_left, retry_secs)
+                        time.sleep(retry_secs)
+                    else:
+                        retry_secs = 1  # Future: use exponential backoff?
+                        log.debug("sleeping for %d second before retrying", retry_secs)
+                        time.sleep(retry_secs)
+                        log.debug('Caught HttpError %s %s in %s (tries_left=%s)',
+                                  h, str(h.body or ''), func_name, tries_left)
+
             except Exception:
                 raise
             log.debug('Closing transport (tries_left=%s)', tries_left)
             transport.close()
             tries_left -= 1
 
+        if last_http_exception is not None:
+            raise last_http_exception
         raise HiveServer2Error('Failed after retrying {0} times'
                                .format(self.retries))
 
-    def _operation(self, kind, request):
-        resp = self._rpc(kind, request)
+    def _operation(self, kind, request, retry_on_http_error=False):
+        resp = self._rpc(kind, request, retry_on_http_error)
         return self._get_operation(resp.operationHandle)
 
     def _log_request(self, kind, request):
@@ -1087,7 +1118,10 @@ class HS2Service(ThriftRPC):
         req = TOpenSessionReq(client_protocol=protocol,
                               username=user,
                               configuration=configuration)
-        resp = self._rpc('OpenSession', req)
+        # OpenSession rpcs are idempotent and so ok to retry. If the client gets
+        # disconnected and the server successfully opened a session, the client
+        # will retry and rely on server to clean up the session.
+        resp = self._rpc('OpenSession', req, True)
         return HS2Session(self, resp.sessionHandle,
                           resp.configuration,
                           resp.serverProtocolVersion)
@@ -1112,37 +1146,42 @@ class HS2Session(ThriftRPC):
 
     def close(self):
         req = TCloseSessionReq(sessionHandle=self.handle)
-        self._rpc('CloseSession', req)
+        # CloseSession rpcs don't retry as a session cannot be closed twice.
+        self._rpc('CloseSession', req, False)
 
     def execute(self, statement, configuration=None, run_async=False):
         req = TExecuteStatementReq(sessionHandle=self.handle,
                                    statement=statement,
                                    confOverlay=configuration,
                                    runAsync=run_async)
-        return self._operation('ExecuteStatement', req)
+        # Do not try to retry http requests.
+        # Read queries should be idempotent but most dml queries are not. Also retrying
+        # query execution from client could be expensive and so likely makes sense to do
+        # it if server is also aware of the retries.
+        return self._operation('ExecuteStatement', req, False)
 
     def get_databases(self, schema='.*'):
         req = TGetSchemasReq(sessionHandle=self.handle, schemaName=schema)
-        return self._operation('GetSchemas', req)
+        return self._operation('GetSchemas', req, True)
 
     def get_tables(self, database='.*', table_like='.*'):
         req = TGetTablesReq(sessionHandle=self.handle,
                             schemaName=database,
                             tableName=table_like)
-        return self._operation('GetTables', req)
+        return self._operation('GetTables', req, True)
 
     def get_table_schema(self, table, database='.*'):
         req = TGetColumnsReq(sessionHandle=self.handle,
                              schemaName=database,
                              tableName=table, columnName='.*')
-        return self._operation('GetColumns', req)
+        return self._operation('GetColumns', req, True)
 
     def get_functions(self, database='.*'):
         # TODO: need to test this one especially
         req = TGetFunctionsReq(sessionHandle=self.handle,
                                schemaName=database,
                                functionName='.*')
-        return self._operation('GetFunctions', req)
+        return self._operation('GetFunctions', req, True)
 
     def database_exists(self, db_name):
         op = self.get_databases(schema=db_name)
@@ -1214,20 +1253,23 @@ class Operation(ThriftRPC):
     def get_status(self):
         # pylint: disable=protected-access
         req = TGetOperationStatusReq(operationHandle=self.handle)
-        resp = self._rpc('GetOperationStatus', req)
+        # GetOperationStatus rpc is idempotent and so safe to retry.
+        resp = self._rpc('GetOperationStatus', req, True)
         self.update_has_result_set(resp)
         return TOperationState._VALUES_TO_NAMES[resp.operationState]
 
     def get_state(self):
         req = TGetOperationStatusReq(operationHandle=self.handle)
-        resp = self._rpc('GetOperationStatus', req)
+        # GetOperationStatus rpc is idempotent and so safe to retry.
+        resp = self._rpc('GetOperationStatus', req, True)
         self.update_has_result_set(resp)
         return resp
 
     def get_log(self, max_rows=1024, orientation=TFetchOrientation.FETCH_NEXT):
         try:
             req = TGetLogReq(operationHandle=self.handle)
-            log = self._rpc('GetLog', req).log
+            # GetLog rpc is idempotent and so safe to retry.
+            log = self._rpc('GetLog', req, True).log
         except TApplicationException as e: # raised if Hive is used
             if not e.type == TApplicationException.UNKNOWN_METHOD:
                 raise
@@ -1235,7 +1277,7 @@ class Operation(ThriftRPC):
                                    orientation=orientation,
                                    maxRows=max_rows,
                                    fetchType=1)
-            resp = self._rpc('FetchResults', req)
+            resp = self._rpc('FetchResults', req, False)
             schema = [('Log', 'STRING', None, None, None, None, None)]
             log = self._wrap_results(resp.results, schema, convert_types=True)
             log = '\n'.join(l[0] for l in log)
@@ -1243,17 +1285,21 @@ class Operation(ThriftRPC):
 
     def cancel(self):
         req = TCancelOperationReq(operationHandle=self.handle)
-        return self._rpc('CancelOperation', req)
+        # CancelOperation rpc is idempotent and so safe to retry.
+        return self._rpc('CancelOperation', req, True)
 
     def close(self):
         req = TCloseOperationReq(operationHandle=self.handle)
-        return self._rpc('CloseOperation', req)
+        # CloseOperation rpc is not idempotent for dml and we're not sure
+        # here if this is dml or not.
+        return self._rpc('CloseOperation', req, False)
 
     def get_profile(self, profile_format=TRuntimeProfileFormat.STRING):
         req = TGetRuntimeProfileReq(operationHandle=self.handle,
                                     sessionHandle=self.session.handle,
                                     format=profile_format)
-        resp = self._rpc('GetRuntimeProfile', req)
+        # GetRuntimeProfile rpc is idempotent and so safe to retry.
+        resp = self._rpc('GetRuntimeProfile', req, True)
         if profile_format == TRuntimeProfileFormat.THRIFT:
             return resp.thrift_profile
         return resp.profile
@@ -1261,7 +1307,8 @@ class Operation(ThriftRPC):
     def get_summary(self):
         req = TGetExecSummaryReq(operationHandle=self.handle,
                                  sessionHandle=self.session.handle)
-        resp = self._rpc('GetExecSummary', req)
+        # GetExecSummary rpc is idempotent and so safe to retry.
+        resp = self._rpc('GetExecSummary', req, True)
         return resp.summary
 
     def fetch(self, schema=None, max_rows=1024,
@@ -1278,7 +1325,9 @@ class Operation(ThriftRPC):
         req = TFetchResultsReq(operationHandle=self.handle,
                                orientation=orientation,
                                maxRows=max_rows)
-        resp = self._rpc('FetchResults', req)
+        # FetchResults rpc is not idempotent unless the client and server communicate and
+        # results are kept around for retry to be successful.
+        resp = self._rpc('FetchResults', req, False)
         return self._wrap_results(resp.results, resp.hasMoreRows, schema,
                                   convert_types=convert_types)
 
@@ -1301,7 +1350,7 @@ class Operation(ThriftRPC):
             return None
 
         req = TGetResultSetMetadataReq(operationHandle=self.handle)
-        resp = self._rpc('GetResultSetMetadata', req)
+        resp = self._rpc('GetResultSetMetadata', req, True)
 
         schema = []
         for column in resp.schema.columns:
