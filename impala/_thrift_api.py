@@ -373,10 +373,18 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
     if timeout is not None:
         log.error('get_http_transport does not support a timeout')
     if use_ssl:
+        ssl_ctx = ssl.create_default_context(cafile=ca_cert)
+        if ca_cert:
+          ssl_ctx.verify_mode = ssl.CERT_REQUIRED
+        else:
+          ssl_ctx.check_hostname = False  # Mandated by the SSL lib for CERT_NONE mode.
+          ssl_ctx.verify_mode = ssl.CERT_NONE
+
         url = 'https://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
         # TODO(#362): Add server authentication with thrift 0.12.
-        transport = ImpalaHttpClient(url, auth_cookie_names=auth_cookie_names)
+        transport = ImpalaHttpClient(url, ssl_context=ssl_ctx,
+                                     auth_cookie_names=auth_cookie_names)
     else:
         url = 'http://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
