@@ -1,6 +1,18 @@
 Changelog
 =========
 
+0.17a2
+------
+* **Improvements**
+  - Implement simple retry which throws the underlying HttpError if retrying fails
+  - Ugprade Thift to 0.11.0 for Python 2
+  - Add build script
+
+* **Bug Fixes**
+  - Server certs should not be verified if SSL is enabled and ca_cert is not specified
+  - Added "fetchType" to TFetchResultsReq.
+  - Fix Thrift compilation with current Impala
+
 0.17a1
 ------
 * **Improvements**
