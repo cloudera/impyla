@@ -3,14 +3,13 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:new_style
+#  options string: py:new_style,no_utf8strings
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
 from thrift.protocol.TProtocol import TProtocolException
 from thrift.TRecursive import fix_spec
 
-import sys
 
 from thrift.transport import TTransport
 all_structs = []
@@ -340,12 +339,12 @@ class TStructField(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.name = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.name = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.comment = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.comment = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -360,11 +359,11 @@ class TStructField(object):
         oprot.writeStructBegin('TStructField')
         if self.name is not None:
             oprot.writeFieldBegin('name', TType.STRING, 1)
-            oprot.writeString(self.name.encode('utf-8') if sys.version_info[0] == 2 else self.name)
+            oprot.writeString(self.name)
             oprot.writeFieldEnd()
         if self.comment is not None:
             oprot.writeFieldBegin('comment', TType.STRING, 2)
-            oprot.writeString(self.comment.encode('utf-8') if sys.version_info[0] == 2 else self.comment)
+            oprot.writeString(self.comment)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -564,7 +563,7 @@ class TNetworkAddress(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.hostname = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.hostname = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
@@ -584,7 +583,7 @@ class TNetworkAddress(object):
         oprot.writeStructBegin('TNetworkAddress')
         if self.hostname is not None:
             oprot.writeFieldBegin('hostname', TType.STRING, 1)
-            oprot.writeString(self.hostname.encode('utf-8') if sys.version_info[0] == 2 else self.hostname)
+            oprot.writeString(self.hostname)
             oprot.writeFieldEnd()
         if self.port is not None:
             oprot.writeFieldBegin('port', TType.I32, 2)
@@ -706,12 +705,12 @@ class TFunctionName(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.db_name = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.db_name = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.function_name = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.function_name = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -726,11 +725,11 @@ class TFunctionName(object):
         oprot.writeStructBegin('TFunctionName')
         if self.db_name is not None:
             oprot.writeFieldBegin('db_name', TType.STRING, 1)
-            oprot.writeString(self.db_name.encode('utf-8') if sys.version_info[0] == 2 else self.db_name)
+            oprot.writeString(self.db_name)
             oprot.writeFieldEnd()
         if self.function_name is not None:
             oprot.writeFieldBegin('function_name', TType.STRING, 2)
-            oprot.writeString(self.function_name.encode('utf-8') if sys.version_info[0] == 2 else self.function_name)
+            oprot.writeString(self.function_name)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -777,17 +776,17 @@ class TScalarFunction(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.symbol = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.symbol = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.prepare_fn_symbol = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.prepare_fn_symbol = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.close_fn_symbol = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.close_fn_symbol = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -802,15 +801,15 @@ class TScalarFunction(object):
         oprot.writeStructBegin('TScalarFunction')
         if self.symbol is not None:
             oprot.writeFieldBegin('symbol', TType.STRING, 1)
-            oprot.writeString(self.symbol.encode('utf-8') if sys.version_info[0] == 2 else self.symbol)
+            oprot.writeString(self.symbol)
             oprot.writeFieldEnd()
         if self.prepare_fn_symbol is not None:
             oprot.writeFieldBegin('prepare_fn_symbol', TType.STRING, 2)
-            oprot.writeString(self.prepare_fn_symbol.encode('utf-8') if sys.version_info[0] == 2 else self.prepare_fn_symbol)
+            oprot.writeString(self.prepare_fn_symbol)
             oprot.writeFieldEnd()
         if self.close_fn_symbol is not None:
             oprot.writeFieldBegin('close_fn_symbol', TType.STRING, 3)
-            oprot.writeString(self.close_fn_symbol.encode('utf-8') if sys.version_info[0] == 2 else self.close_fn_symbol)
+            oprot.writeString(self.close_fn_symbol)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -882,37 +881,37 @@ class TAggregateFunction(object):
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.update_fn_symbol = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.update_fn_symbol = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
                 if ftype == TType.STRING:
-                    self.init_fn_symbol = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.init_fn_symbol = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 5:
                 if ftype == TType.STRING:
-                    self.serialize_fn_symbol = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.serialize_fn_symbol = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 6:
                 if ftype == TType.STRING:
-                    self.merge_fn_symbol = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.merge_fn_symbol = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 7:
                 if ftype == TType.STRING:
-                    self.finalize_fn_symbol = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.finalize_fn_symbol = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 8:
                 if ftype == TType.STRING:
-                    self.get_value_fn_symbol = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.get_value_fn_symbol = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 9:
                 if ftype == TType.STRING:
-                    self.remove_fn_symbol = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.remove_fn_symbol = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 10:
@@ -940,31 +939,31 @@ class TAggregateFunction(object):
             oprot.writeFieldEnd()
         if self.update_fn_symbol is not None:
             oprot.writeFieldBegin('update_fn_symbol', TType.STRING, 3)
-            oprot.writeString(self.update_fn_symbol.encode('utf-8') if sys.version_info[0] == 2 else self.update_fn_symbol)
+            oprot.writeString(self.update_fn_symbol)
             oprot.writeFieldEnd()
         if self.init_fn_symbol is not None:
             oprot.writeFieldBegin('init_fn_symbol', TType.STRING, 4)
-            oprot.writeString(self.init_fn_symbol.encode('utf-8') if sys.version_info[0] == 2 else self.init_fn_symbol)
+            oprot.writeString(self.init_fn_symbol)
             oprot.writeFieldEnd()
         if self.serialize_fn_symbol is not None:
             oprot.writeFieldBegin('serialize_fn_symbol', TType.STRING, 5)
-            oprot.writeString(self.serialize_fn_symbol.encode('utf-8') if sys.version_info[0] == 2 else self.serialize_fn_symbol)
+            oprot.writeString(self.serialize_fn_symbol)
             oprot.writeFieldEnd()
         if self.merge_fn_symbol is not None:
             oprot.writeFieldBegin('merge_fn_symbol', TType.STRING, 6)
-            oprot.writeString(self.merge_fn_symbol.encode('utf-8') if sys.version_info[0] == 2 else self.merge_fn_symbol)
+            oprot.writeString(self.merge_fn_symbol)
             oprot.writeFieldEnd()
         if self.finalize_fn_symbol is not None:
             oprot.writeFieldBegin('finalize_fn_symbol', TType.STRING, 7)
-            oprot.writeString(self.finalize_fn_symbol.encode('utf-8') if sys.version_info[0] == 2 else self.finalize_fn_symbol)
+            oprot.writeString(self.finalize_fn_symbol)
             oprot.writeFieldEnd()
         if self.get_value_fn_symbol is not None:
             oprot.writeFieldBegin('get_value_fn_symbol', TType.STRING, 8)
-            oprot.writeString(self.get_value_fn_symbol.encode('utf-8') if sys.version_info[0] == 2 else self.get_value_fn_symbol)
+            oprot.writeString(self.get_value_fn_symbol)
             oprot.writeFieldEnd()
         if self.remove_fn_symbol is not None:
             oprot.writeFieldBegin('remove_fn_symbol', TType.STRING, 9)
-            oprot.writeString(self.remove_fn_symbol.encode('utf-8') if sys.version_info[0] == 2 else self.remove_fn_symbol)
+            oprot.writeString(self.remove_fn_symbol)
             oprot.writeFieldEnd()
         if self.ignores_distinct is not None:
             oprot.writeFieldBegin('ignores_distinct', TType.BOOL, 10)
@@ -1072,17 +1071,17 @@ class TFunction(object):
                     iprot.skip(ftype)
             elif fid == 6:
                 if ftype == TType.STRING:
-                    self.comment = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.comment = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 7:
                 if ftype == TType.STRING:
-                    self.signature = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.signature = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 8:
                 if ftype == TType.STRING:
-                    self.hdfs_location = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.hdfs_location = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 9:
@@ -1142,15 +1141,15 @@ class TFunction(object):
             oprot.writeFieldEnd()
         if self.comment is not None:
             oprot.writeFieldBegin('comment', TType.STRING, 6)
-            oprot.writeString(self.comment.encode('utf-8') if sys.version_info[0] == 2 else self.comment)
+            oprot.writeString(self.comment)
             oprot.writeFieldEnd()
         if self.signature is not None:
             oprot.writeFieldBegin('signature', TType.STRING, 7)
-            oprot.writeString(self.signature.encode('utf-8') if sys.version_info[0] == 2 else self.signature)
+            oprot.writeString(self.signature)
             oprot.writeFieldEnd()
         if self.hdfs_location is not None:
             oprot.writeFieldBegin('hdfs_location', TType.STRING, 8)
-            oprot.writeString(self.hdfs_location.encode('utf-8') if sys.version_info[0] == 2 else self.hdfs_location)
+            oprot.writeString(self.hdfs_location)
             oprot.writeFieldEnd()
         if self.scalar_fn is not None:
             oprot.writeFieldBegin('scalar_fn', TType.STRUCT, 9)
@@ -1197,8 +1196,8 @@ TScalarType.thrift_spec = (
 all_structs.append(TStructField)
 TStructField.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'name', 'UTF8', None, ),  # 1
-    (2, TType.STRING, 'comment', 'UTF8', None, ),  # 2
+    (1, TType.STRING, 'name', None, None, ),  # 1
+    (2, TType.STRING, 'comment', None, None, ),  # 2
 )
 all_structs.append(TTypeNode)
 TTypeNode.thrift_spec = (
@@ -1215,7 +1214,7 @@ TColumnType.thrift_spec = (
 all_structs.append(TNetworkAddress)
 TNetworkAddress.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'hostname', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'hostname', None, None, ),  # 1
     (2, TType.I32, 'port', None, None, ),  # 2
 )
 all_structs.append(TUniqueId)
@@ -1227,28 +1226,28 @@ TUniqueId.thrift_spec = (
 all_structs.append(TFunctionName)
 TFunctionName.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'db_name', 'UTF8', None, ),  # 1
-    (2, TType.STRING, 'function_name', 'UTF8', None, ),  # 2
+    (1, TType.STRING, 'db_name', None, None, ),  # 1
+    (2, TType.STRING, 'function_name', None, None, ),  # 2
 )
 all_structs.append(TScalarFunction)
 TScalarFunction.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'symbol', 'UTF8', None, ),  # 1
-    (2, TType.STRING, 'prepare_fn_symbol', 'UTF8', None, ),  # 2
-    (3, TType.STRING, 'close_fn_symbol', 'UTF8', None, ),  # 3
+    (1, TType.STRING, 'symbol', None, None, ),  # 1
+    (2, TType.STRING, 'prepare_fn_symbol', None, None, ),  # 2
+    (3, TType.STRING, 'close_fn_symbol', None, None, ),  # 3
 )
 all_structs.append(TAggregateFunction)
 TAggregateFunction.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'intermediate_type', [TColumnType, None], None, ),  # 1
     (2, TType.BOOL, 'is_analytic_only_fn', None, None, ),  # 2
-    (3, TType.STRING, 'update_fn_symbol', 'UTF8', None, ),  # 3
-    (4, TType.STRING, 'init_fn_symbol', 'UTF8', None, ),  # 4
-    (5, TType.STRING, 'serialize_fn_symbol', 'UTF8', None, ),  # 5
-    (6, TType.STRING, 'merge_fn_symbol', 'UTF8', None, ),  # 6
-    (7, TType.STRING, 'finalize_fn_symbol', 'UTF8', None, ),  # 7
-    (8, TType.STRING, 'get_value_fn_symbol', 'UTF8', None, ),  # 8
-    (9, TType.STRING, 'remove_fn_symbol', 'UTF8', None, ),  # 9
+    (3, TType.STRING, 'update_fn_symbol', None, None, ),  # 3
+    (4, TType.STRING, 'init_fn_symbol', None, None, ),  # 4
+    (5, TType.STRING, 'serialize_fn_symbol', None, None, ),  # 5
+    (6, TType.STRING, 'merge_fn_symbol', None, None, ),  # 6
+    (7, TType.STRING, 'finalize_fn_symbol', None, None, ),  # 7
+    (8, TType.STRING, 'get_value_fn_symbol', None, None, ),  # 8
+    (9, TType.STRING, 'remove_fn_symbol', None, None, ),  # 9
     (10, TType.BOOL, 'ignores_distinct', None, None, ),  # 10
 )
 all_structs.append(TFunction)
@@ -1259,9 +1258,9 @@ TFunction.thrift_spec = (
     (3, TType.LIST, 'arg_types', (TType.STRUCT, [TColumnType, None], False), None, ),  # 3
     (4, TType.STRUCT, 'ret_type', [TColumnType, None], None, ),  # 4
     (5, TType.BOOL, 'has_var_args', None, None, ),  # 5
-    (6, TType.STRING, 'comment', 'UTF8', None, ),  # 6
-    (7, TType.STRING, 'signature', 'UTF8', None, ),  # 7
-    (8, TType.STRING, 'hdfs_location', 'UTF8', None, ),  # 8
+    (6, TType.STRING, 'comment', None, None, ),  # 6
+    (7, TType.STRING, 'signature', None, None, ),  # 7
+    (8, TType.STRING, 'hdfs_location', None, None, ),  # 8
     (9, TType.STRUCT, 'scalar_fn', [TScalarFunction, None], None, ),  # 9
     (10, TType.STRUCT, 'aggregate_fn', [TAggregateFunction, None], None, ),  # 10
     (11, TType.BOOL, 'is_persistent', None, None, ),  # 11

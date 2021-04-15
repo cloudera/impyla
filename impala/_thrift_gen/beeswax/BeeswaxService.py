@@ -3,14 +3,13 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:new_style
+#  options string: py:new_style,no_utf8strings
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
 from thrift.protocol.TProtocol import TProtocolException
 from thrift.TRecursive import fix_spec
 
-import sys
 import logging
 from .ttypes import *
 from thrift.Thrift import TProcessor
@@ -1050,7 +1049,7 @@ class executeAndWait_args(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.clientCtx = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.clientCtx = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1069,7 +1068,7 @@ class executeAndWait_args(object):
             oprot.writeFieldEnd()
         if self.clientCtx is not None:
             oprot.writeFieldBegin('clientCtx', TType.STRING, 2)
-            oprot.writeString(self.clientCtx.encode('utf-8') if sys.version_info[0] == 2 else self.clientCtx)
+            oprot.writeString(self.clientCtx)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1091,7 +1090,7 @@ all_structs.append(executeAndWait_args)
 executeAndWait_args.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'query', [Query, None], None, ),  # 1
-    (2, TType.STRING, 'clientCtx', 'UTF8', None, ),  # 2
+    (2, TType.STRING, 'clientCtx', None, None, ),  # 2
 )
 
 
@@ -1770,7 +1769,7 @@ class echo_args(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.s = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.s = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1785,7 +1784,7 @@ class echo_args(object):
         oprot.writeStructBegin('echo_args')
         if self.s is not None:
             oprot.writeFieldBegin('s', TType.STRING, 1)
-            oprot.writeString(self.s.encode('utf-8') if sys.version_info[0] == 2 else self.s)
+            oprot.writeString(self.s)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1806,7 +1805,7 @@ class echo_args(object):
 all_structs.append(echo_args)
 echo_args.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 's', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 's', None, None, ),  # 1
 )
 
 
@@ -1831,7 +1830,7 @@ class echo_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.success = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1846,7 +1845,7 @@ class echo_result(object):
         oprot.writeStructBegin('echo_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeString(self.success)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1866,7 +1865,7 @@ class echo_result(object):
         return not (self == other)
 all_structs.append(echo_result)
 echo_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (0, TType.STRING, 'success', None, None, ),  # 0
 )
 
 
@@ -1934,7 +1933,7 @@ class dump_config_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.success = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1949,7 +1948,7 @@ class dump_config_result(object):
         oprot.writeStructBegin('dump_config_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeString(self.success)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1969,7 +1968,7 @@ class dump_config_result(object):
         return not (self == other)
 all_structs.append(dump_config_result)
 dump_config_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (0, TType.STRING, 'success', None, None, ),  # 0
 )
 
 
@@ -1994,7 +1993,7 @@ class get_log_args(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.context = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.context = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -2009,7 +2008,7 @@ class get_log_args(object):
         oprot.writeStructBegin('get_log_args')
         if self.context is not None:
             oprot.writeFieldBegin('context', TType.STRING, 1)
-            oprot.writeString(self.context.encode('utf-8') if sys.version_info[0] == 2 else self.context)
+            oprot.writeString(self.context)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -2030,7 +2029,7 @@ class get_log_args(object):
 all_structs.append(get_log_args)
 get_log_args.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'context', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'context', None, None, ),  # 1
 )
 
 
@@ -2057,7 +2056,7 @@ class get_log_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.success = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 1:
@@ -2078,7 +2077,7 @@ class get_log_result(object):
         oprot.writeStructBegin('get_log_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeString(self.success)
             oprot.writeFieldEnd()
         if self.error is not None:
             oprot.writeFieldBegin('error', TType.STRUCT, 1)
@@ -2102,7 +2101,7 @@ class get_log_result(object):
         return not (self == other)
 all_structs.append(get_log_result)
 get_log_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (0, TType.STRING, 'success', None, None, ),  # 0
     (1, TType.STRUCT, 'error', [QueryNotFoundException, None], None, ),  # 1
 )
 
@@ -2395,7 +2394,7 @@ class clean_args(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.log_context = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.log_context = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -2410,7 +2409,7 @@ class clean_args(object):
         oprot.writeStructBegin('clean_args')
         if self.log_context is not None:
             oprot.writeFieldBegin('log_context', TType.STRING, 1)
-            oprot.writeString(self.log_context.encode('utf-8') if sys.version_info[0] == 2 else self.log_context)
+            oprot.writeString(self.log_context)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -2431,7 +2430,7 @@ class clean_args(object):
 all_structs.append(clean_args)
 clean_args.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'log_context', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'log_context', None, None, ),  # 1
 )
 
 

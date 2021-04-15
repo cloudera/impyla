@@ -3,14 +3,13 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:new_style
+#  options string: py:new_style,no_utf8strings
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
 from thrift.protocol.TProtocol import TProtocolException
 from thrift.TRecursive import fix_spec
 
-import sys
 
 from thrift.transport import TTransport
 all_structs = []
@@ -413,7 +412,7 @@ class TTypeQualifierValue(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.stringValue = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.stringValue = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -432,7 +431,7 @@ class TTypeQualifierValue(object):
             oprot.writeFieldEnd()
         if self.stringValue is not None:
             oprot.writeFieldBegin('stringValue', TType.STRING, 2)
-            oprot.writeString(self.stringValue.encode('utf-8') if sys.version_info[0] == 2 else self.stringValue)
+            oprot.writeString(self.stringValue)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -476,7 +475,7 @@ class TTypeQualifiers(object):
                     self.qualifiers = {}
                     (_ktype1, _vtype2, _size0) = iprot.readMapBegin()
                     for _i4 in range(_size0):
-                        _key5 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key5 = iprot.readString()
                         _val6 = TTypeQualifierValue()
                         _val6.read(iprot)
                         self.qualifiers[_key5] = _val6
@@ -497,7 +496,7 @@ class TTypeQualifiers(object):
             oprot.writeFieldBegin('qualifiers', TType.MAP, 1)
             oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.qualifiers))
             for kiter7, viter8 in self.qualifiers.items():
-                oprot.writeString(kiter7.encode('utf-8') if sys.version_info[0] == 2 else kiter7)
+                oprot.writeString(kiter7)
                 viter8.write(oprot)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
@@ -744,7 +743,7 @@ class TStructTypeEntry(object):
                     self.nameToTypePtr = {}
                     (_ktype10, _vtype11, _size9) = iprot.readMapBegin()
                     for _i13 in range(_size9):
-                        _key14 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key14 = iprot.readString()
                         _val15 = iprot.readI32()
                         self.nameToTypePtr[_key14] = _val15
                     iprot.readMapEnd()
@@ -764,7 +763,7 @@ class TStructTypeEntry(object):
             oprot.writeFieldBegin('nameToTypePtr', TType.MAP, 1)
             oprot.writeMapBegin(TType.STRING, TType.I32, len(self.nameToTypePtr))
             for kiter16, viter17 in self.nameToTypePtr.items():
-                oprot.writeString(kiter16.encode('utf-8') if sys.version_info[0] == 2 else kiter16)
+                oprot.writeString(kiter16)
                 oprot.writeI32(viter17)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
@@ -812,7 +811,7 @@ class TUnionTypeEntry(object):
                     self.nameToTypePtr = {}
                     (_ktype19, _vtype20, _size18) = iprot.readMapBegin()
                     for _i22 in range(_size18):
-                        _key23 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key23 = iprot.readString()
                         _val24 = iprot.readI32()
                         self.nameToTypePtr[_key23] = _val24
                     iprot.readMapEnd()
@@ -832,7 +831,7 @@ class TUnionTypeEntry(object):
             oprot.writeFieldBegin('nameToTypePtr', TType.MAP, 1)
             oprot.writeMapBegin(TType.STRING, TType.I32, len(self.nameToTypePtr))
             for kiter25, viter26 in self.nameToTypePtr.items():
-                oprot.writeString(kiter25.encode('utf-8') if sys.version_info[0] == 2 else kiter25)
+                oprot.writeString(kiter25)
                 oprot.writeI32(viter26)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
@@ -877,7 +876,7 @@ class TUserDefinedTypeEntry(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.typeClassName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.typeClassName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -892,7 +891,7 @@ class TUserDefinedTypeEntry(object):
         oprot.writeStructBegin('TUserDefinedTypeEntry')
         if self.typeClassName is not None:
             oprot.writeFieldBegin('typeClassName', TType.STRING, 1)
-            oprot.writeString(self.typeClassName.encode('utf-8') if sys.version_info[0] == 2 else self.typeClassName)
+            oprot.writeString(self.typeClassName)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1125,7 +1124,7 @@ class TColumnDesc(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.columnName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.columnName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
@@ -1141,7 +1140,7 @@ class TColumnDesc(object):
                     iprot.skip(ftype)
             elif fid == 4:
                 if ftype == TType.STRING:
-                    self.comment = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.comment = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1156,7 +1155,7 @@ class TColumnDesc(object):
         oprot.writeStructBegin('TColumnDesc')
         if self.columnName is not None:
             oprot.writeFieldBegin('columnName', TType.STRING, 1)
-            oprot.writeString(self.columnName.encode('utf-8') if sys.version_info[0] == 2 else self.columnName)
+            oprot.writeString(self.columnName)
             oprot.writeFieldEnd()
         if self.typeDesc is not None:
             oprot.writeFieldBegin('typeDesc', TType.STRUCT, 2)
@@ -1168,7 +1167,7 @@ class TColumnDesc(object):
             oprot.writeFieldEnd()
         if self.comment is not None:
             oprot.writeFieldBegin('comment', TType.STRING, 4)
-            oprot.writeString(self.comment.encode('utf-8') if sys.version_info[0] == 2 else self.comment)
+            oprot.writeString(self.comment)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1618,7 +1617,7 @@ class TStringValue(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.value = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.value = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1633,7 +1632,7 @@ class TStringValue(object):
         oprot.writeStructBegin('TStringValue')
         if self.value is not None:
             oprot.writeFieldBegin('value', TType.STRING, 1)
-            oprot.writeString(self.value.encode('utf-8') if sys.version_info[0] == 2 else self.value)
+            oprot.writeString(self.value)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -2349,7 +2348,7 @@ class TStringColumn(object):
                     self.values = []
                     (_etype93, _size90) = iprot.readListBegin()
                     for _i94 in range(_size90):
-                        _elem95 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _elem95 = iprot.readString()
                         self.values.append(_elem95)
                     iprot.readListEnd()
                 else:
@@ -2373,7 +2372,7 @@ class TStringColumn(object):
             oprot.writeFieldBegin('values', TType.LIST, 1)
             oprot.writeListBegin(TType.STRING, len(self.values))
             for iter96 in self.values:
-                oprot.writeString(iter96.encode('utf-8') if sys.version_info[0] == 2 else iter96)
+                oprot.writeString(iter96)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.nulls is not None:
@@ -2759,14 +2758,14 @@ class TStatus(object):
                     self.infoMessages = []
                     (_etype121, _size118) = iprot.readListBegin()
                     for _i122 in range(_size118):
-                        _elem123 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _elem123 = iprot.readString()
                         self.infoMessages.append(_elem123)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.sqlState = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.sqlState = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
@@ -2776,7 +2775,7 @@ class TStatus(object):
                     iprot.skip(ftype)
             elif fid == 5:
                 if ftype == TType.STRING:
-                    self.errorMessage = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.errorMessage = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -2797,12 +2796,12 @@ class TStatus(object):
             oprot.writeFieldBegin('infoMessages', TType.LIST, 2)
             oprot.writeListBegin(TType.STRING, len(self.infoMessages))
             for iter124 in self.infoMessages:
-                oprot.writeString(iter124.encode('utf-8') if sys.version_info[0] == 2 else iter124)
+                oprot.writeString(iter124)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.sqlState is not None:
             oprot.writeFieldBegin('sqlState', TType.STRING, 3)
-            oprot.writeString(self.sqlState.encode('utf-8') if sys.version_info[0] == 2 else self.sqlState)
+            oprot.writeString(self.sqlState)
             oprot.writeFieldEnd()
         if self.errorCode is not None:
             oprot.writeFieldBegin('errorCode', TType.I32, 4)
@@ -2810,7 +2809,7 @@ class TStatus(object):
             oprot.writeFieldEnd()
         if self.errorMessage is not None:
             oprot.writeFieldBegin('errorMessage', TType.STRING, 5)
-            oprot.writeString(self.errorMessage.encode('utf-8') if sys.version_info[0] == 2 else self.errorMessage)
+            oprot.writeString(self.errorMessage)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -3090,12 +3089,12 @@ class TOpenSessionReq(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.username = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.username = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.password = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.password = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
@@ -3103,8 +3102,8 @@ class TOpenSessionReq(object):
                     self.configuration = {}
                     (_ktype126, _vtype127, _size125) = iprot.readMapBegin()
                     for _i129 in range(_size125):
-                        _key130 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                        _val131 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key130 = iprot.readString()
+                        _val131 = iprot.readString()
                         self.configuration[_key130] = _val131
                     iprot.readMapEnd()
                 else:
@@ -3125,18 +3124,18 @@ class TOpenSessionReq(object):
             oprot.writeFieldEnd()
         if self.username is not None:
             oprot.writeFieldBegin('username', TType.STRING, 2)
-            oprot.writeString(self.username.encode('utf-8') if sys.version_info[0] == 2 else self.username)
+            oprot.writeString(self.username)
             oprot.writeFieldEnd()
         if self.password is not None:
             oprot.writeFieldBegin('password', TType.STRING, 3)
-            oprot.writeString(self.password.encode('utf-8') if sys.version_info[0] == 2 else self.password)
+            oprot.writeString(self.password)
             oprot.writeFieldEnd()
         if self.configuration is not None:
             oprot.writeFieldBegin('configuration', TType.MAP, 4)
             oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.configuration))
             for kiter132, viter133 in self.configuration.items():
-                oprot.writeString(kiter132.encode('utf-8') if sys.version_info[0] == 2 else kiter132)
-                oprot.writeString(viter133.encode('utf-8') if sys.version_info[0] == 2 else viter133)
+                oprot.writeString(kiter132)
+                oprot.writeString(viter133)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -3206,8 +3205,8 @@ class TOpenSessionResp(object):
                     self.configuration = {}
                     (_ktype135, _vtype136, _size134) = iprot.readMapBegin()
                     for _i138 in range(_size134):
-                        _key139 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                        _val140 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key139 = iprot.readString()
+                        _val140 = iprot.readString()
                         self.configuration[_key139] = _val140
                     iprot.readMapEnd()
                 else:
@@ -3238,8 +3237,8 @@ class TOpenSessionResp(object):
             oprot.writeFieldBegin('configuration', TType.MAP, 4)
             oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.configuration))
             for kiter141, viter142 in self.configuration.items():
-                oprot.writeString(kiter141.encode('utf-8') if sys.version_info[0] == 2 else kiter141)
-                oprot.writeString(viter142.encode('utf-8') if sys.version_info[0] == 2 else viter142)
+                oprot.writeString(kiter141)
+                oprot.writeString(viter142)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -3413,7 +3412,7 @@ class TGetInfoValue(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.stringValue = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.stringValue = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
@@ -3453,7 +3452,7 @@ class TGetInfoValue(object):
         oprot.writeStructBegin('TGetInfoValue')
         if self.stringValue is not None:
             oprot.writeFieldBegin('stringValue', TType.STRING, 1)
-            oprot.writeString(self.stringValue.encode('utf-8') if sys.version_info[0] == 2 else self.stringValue)
+            oprot.writeString(self.stringValue)
             oprot.writeFieldEnd()
         if self.smallIntValue is not None:
             oprot.writeFieldBegin('smallIntValue', TType.I16, 2)
@@ -3671,7 +3670,7 @@ class TExecuteStatementReq(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.statement = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.statement = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
@@ -3679,8 +3678,8 @@ class TExecuteStatementReq(object):
                     self.confOverlay = {}
                     (_ktype144, _vtype145, _size143) = iprot.readMapBegin()
                     for _i147 in range(_size143):
-                        _key148 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                        _val149 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key148 = iprot.readString()
+                        _val149 = iprot.readString()
                         self.confOverlay[_key148] = _val149
                     iprot.readMapEnd()
                 else:
@@ -3706,14 +3705,14 @@ class TExecuteStatementReq(object):
             oprot.writeFieldEnd()
         if self.statement is not None:
             oprot.writeFieldBegin('statement', TType.STRING, 2)
-            oprot.writeString(self.statement.encode('utf-8') if sys.version_info[0] == 2 else self.statement)
+            oprot.writeString(self.statement)
             oprot.writeFieldEnd()
         if self.confOverlay is not None:
             oprot.writeFieldBegin('confOverlay', TType.MAP, 3)
             oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.confOverlay))
             for kiter150, viter151 in self.confOverlay.items():
-                oprot.writeString(kiter150.encode('utf-8') if sys.version_info[0] == 2 else kiter150)
-                oprot.writeString(viter151.encode('utf-8') if sys.version_info[0] == 2 else viter151)
+                oprot.writeString(kiter150)
+                oprot.writeString(viter151)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         if self.runAsync is not None:
@@ -4104,12 +4103,12 @@ class TGetSchemasReq(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.catalogName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.catalogName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.schemaName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.schemaName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -4128,11 +4127,11 @@ class TGetSchemasReq(object):
             oprot.writeFieldEnd()
         if self.catalogName is not None:
             oprot.writeFieldBegin('catalogName', TType.STRING, 2)
-            oprot.writeString(self.catalogName.encode('utf-8') if sys.version_info[0] == 2 else self.catalogName)
+            oprot.writeString(self.catalogName)
             oprot.writeFieldEnd()
         if self.schemaName is not None:
             oprot.writeFieldBegin('schemaName', TType.STRING, 3)
-            oprot.writeString(self.schemaName.encode('utf-8') if sys.version_info[0] == 2 else self.schemaName)
+            oprot.writeString(self.schemaName)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -4260,17 +4259,17 @@ class TGetTablesReq(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.catalogName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.catalogName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.schemaName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.schemaName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
                 if ftype == TType.STRING:
-                    self.tableName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.tableName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 5:
@@ -4278,7 +4277,7 @@ class TGetTablesReq(object):
                     self.tableTypes = []
                     (_etype155, _size152) = iprot.readListBegin()
                     for _i156 in range(_size152):
-                        _elem157 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _elem157 = iprot.readString()
                         self.tableTypes.append(_elem157)
                     iprot.readListEnd()
                 else:
@@ -4299,21 +4298,21 @@ class TGetTablesReq(object):
             oprot.writeFieldEnd()
         if self.catalogName is not None:
             oprot.writeFieldBegin('catalogName', TType.STRING, 2)
-            oprot.writeString(self.catalogName.encode('utf-8') if sys.version_info[0] == 2 else self.catalogName)
+            oprot.writeString(self.catalogName)
             oprot.writeFieldEnd()
         if self.schemaName is not None:
             oprot.writeFieldBegin('schemaName', TType.STRING, 3)
-            oprot.writeString(self.schemaName.encode('utf-8') if sys.version_info[0] == 2 else self.schemaName)
+            oprot.writeString(self.schemaName)
             oprot.writeFieldEnd()
         if self.tableName is not None:
             oprot.writeFieldBegin('tableName', TType.STRING, 4)
-            oprot.writeString(self.tableName.encode('utf-8') if sys.version_info[0] == 2 else self.tableName)
+            oprot.writeString(self.tableName)
             oprot.writeFieldEnd()
         if self.tableTypes is not None:
             oprot.writeFieldBegin('tableTypes', TType.LIST, 5)
             oprot.writeListBegin(TType.STRING, len(self.tableTypes))
             for iter158 in self.tableTypes:
-                oprot.writeString(iter158.encode('utf-8') if sys.version_info[0] == 2 else iter158)
+                oprot.writeString(iter158)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -4572,22 +4571,22 @@ class TGetColumnsReq(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.catalogName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.catalogName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.schemaName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.schemaName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
                 if ftype == TType.STRING:
-                    self.tableName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.tableName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 5:
                 if ftype == TType.STRING:
-                    self.columnName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.columnName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -4606,19 +4605,19 @@ class TGetColumnsReq(object):
             oprot.writeFieldEnd()
         if self.catalogName is not None:
             oprot.writeFieldBegin('catalogName', TType.STRING, 2)
-            oprot.writeString(self.catalogName.encode('utf-8') if sys.version_info[0] == 2 else self.catalogName)
+            oprot.writeString(self.catalogName)
             oprot.writeFieldEnd()
         if self.schemaName is not None:
             oprot.writeFieldBegin('schemaName', TType.STRING, 3)
-            oprot.writeString(self.schemaName.encode('utf-8') if sys.version_info[0] == 2 else self.schemaName)
+            oprot.writeString(self.schemaName)
             oprot.writeFieldEnd()
         if self.tableName is not None:
             oprot.writeFieldBegin('tableName', TType.STRING, 4)
-            oprot.writeString(self.tableName.encode('utf-8') if sys.version_info[0] == 2 else self.tableName)
+            oprot.writeString(self.tableName)
             oprot.writeFieldEnd()
         if self.columnName is not None:
             oprot.writeFieldBegin('columnName', TType.STRING, 5)
-            oprot.writeString(self.columnName.encode('utf-8') if sys.version_info[0] == 2 else self.columnName)
+            oprot.writeString(self.columnName)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -4744,17 +4743,17 @@ class TGetFunctionsReq(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.catalogName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.catalogName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.schemaName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.schemaName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
                 if ftype == TType.STRING:
-                    self.functionName = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.functionName = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -4773,15 +4772,15 @@ class TGetFunctionsReq(object):
             oprot.writeFieldEnd()
         if self.catalogName is not None:
             oprot.writeFieldBegin('catalogName', TType.STRING, 2)
-            oprot.writeString(self.catalogName.encode('utf-8') if sys.version_info[0] == 2 else self.catalogName)
+            oprot.writeString(self.catalogName)
             oprot.writeFieldEnd()
         if self.schemaName is not None:
             oprot.writeFieldBegin('schemaName', TType.STRING, 3)
-            oprot.writeString(self.schemaName.encode('utf-8') if sys.version_info[0] == 2 else self.schemaName)
+            oprot.writeString(self.schemaName)
             oprot.writeFieldEnd()
         if self.functionName is not None:
             oprot.writeFieldBegin('functionName', TType.STRING, 4)
-            oprot.writeString(self.functionName.encode('utf-8') if sys.version_info[0] == 2 else self.functionName)
+            oprot.writeString(self.functionName)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -4977,7 +4976,7 @@ class TGetOperationStatusResp(object):
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.sqlState = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.sqlState = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
@@ -4987,7 +4986,7 @@ class TGetOperationStatusResp(object):
                     iprot.skip(ftype)
             elif fid == 5:
                 if ftype == TType.STRING:
-                    self.errorMessage = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.errorMessage = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 9:
@@ -5015,7 +5014,7 @@ class TGetOperationStatusResp(object):
             oprot.writeFieldEnd()
         if self.sqlState is not None:
             oprot.writeFieldBegin('sqlState', TType.STRING, 3)
-            oprot.writeString(self.sqlState.encode('utf-8') if sys.version_info[0] == 2 else self.sqlState)
+            oprot.writeString(self.sqlState)
             oprot.writeFieldEnd()
         if self.errorCode is not None:
             oprot.writeFieldBegin('errorCode', TType.I32, 4)
@@ -5023,7 +5022,7 @@ class TGetOperationStatusResp(object):
             oprot.writeFieldEnd()
         if self.errorMessage is not None:
             oprot.writeFieldBegin('errorMessage', TType.STRING, 5)
-            oprot.writeString(self.errorMessage.encode('utf-8') if sys.version_info[0] == 2 else self.errorMessage)
+            oprot.writeString(self.errorMessage)
             oprot.writeFieldEnd()
         if self.hasResultSet is not None:
             oprot.writeFieldBegin('hasResultSet', TType.BOOL, 9)
@@ -5624,12 +5623,12 @@ class TGetDelegationTokenReq(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.owner = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.owner = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.renewer = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.renewer = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -5648,11 +5647,11 @@ class TGetDelegationTokenReq(object):
             oprot.writeFieldEnd()
         if self.owner is not None:
             oprot.writeFieldBegin('owner', TType.STRING, 2)
-            oprot.writeString(self.owner.encode('utf-8') if sys.version_info[0] == 2 else self.owner)
+            oprot.writeString(self.owner)
             oprot.writeFieldEnd()
         if self.renewer is not None:
             oprot.writeFieldBegin('renewer', TType.STRING, 3)
-            oprot.writeString(self.renewer.encode('utf-8') if sys.version_info[0] == 2 else self.renewer)
+            oprot.writeString(self.renewer)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -5707,7 +5706,7 @@ class TGetDelegationTokenResp(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.delegationToken = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.delegationToken = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -5726,7 +5725,7 @@ class TGetDelegationTokenResp(object):
             oprot.writeFieldEnd()
         if self.delegationToken is not None:
             oprot.writeFieldBegin('delegationToken', TType.STRING, 2)
-            oprot.writeString(self.delegationToken.encode('utf-8') if sys.version_info[0] == 2 else self.delegationToken)
+            oprot.writeString(self.delegationToken)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -5777,7 +5776,7 @@ class TCancelDelegationTokenReq(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.delegationToken = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.delegationToken = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -5796,7 +5795,7 @@ class TCancelDelegationTokenReq(object):
             oprot.writeFieldEnd()
         if self.delegationToken is not None:
             oprot.writeFieldBegin('delegationToken', TType.STRING, 2)
-            oprot.writeString(self.delegationToken.encode('utf-8') if sys.version_info[0] == 2 else self.delegationToken)
+            oprot.writeString(self.delegationToken)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -5908,7 +5907,7 @@ class TRenewDelegationTokenReq(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.delegationToken = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.delegationToken = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -5927,7 +5926,7 @@ class TRenewDelegationTokenReq(object):
             oprot.writeFieldEnd()
         if self.delegationToken is not None:
             oprot.writeFieldBegin('delegationToken', TType.STRING, 2)
-            oprot.writeString(self.delegationToken.encode('utf-8') if sys.version_info[0] == 2 else self.delegationToken)
+            oprot.writeString(self.delegationToken)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -6098,7 +6097,7 @@ class TGetLogResp(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.log = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.log = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -6117,7 +6116,7 @@ class TGetLogResp(object):
             oprot.writeFieldEnd()
         if self.log is not None:
             oprot.writeFieldBegin('log', TType.STRING, 2)
-            oprot.writeString(self.log.encode('utf-8') if sys.version_info[0] == 2 else self.log)
+            oprot.writeString(self.log)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -6143,12 +6142,12 @@ all_structs.append(TTypeQualifierValue)
 TTypeQualifierValue.thrift_spec = (
     None,  # 0
     (1, TType.I32, 'i32Value', None, None, ),  # 1
-    (2, TType.STRING, 'stringValue', 'UTF8', None, ),  # 2
+    (2, TType.STRING, 'stringValue', None, None, ),  # 2
 )
 all_structs.append(TTypeQualifiers)
 TTypeQualifiers.thrift_spec = (
     None,  # 0
-    (1, TType.MAP, 'qualifiers', (TType.STRING, 'UTF8', TType.STRUCT, [TTypeQualifierValue, None], False), None, ),  # 1
+    (1, TType.MAP, 'qualifiers', (TType.STRING, None, TType.STRUCT, [TTypeQualifierValue, None], False), None, ),  # 1
 )
 all_structs.append(TPrimitiveTypeEntry)
 TPrimitiveTypeEntry.thrift_spec = (
@@ -6170,17 +6169,17 @@ TMapTypeEntry.thrift_spec = (
 all_structs.append(TStructTypeEntry)
 TStructTypeEntry.thrift_spec = (
     None,  # 0
-    (1, TType.MAP, 'nameToTypePtr', (TType.STRING, 'UTF8', TType.I32, None, False), None, ),  # 1
+    (1, TType.MAP, 'nameToTypePtr', (TType.STRING, None, TType.I32, None, False), None, ),  # 1
 )
 all_structs.append(TUnionTypeEntry)
 TUnionTypeEntry.thrift_spec = (
     None,  # 0
-    (1, TType.MAP, 'nameToTypePtr', (TType.STRING, 'UTF8', TType.I32, None, False), None, ),  # 1
+    (1, TType.MAP, 'nameToTypePtr', (TType.STRING, None, TType.I32, None, False), None, ),  # 1
 )
 all_structs.append(TUserDefinedTypeEntry)
 TUserDefinedTypeEntry.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'typeClassName', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'typeClassName', None, None, ),  # 1
 )
 all_structs.append(TTypeEntry)
 TTypeEntry.thrift_spec = (
@@ -6200,10 +6199,10 @@ TTypeDesc.thrift_spec = (
 all_structs.append(TColumnDesc)
 TColumnDesc.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'columnName', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'columnName', None, None, ),  # 1
     (2, TType.STRUCT, 'typeDesc', [TTypeDesc, None], None, ),  # 2
     (3, TType.I32, 'position', None, None, ),  # 3
-    (4, TType.STRING, 'comment', 'UTF8', None, ),  # 4
+    (4, TType.STRING, 'comment', None, None, ),  # 4
 )
 all_structs.append(TTableSchema)
 TTableSchema.thrift_spec = (
@@ -6243,7 +6242,7 @@ TDoubleValue.thrift_spec = (
 all_structs.append(TStringValue)
 TStringValue.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'value', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'value', None, None, ),  # 1
 )
 all_structs.append(TColumnValue)
 TColumnValue.thrift_spec = (
@@ -6300,7 +6299,7 @@ TDoubleColumn.thrift_spec = (
 all_structs.append(TStringColumn)
 TStringColumn.thrift_spec = (
     None,  # 0
-    (1, TType.LIST, 'values', (TType.STRING, 'UTF8', False), None, ),  # 1
+    (1, TType.LIST, 'values', (TType.STRING, None, False), None, ),  # 1
     (2, TType.STRING, 'nulls', 'BINARY', None, ),  # 2
 )
 all_structs.append(TBinaryColumn)
@@ -6332,10 +6331,10 @@ all_structs.append(TStatus)
 TStatus.thrift_spec = (
     None,  # 0
     (1, TType.I32, 'statusCode', None, None, ),  # 1
-    (2, TType.LIST, 'infoMessages', (TType.STRING, 'UTF8', False), None, ),  # 2
-    (3, TType.STRING, 'sqlState', 'UTF8', None, ),  # 3
+    (2, TType.LIST, 'infoMessages', (TType.STRING, None, False), None, ),  # 2
+    (3, TType.STRING, 'sqlState', None, None, ),  # 3
     (4, TType.I32, 'errorCode', None, None, ),  # 4
-    (5, TType.STRING, 'errorMessage', 'UTF8', None, ),  # 5
+    (5, TType.STRING, 'errorMessage', None, None, ),  # 5
 )
 all_structs.append(THandleIdentifier)
 THandleIdentifier.thrift_spec = (
@@ -6360,9 +6359,9 @@ all_structs.append(TOpenSessionReq)
 TOpenSessionReq.thrift_spec = (
     None,  # 0
     (1, TType.I32, 'client_protocol', None, 5, ),  # 1
-    (2, TType.STRING, 'username', 'UTF8', None, ),  # 2
-    (3, TType.STRING, 'password', 'UTF8', None, ),  # 3
-    (4, TType.MAP, 'configuration', (TType.STRING, 'UTF8', TType.STRING, 'UTF8', False), None, ),  # 4
+    (2, TType.STRING, 'username', None, None, ),  # 2
+    (3, TType.STRING, 'password', None, None, ),  # 3
+    (4, TType.MAP, 'configuration', (TType.STRING, None, TType.STRING, None, False), None, ),  # 4
 )
 all_structs.append(TOpenSessionResp)
 TOpenSessionResp.thrift_spec = (
@@ -6370,7 +6369,7 @@ TOpenSessionResp.thrift_spec = (
     (1, TType.STRUCT, 'status', [TStatus, None], None, ),  # 1
     (2, TType.I32, 'serverProtocolVersion', None, 5, ),  # 2
     (3, TType.STRUCT, 'sessionHandle', [TSessionHandle, None], None, ),  # 3
-    (4, TType.MAP, 'configuration', (TType.STRING, 'UTF8', TType.STRING, 'UTF8', False), None, ),  # 4
+    (4, TType.MAP, 'configuration', (TType.STRING, None, TType.STRING, None, False), None, ),  # 4
 )
 all_structs.append(TCloseSessionReq)
 TCloseSessionReq.thrift_spec = (
@@ -6385,7 +6384,7 @@ TCloseSessionResp.thrift_spec = (
 all_structs.append(TGetInfoValue)
 TGetInfoValue.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'stringValue', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'stringValue', None, None, ),  # 1
     (2, TType.I16, 'smallIntValue', None, None, ),  # 2
     (3, TType.I32, 'integerBitmask', None, None, ),  # 3
     (4, TType.I32, 'integerFlag', None, None, ),  # 4
@@ -6408,8 +6407,8 @@ all_structs.append(TExecuteStatementReq)
 TExecuteStatementReq.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'sessionHandle', [TSessionHandle, None], None, ),  # 1
-    (2, TType.STRING, 'statement', 'UTF8', None, ),  # 2
-    (3, TType.MAP, 'confOverlay', (TType.STRING, 'UTF8', TType.STRING, 'UTF8', False), None, ),  # 3
+    (2, TType.STRING, 'statement', None, None, ),  # 2
+    (3, TType.MAP, 'confOverlay', (TType.STRING, None, TType.STRING, None, False), None, ),  # 3
     (4, TType.BOOL, 'runAsync', None, False, ),  # 4
 )
 all_structs.append(TExecuteStatementResp)
@@ -6444,8 +6443,8 @@ all_structs.append(TGetSchemasReq)
 TGetSchemasReq.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'sessionHandle', [TSessionHandle, None], None, ),  # 1
-    (2, TType.STRING, 'catalogName', 'UTF8', None, ),  # 2
-    (3, TType.STRING, 'schemaName', 'UTF8', None, ),  # 3
+    (2, TType.STRING, 'catalogName', None, None, ),  # 2
+    (3, TType.STRING, 'schemaName', None, None, ),  # 3
 )
 all_structs.append(TGetSchemasResp)
 TGetSchemasResp.thrift_spec = (
@@ -6457,10 +6456,10 @@ all_structs.append(TGetTablesReq)
 TGetTablesReq.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'sessionHandle', [TSessionHandle, None], None, ),  # 1
-    (2, TType.STRING, 'catalogName', 'UTF8', None, ),  # 2
-    (3, TType.STRING, 'schemaName', 'UTF8', None, ),  # 3
-    (4, TType.STRING, 'tableName', 'UTF8', None, ),  # 4
-    (5, TType.LIST, 'tableTypes', (TType.STRING, 'UTF8', False), None, ),  # 5
+    (2, TType.STRING, 'catalogName', None, None, ),  # 2
+    (3, TType.STRING, 'schemaName', None, None, ),  # 3
+    (4, TType.STRING, 'tableName', None, None, ),  # 4
+    (5, TType.LIST, 'tableTypes', (TType.STRING, None, False), None, ),  # 5
 )
 all_structs.append(TGetTablesResp)
 TGetTablesResp.thrift_spec = (
@@ -6483,10 +6482,10 @@ all_structs.append(TGetColumnsReq)
 TGetColumnsReq.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'sessionHandle', [TSessionHandle, None], None, ),  # 1
-    (2, TType.STRING, 'catalogName', 'UTF8', None, ),  # 2
-    (3, TType.STRING, 'schemaName', 'UTF8', None, ),  # 3
-    (4, TType.STRING, 'tableName', 'UTF8', None, ),  # 4
-    (5, TType.STRING, 'columnName', 'UTF8', None, ),  # 5
+    (2, TType.STRING, 'catalogName', None, None, ),  # 2
+    (3, TType.STRING, 'schemaName', None, None, ),  # 3
+    (4, TType.STRING, 'tableName', None, None, ),  # 4
+    (5, TType.STRING, 'columnName', None, None, ),  # 5
 )
 all_structs.append(TGetColumnsResp)
 TGetColumnsResp.thrift_spec = (
@@ -6498,9 +6497,9 @@ all_structs.append(TGetFunctionsReq)
 TGetFunctionsReq.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'sessionHandle', [TSessionHandle, None], None, ),  # 1
-    (2, TType.STRING, 'catalogName', 'UTF8', None, ),  # 2
-    (3, TType.STRING, 'schemaName', 'UTF8', None, ),  # 3
-    (4, TType.STRING, 'functionName', 'UTF8', None, ),  # 4
+    (2, TType.STRING, 'catalogName', None, None, ),  # 2
+    (3, TType.STRING, 'schemaName', None, None, ),  # 3
+    (4, TType.STRING, 'functionName', None, None, ),  # 4
 )
 all_structs.append(TGetFunctionsResp)
 TGetFunctionsResp.thrift_spec = (
@@ -6518,9 +6517,9 @@ TGetOperationStatusResp.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'status', [TStatus, None], None, ),  # 1
     (2, TType.I32, 'operationState', None, None, ),  # 2
-    (3, TType.STRING, 'sqlState', 'UTF8', None, ),  # 3
+    (3, TType.STRING, 'sqlState', None, None, ),  # 3
     (4, TType.I32, 'errorCode', None, None, ),  # 4
-    (5, TType.STRING, 'errorMessage', 'UTF8', None, ),  # 5
+    (5, TType.STRING, 'errorMessage', None, None, ),  # 5
     None,  # 6
     None,  # 7
     None,  # 8
@@ -6576,20 +6575,20 @@ all_structs.append(TGetDelegationTokenReq)
 TGetDelegationTokenReq.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'sessionHandle', [TSessionHandle, None], None, ),  # 1
-    (2, TType.STRING, 'owner', 'UTF8', None, ),  # 2
-    (3, TType.STRING, 'renewer', 'UTF8', None, ),  # 3
+    (2, TType.STRING, 'owner', None, None, ),  # 2
+    (3, TType.STRING, 'renewer', None, None, ),  # 3
 )
 all_structs.append(TGetDelegationTokenResp)
 TGetDelegationTokenResp.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'status', [TStatus, None], None, ),  # 1
-    (2, TType.STRING, 'delegationToken', 'UTF8', None, ),  # 2
+    (2, TType.STRING, 'delegationToken', None, None, ),  # 2
 )
 all_structs.append(TCancelDelegationTokenReq)
 TCancelDelegationTokenReq.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'sessionHandle', [TSessionHandle, None], None, ),  # 1
-    (2, TType.STRING, 'delegationToken', 'UTF8', None, ),  # 2
+    (2, TType.STRING, 'delegationToken', None, None, ),  # 2
 )
 all_structs.append(TCancelDelegationTokenResp)
 TCancelDelegationTokenResp.thrift_spec = (
@@ -6600,7 +6599,7 @@ all_structs.append(TRenewDelegationTokenReq)
 TRenewDelegationTokenReq.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'sessionHandle', [TSessionHandle, None], None, ),  # 1
-    (2, TType.STRING, 'delegationToken', 'UTF8', None, ),  # 2
+    (2, TType.STRING, 'delegationToken', None, None, ),  # 2
 )
 all_structs.append(TRenewDelegationTokenResp)
 TRenewDelegationTokenResp.thrift_spec = (
@@ -6616,7 +6615,7 @@ all_structs.append(TGetLogResp)
 TGetLogResp.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'status', [TStatus, None], None, ),  # 1
-    (2, TType.STRING, 'log', 'UTF8', None, ),  # 2
+    (2, TType.STRING, 'log', None, None, ),  # 2
 )
 fix_spec(all_structs)
 del all_structs

@@ -3,14 +3,13 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:new_style
+#  options string: py:new_style,no_utf8strings
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
 from thrift.protocol.TProtocol import TProtocolException
 from thrift.TRecursive import fix_spec
 
-import sys
 import impala._thrift_gen.ExecStats.ttypes
 import impala._thrift_gen.Status.ttypes
 import impala._thrift_gen.Types.ttypes
@@ -291,7 +290,7 @@ class TInsertResult(object):
                     self.rows_modified = {}
                     (_ktype1, _vtype2, _size0) = iprot.readMapBegin()
                     for _i4 in range(_size0):
-                        _key5 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key5 = iprot.readString()
                         _val6 = iprot.readI64()
                         self.rows_modified[_key5] = _val6
                     iprot.readMapEnd()
@@ -316,7 +315,7 @@ class TInsertResult(object):
             oprot.writeFieldBegin('rows_modified', TType.MAP, 1)
             oprot.writeMapBegin(TType.STRING, TType.I64, len(self.rows_modified))
             for kiter7, viter8 in self.rows_modified.items():
-                oprot.writeString(kiter7.encode('utf-8') if sys.version_info[0] == 2 else kiter7)
+                oprot.writeString(kiter7)
                 oprot.writeI64(viter8)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
@@ -367,12 +366,12 @@ class TPingImpalaServiceResp(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.version = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.version = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.webserver_address = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.webserver_address = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -387,11 +386,11 @@ class TPingImpalaServiceResp(object):
         oprot.writeStructBegin('TPingImpalaServiceResp')
         if self.version is not None:
             oprot.writeFieldBegin('version', TType.STRING, 1)
-            oprot.writeString(self.version.encode('utf-8') if sys.version_info[0] == 2 else self.version)
+            oprot.writeString(self.version)
             oprot.writeFieldEnd()
         if self.webserver_address is not None:
             oprot.writeFieldBegin('webserver_address', TType.STRING, 2)
-            oprot.writeString(self.webserver_address.encode('utf-8') if sys.version_info[0] == 2 else self.webserver_address)
+            oprot.writeString(self.webserver_address)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -434,12 +433,12 @@ class TResetTableReq(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.db_name = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.db_name = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.table_name = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.table_name = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -454,11 +453,11 @@ class TResetTableReq(object):
         oprot.writeStructBegin('TResetTableReq')
         if self.db_name is not None:
             oprot.writeFieldBegin('db_name', TType.STRING, 1)
-            oprot.writeString(self.db_name.encode('utf-8') if sys.version_info[0] == 2 else self.db_name)
+            oprot.writeString(self.db_name)
             oprot.writeFieldEnd()
         if self.table_name is not None:
             oprot.writeFieldBegin('table_name', TType.STRING, 2)
-            oprot.writeString(self.table_name.encode('utf-8') if sys.version_info[0] == 2 else self.table_name)
+            oprot.writeString(self.table_name)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -733,7 +732,7 @@ class TGetRuntimeProfileResp(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.profile = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.profile = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
@@ -758,7 +757,7 @@ class TGetRuntimeProfileResp(object):
             oprot.writeFieldEnd()
         if self.profile is not None:
             oprot.writeFieldBegin('profile', TType.STRING, 2)
-            oprot.writeString(self.profile.encode('utf-8') if sys.version_info[0] == 2 else self.profile)
+            oprot.writeString(self.profile)
             oprot.writeFieldEnd()
         if self.thrift_profile is not None:
             oprot.writeFieldBegin('thrift_profile', TType.STRUCT, 3)
@@ -785,20 +784,20 @@ class TGetRuntimeProfileResp(object):
 all_structs.append(TInsertResult)
 TInsertResult.thrift_spec = (
     None,  # 0
-    (1, TType.MAP, 'rows_modified', (TType.STRING, 'UTF8', TType.I64, None, False), None, ),  # 1
+    (1, TType.MAP, 'rows_modified', (TType.STRING, None, TType.I64, None, False), None, ),  # 1
     (2, TType.I64, 'num_row_errors', None, None, ),  # 2
 )
 all_structs.append(TPingImpalaServiceResp)
 TPingImpalaServiceResp.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'version', 'UTF8', None, ),  # 1
-    (2, TType.STRING, 'webserver_address', 'UTF8', None, ),  # 2
+    (1, TType.STRING, 'version', None, None, ),  # 1
+    (2, TType.STRING, 'webserver_address', None, None, ),  # 2
 )
 all_structs.append(TResetTableReq)
 TResetTableReq.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'db_name', 'UTF8', None, ),  # 1
-    (2, TType.STRING, 'table_name', 'UTF8', None, ),  # 2
+    (1, TType.STRING, 'db_name', None, None, ),  # 1
+    (2, TType.STRING, 'table_name', None, None, ),  # 2
 )
 all_structs.append(TGetExecSummaryReq)
 TGetExecSummaryReq.thrift_spec = (
@@ -823,7 +822,7 @@ all_structs.append(TGetRuntimeProfileResp)
 TGetRuntimeProfileResp.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'status', [impala._thrift_gen.TCLIService.ttypes.TStatus, None], None, ),  # 1
-    (2, TType.STRING, 'profile', 'UTF8', None, ),  # 2
+    (2, TType.STRING, 'profile', None, None, ),  # 2
     (3, TType.STRUCT, 'thrift_profile', [impala._thrift_gen.RuntimeProfile.ttypes.TRuntimeProfileTree, None], None, ),  # 3
 )
 fix_spec(all_structs)
