@@ -3,14 +3,13 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:new_style
+#  options string: py:new_style,no_utf8strings
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
 from thrift.protocol.TProtocol import TProtocolException
 from thrift.TRecursive import fix_spec
 
-import sys
 import impala._thrift_gen.ErrorCodes.ttypes
 
 from thrift.transport import TTransport
@@ -48,7 +47,7 @@ class TStatus(object):
                     self.error_msgs = []
                     (_etype3, _size0) = iprot.readListBegin()
                     for _i4 in range(_size0):
-                        _elem5 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _elem5 = iprot.readString()
                         self.error_msgs.append(_elem5)
                     iprot.readListEnd()
                 else:
@@ -71,7 +70,7 @@ class TStatus(object):
             oprot.writeFieldBegin('error_msgs', TType.LIST, 2)
             oprot.writeListBegin(TType.STRING, len(self.error_msgs))
             for iter6 in self.error_msgs:
-                oprot.writeString(iter6.encode('utf-8') if sys.version_info[0] == 2 else iter6)
+                oprot.writeString(iter6)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -96,7 +95,7 @@ all_structs.append(TStatus)
 TStatus.thrift_spec = (
     None,  # 0
     (1, TType.I32, 'status_code', None, None, ),  # 1
-    (2, TType.LIST, 'error_msgs', (TType.STRING, 'UTF8', False), None, ),  # 2
+    (2, TType.LIST, 'error_msgs', (TType.STRING, None, False), None, ),  # 2
 )
 fix_spec(all_structs)
 del all_structs

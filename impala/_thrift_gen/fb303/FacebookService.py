@@ -3,14 +3,13 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:new_style
+#  options string: py:new_style,no_utf8strings
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
 from thrift.protocol.TProtocol import TProtocolException
 from thrift.TRecursive import fix_spec
 
-import sys
 import logging
 from .ttypes import *
 from thrift.Thrift import TProcessor
@@ -865,7 +864,7 @@ class getName_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.success = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -880,7 +879,7 @@ class getName_result(object):
         oprot.writeStructBegin('getName_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeString(self.success)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -900,7 +899,7 @@ class getName_result(object):
         return not (self == other)
 all_structs.append(getName_result)
 getName_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (0, TType.STRING, 'success', None, None, ),  # 0
 )
 
 
@@ -968,7 +967,7 @@ class getVersion_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.success = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -983,7 +982,7 @@ class getVersion_result(object):
         oprot.writeStructBegin('getVersion_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeString(self.success)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1003,7 +1002,7 @@ class getVersion_result(object):
         return not (self == other)
 all_structs.append(getVersion_result)
 getVersion_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (0, TType.STRING, 'success', None, None, ),  # 0
 )
 
 
@@ -1174,7 +1173,7 @@ class getStatusDetails_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.success = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1189,7 +1188,7 @@ class getStatusDetails_result(object):
         oprot.writeStructBegin('getStatusDetails_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeString(self.success)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1209,7 +1208,7 @@ class getStatusDetails_result(object):
         return not (self == other)
 all_structs.append(getStatusDetails_result)
 getStatusDetails_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (0, TType.STRING, 'success', None, None, ),  # 0
 )
 
 
@@ -1280,7 +1279,7 @@ class getCounters_result(object):
                     self.success = {}
                     (_ktype1, _vtype2, _size0) = iprot.readMapBegin()
                     for _i4 in range(_size0):
-                        _key5 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key5 = iprot.readString()
                         _val6 = iprot.readI64()
                         self.success[_key5] = _val6
                     iprot.readMapEnd()
@@ -1300,7 +1299,7 @@ class getCounters_result(object):
             oprot.writeFieldBegin('success', TType.MAP, 0)
             oprot.writeMapBegin(TType.STRING, TType.I64, len(self.success))
             for kiter7, viter8 in self.success.items():
-                oprot.writeString(kiter7.encode('utf-8') if sys.version_info[0] == 2 else kiter7)
+                oprot.writeString(kiter7)
                 oprot.writeI64(viter8)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
@@ -1322,7 +1321,7 @@ class getCounters_result(object):
         return not (self == other)
 all_structs.append(getCounters_result)
 getCounters_result.thrift_spec = (
-    (0, TType.MAP, 'success', (TType.STRING, 'UTF8', TType.I64, None, False), None, ),  # 0
+    (0, TType.MAP, 'success', (TType.STRING, None, TType.I64, None, False), None, ),  # 0
 )
 
 
@@ -1347,7 +1346,7 @@ class getCounter_args(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.key = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.key = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1362,7 +1361,7 @@ class getCounter_args(object):
         oprot.writeStructBegin('getCounter_args')
         if self.key is not None:
             oprot.writeFieldBegin('key', TType.STRING, 1)
-            oprot.writeString(self.key.encode('utf-8') if sys.version_info[0] == 2 else self.key)
+            oprot.writeString(self.key)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1383,7 +1382,7 @@ class getCounter_args(object):
 all_structs.append(getCounter_args)
 getCounter_args.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'key', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'key', None, None, ),  # 1
 )
 
 
@@ -1470,12 +1469,12 @@ class setOption_args(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.key = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.key = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.value = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.value = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1490,11 +1489,11 @@ class setOption_args(object):
         oprot.writeStructBegin('setOption_args')
         if self.key is not None:
             oprot.writeFieldBegin('key', TType.STRING, 1)
-            oprot.writeString(self.key.encode('utf-8') if sys.version_info[0] == 2 else self.key)
+            oprot.writeString(self.key)
             oprot.writeFieldEnd()
         if self.value is not None:
             oprot.writeFieldBegin('value', TType.STRING, 2)
-            oprot.writeString(self.value.encode('utf-8') if sys.version_info[0] == 2 else self.value)
+            oprot.writeString(self.value)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1515,8 +1514,8 @@ class setOption_args(object):
 all_structs.append(setOption_args)
 setOption_args.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'key', 'UTF8', None, ),  # 1
-    (2, TType.STRING, 'value', 'UTF8', None, ),  # 2
+    (1, TType.STRING, 'key', None, None, ),  # 1
+    (2, TType.STRING, 'value', None, None, ),  # 2
 )
 
 
@@ -1584,7 +1583,7 @@ class getOption_args(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.key = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.key = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1599,7 +1598,7 @@ class getOption_args(object):
         oprot.writeStructBegin('getOption_args')
         if self.key is not None:
             oprot.writeFieldBegin('key', TType.STRING, 1)
-            oprot.writeString(self.key.encode('utf-8') if sys.version_info[0] == 2 else self.key)
+            oprot.writeString(self.key)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1620,7 +1619,7 @@ class getOption_args(object):
 all_structs.append(getOption_args)
 getOption_args.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'key', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'key', None, None, ),  # 1
 )
 
 
@@ -1645,7 +1644,7 @@ class getOption_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.success = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1660,7 +1659,7 @@ class getOption_result(object):
         oprot.writeStructBegin('getOption_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeString(self.success)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1680,7 +1679,7 @@ class getOption_result(object):
         return not (self == other)
 all_structs.append(getOption_result)
 getOption_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (0, TType.STRING, 'success', None, None, ),  # 0
 )
 
 
@@ -1751,8 +1750,8 @@ class getOptions_result(object):
                     self.success = {}
                     (_ktype10, _vtype11, _size9) = iprot.readMapBegin()
                     for _i13 in range(_size9):
-                        _key14 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                        _val15 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key14 = iprot.readString()
+                        _val15 = iprot.readString()
                         self.success[_key14] = _val15
                     iprot.readMapEnd()
                 else:
@@ -1771,8 +1770,8 @@ class getOptions_result(object):
             oprot.writeFieldBegin('success', TType.MAP, 0)
             oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.success))
             for kiter16, viter17 in self.success.items():
-                oprot.writeString(kiter16.encode('utf-8') if sys.version_info[0] == 2 else kiter16)
-                oprot.writeString(viter17.encode('utf-8') if sys.version_info[0] == 2 else viter17)
+                oprot.writeString(kiter16)
+                oprot.writeString(viter17)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -1793,7 +1792,7 @@ class getOptions_result(object):
         return not (self == other)
 all_structs.append(getOptions_result)
 getOptions_result.thrift_spec = (
-    (0, TType.MAP, 'success', (TType.STRING, 'UTF8', TType.STRING, 'UTF8', False), None, ),  # 0
+    (0, TType.MAP, 'success', (TType.STRING, None, TType.STRING, None, False), None, ),  # 0
 )
 
 
@@ -1879,7 +1878,7 @@ class getCpuProfile_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.success = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -1894,7 +1893,7 @@ class getCpuProfile_result(object):
         oprot.writeStructBegin('getCpuProfile_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeString(self.success)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1914,7 +1913,7 @@ class getCpuProfile_result(object):
         return not (self == other)
 all_structs.append(getCpuProfile_result)
 getCpuProfile_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (0, TType.STRING, 'success', None, None, ),  # 0
 )
 
 

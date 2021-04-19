@@ -3,14 +3,13 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:new_style
+#  options string: py:new_style,no_utf8strings
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
 from thrift.protocol.TProtocol import TProtocolException
 from thrift.TRecursive import fix_spec
 
-import sys
 import impala._thrift_gen.beeswax.BeeswaxService
 import logging
 from .ttypes import *
@@ -942,7 +941,7 @@ class GetRuntimeProfile_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRING:
-                    self.success = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.success = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 1:
@@ -963,7 +962,7 @@ class GetRuntimeProfile_result(object):
         oprot.writeStructBegin('GetRuntimeProfile_result')
         if self.success is not None:
             oprot.writeFieldBegin('success', TType.STRING, 0)
-            oprot.writeString(self.success.encode('utf-8') if sys.version_info[0] == 2 else self.success)
+            oprot.writeString(self.success)
             oprot.writeFieldEnd()
         if self.error is not None:
             oprot.writeFieldBegin('error', TType.STRUCT, 1)
@@ -987,7 +986,7 @@ class GetRuntimeProfile_result(object):
         return not (self == other)
 all_structs.append(GetRuntimeProfile_result)
 GetRuntimeProfile_result.thrift_spec = (
-    (0, TType.STRING, 'success', 'UTF8', None, ),  # 0
+    (0, TType.STRING, 'success', None, None, ),  # 0
     (1, TType.STRUCT, 'error', [impala._thrift_gen.beeswax.ttypes.BeeswaxException, None], None, ),  # 1
 )
 

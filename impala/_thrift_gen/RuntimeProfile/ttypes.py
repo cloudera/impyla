@@ -3,14 +3,13 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:new_style
+#  options string: py:new_style,no_utf8strings
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
 from thrift.protocol.TProtocol import TProtocolException
 from thrift.TRecursive import fix_spec
 
-import sys
 import impala._thrift_gen.ExecStats.ttypes
 import impala._thrift_gen.Metrics.ttypes
 import impala._thrift_gen.Types.ttypes
@@ -62,7 +61,7 @@ class TCounter(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.name = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.name = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
@@ -87,7 +86,7 @@ class TCounter(object):
         oprot.writeStructBegin('TCounter')
         if self.name is not None:
             oprot.writeFieldBegin('name', TType.STRING, 1)
-            oprot.writeString(self.name.encode('utf-8') if sys.version_info[0] == 2 else self.name)
+            oprot.writeString(self.name)
             oprot.writeFieldEnd()
         if self.unit is not None:
             oprot.writeFieldBegin('unit', TType.I32, 2)
@@ -146,7 +145,7 @@ class TEventSequence(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.name = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.name = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
@@ -164,7 +163,7 @@ class TEventSequence(object):
                     self.labels = []
                     (_etype9, _size6) = iprot.readListBegin()
                     for _i10 in range(_size6):
-                        _elem11 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _elem11 = iprot.readString()
                         self.labels.append(_elem11)
                     iprot.readListEnd()
                 else:
@@ -181,7 +180,7 @@ class TEventSequence(object):
         oprot.writeStructBegin('TEventSequence')
         if self.name is not None:
             oprot.writeFieldBegin('name', TType.STRING, 1)
-            oprot.writeString(self.name.encode('utf-8') if sys.version_info[0] == 2 else self.name)
+            oprot.writeString(self.name)
             oprot.writeFieldEnd()
         if self.timestamps is not None:
             oprot.writeFieldBegin('timestamps', TType.LIST, 2)
@@ -194,7 +193,7 @@ class TEventSequence(object):
             oprot.writeFieldBegin('labels', TType.LIST, 3)
             oprot.writeListBegin(TType.STRING, len(self.labels))
             for iter13 in self.labels:
-                oprot.writeString(iter13.encode('utf-8') if sys.version_info[0] == 2 else iter13)
+                oprot.writeString(iter13)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -250,7 +249,7 @@ class TTimeSeriesCounter(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.name = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.name = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
@@ -290,7 +289,7 @@ class TTimeSeriesCounter(object):
         oprot.writeStructBegin('TTimeSeriesCounter')
         if self.name is not None:
             oprot.writeFieldBegin('name', TType.STRING, 1)
-            oprot.writeString(self.name.encode('utf-8') if sys.version_info[0] == 2 else self.name)
+            oprot.writeString(self.name)
             oprot.writeFieldEnd()
         if self.unit is not None:
             oprot.writeFieldBegin('unit', TType.I32, 2)
@@ -368,7 +367,7 @@ class TSummaryStatsCounter(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.name = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.name = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
@@ -408,7 +407,7 @@ class TSummaryStatsCounter(object):
         oprot.writeStructBegin('TSummaryStatsCounter')
         if self.name is not None:
             oprot.writeFieldBegin('name', TType.STRING, 1)
-            oprot.writeString(self.name.encode('utf-8') if sys.version_info[0] == 2 else self.name)
+            oprot.writeString(self.name)
             oprot.writeFieldEnd()
         if self.unit is not None:
             oprot.writeFieldBegin('unit', TType.I32, 2)
@@ -570,7 +569,7 @@ class TRuntimeProfileNode(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.name = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.name = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
@@ -604,8 +603,8 @@ class TRuntimeProfileNode(object):
                     self.info_strings = {}
                     (_ktype28, _vtype29, _size27) = iprot.readMapBegin()
                     for _i31 in range(_size27):
-                        _key32 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
-                        _val33 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key32 = iprot.readString()
+                        _val33 = iprot.readString()
                         self.info_strings[_key32] = _val33
                     iprot.readMapEnd()
                 else:
@@ -615,7 +614,7 @@ class TRuntimeProfileNode(object):
                     self.info_strings_display_order = []
                     (_etype37, _size34) = iprot.readListBegin()
                     for _i38 in range(_size34):
-                        _elem39 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _elem39 = iprot.readString()
                         self.info_strings_display_order.append(_elem39)
                     iprot.readListEnd()
                 else:
@@ -625,11 +624,11 @@ class TRuntimeProfileNode(object):
                     self.child_counters_map = {}
                     (_ktype41, _vtype42, _size40) = iprot.readMapBegin()
                     for _i44 in range(_size40):
-                        _key45 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _key45 = iprot.readString()
                         _val46 = set()
                         (_etype50, _size47) = iprot.readSetBegin()
                         for _i51 in range(_size47):
-                            _elem52 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                            _elem52 = iprot.readString()
                             _val46.add(_elem52)
                         iprot.readSetEnd()
                         self.child_counters_map[_key45] = _val46
@@ -687,7 +686,7 @@ class TRuntimeProfileNode(object):
         oprot.writeStructBegin('TRuntimeProfileNode')
         if self.name is not None:
             oprot.writeFieldBegin('name', TType.STRING, 1)
-            oprot.writeString(self.name.encode('utf-8') if sys.version_info[0] == 2 else self.name)
+            oprot.writeString(self.name)
             oprot.writeFieldEnd()
         if self.num_children is not None:
             oprot.writeFieldBegin('num_children', TType.I32, 2)
@@ -712,25 +711,25 @@ class TRuntimeProfileNode(object):
             oprot.writeFieldBegin('info_strings', TType.MAP, 6)
             oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.info_strings))
             for kiter72, viter73 in self.info_strings.items():
-                oprot.writeString(kiter72.encode('utf-8') if sys.version_info[0] == 2 else kiter72)
-                oprot.writeString(viter73.encode('utf-8') if sys.version_info[0] == 2 else viter73)
+                oprot.writeString(kiter72)
+                oprot.writeString(viter73)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         if self.info_strings_display_order is not None:
             oprot.writeFieldBegin('info_strings_display_order', TType.LIST, 7)
             oprot.writeListBegin(TType.STRING, len(self.info_strings_display_order))
             for iter74 in self.info_strings_display_order:
-                oprot.writeString(iter74.encode('utf-8') if sys.version_info[0] == 2 else iter74)
+                oprot.writeString(iter74)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.child_counters_map is not None:
             oprot.writeFieldBegin('child_counters_map', TType.MAP, 8)
             oprot.writeMapBegin(TType.STRING, TType.SET, len(self.child_counters_map))
             for kiter75, viter76 in self.child_counters_map.items():
-                oprot.writeString(kiter75.encode('utf-8') if sys.version_info[0] == 2 else kiter75)
+                oprot.writeString(kiter75)
                 oprot.writeSetBegin(TType.STRING, len(viter76))
                 for iter77 in viter76:
-                    oprot.writeString(iter77.encode('utf-8') if sys.version_info[0] == 2 else iter77)
+                    oprot.writeString(iter77)
                 oprot.writeSetEnd()
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
@@ -952,21 +951,21 @@ class TRuntimeProfileForest(object):
 all_structs.append(TCounter)
 TCounter.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'name', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'name', None, None, ),  # 1
     (2, TType.I32, 'unit', None, None, ),  # 2
     (3, TType.I64, 'value', None, None, ),  # 3
 )
 all_structs.append(TEventSequence)
 TEventSequence.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'name', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'name', None, None, ),  # 1
     (2, TType.LIST, 'timestamps', (TType.I64, None, False), None, ),  # 2
-    (3, TType.LIST, 'labels', (TType.STRING, 'UTF8', False), None, ),  # 3
+    (3, TType.LIST, 'labels', (TType.STRING, None, False), None, ),  # 3
 )
 all_structs.append(TTimeSeriesCounter)
 TTimeSeriesCounter.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'name', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'name', None, None, ),  # 1
     (2, TType.I32, 'unit', None, None, ),  # 2
     (3, TType.I32, 'period_ms', None, None, ),  # 3
     (4, TType.LIST, 'values', (TType.I64, None, False), None, ),  # 4
@@ -975,7 +974,7 @@ TTimeSeriesCounter.thrift_spec = (
 all_structs.append(TSummaryStatsCounter)
 TSummaryStatsCounter.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'name', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'name', None, None, ),  # 1
     (2, TType.I32, 'unit', None, None, ),  # 2
     (3, TType.I64, 'sum', None, None, ),  # 3
     (4, TType.I64, 'total_num_values', None, None, ),  # 4
@@ -991,14 +990,14 @@ TRuntimeProfileNodeMetadata.thrift_spec = (
 all_structs.append(TRuntimeProfileNode)
 TRuntimeProfileNode.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'name', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'name', None, None, ),  # 1
     (2, TType.I32, 'num_children', None, None, ),  # 2
     (3, TType.LIST, 'counters', (TType.STRUCT, [TCounter, None], False), None, ),  # 3
     (4, TType.I64, 'metadata', None, None, ),  # 4
     (5, TType.BOOL, 'indent', None, None, ),  # 5
-    (6, TType.MAP, 'info_strings', (TType.STRING, 'UTF8', TType.STRING, 'UTF8', False), None, ),  # 6
-    (7, TType.LIST, 'info_strings_display_order', (TType.STRING, 'UTF8', False), None, ),  # 7
-    (8, TType.MAP, 'child_counters_map', (TType.STRING, 'UTF8', TType.SET, (TType.STRING, 'UTF8', False), False), None, ),  # 8
+    (6, TType.MAP, 'info_strings', (TType.STRING, None, TType.STRING, None, False), None, ),  # 6
+    (7, TType.LIST, 'info_strings_display_order', (TType.STRING, None, False), None, ),  # 7
+    (8, TType.MAP, 'child_counters_map', (TType.STRING, None, TType.SET, (TType.STRING, None, False), False), None, ),  # 8
     (9, TType.LIST, 'event_sequences', (TType.STRUCT, [TEventSequence, None], False), None, ),  # 9
     (10, TType.LIST, 'time_series_counters', (TType.STRUCT, [TTimeSeriesCounter, None], False), None, ),  # 10
     (11, TType.LIST, 'summary_stats_counters', (TType.STRUCT, [TSummaryStatsCounter, None], False), None, ),  # 11
