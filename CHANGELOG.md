@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.17a3
+------
+* **Bug Fixes**
+  - Add no_utf8strings to thrift compiler option (#440)
+
 0.17a2
 ------
 * **Improvements**
