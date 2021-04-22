@@ -48,6 +48,21 @@ class STRING(String):
 
 
 class ImpalaDDLCompiler(DDLCompiler):
+    # Impala has no support for foreign keys.
+    def visit_foreign_key_constraint(self, constraint):
+        return None
+
+    # Impala has no support for primary keys.
+    def visit_primary_key_constraint(self, constraint):
+        return None
+
+    def get_column_specification(self, column, **kwargs):
+        column.nullable = True  # Prevent adding NOT NULL constraints; since all columns in Impala are nullable
+        colspec = super(ImpalaDDLCompiler, self).get_column_specification(
+            column, **kwargs
+        )
+        return colspec
+
     def post_create_table(self, table):
         """Build table-level CREATE options."""
 
@@ -69,6 +84,23 @@ class ImpalaDDLCompiler(DDLCompiler):
 
 class ImpalaTypeCompiler(GenericTypeCompiler):
     # pylint: disable=unused-argument
+
+    # https://docs.cloudera.com/documentation/enterprise/6/6.3/topics/impala_porting.html
+    # Impala only supports the STRING type
+    def visit_VARCHAR(self, type_):
+        return 'STRING'
+
+    visit_NCHAR = visit_VARCHAR
+    visit_VARCHAR = visit_VARCHAR
+    visit_NVARCHAR = visit_VARCHAR
+    visit_TEXT = visit_VARCHAR
+
+    # Impala only supports the TIMESTAMP type
+    def visit_DATETIME(self, type_):
+        return 'TIMESTAMP'
+
+    visit_DATE = visit_DATETIME
+    visit_TIME = visit_DATETIME
 
     def visit_TINYINT(self, type_):
         return 'TINYINT'
