@@ -30,12 +30,11 @@ GIT_URL="https://github.com/${GITHUB_ACCOUNT}/${GIT_REPO}.git"
 WHEELHOUSE_DIR="${PIP_DISTS_BUILD_DIR}/wheelhouse"
 SDIST_DIR="${PIP_DISTS_BUILD_DIR}/sdist"
 
-# cyrus-sasl & cyrus-sasl-devel are required by sasl package
 # krb5-libs & krb5-devel are required by kerberos package
-SYSTEM_REQUIREMENTS=(cyrus-sasl cyrus-sasl-devel krb5-libs krb5-devel)
+SYSTEM_REQUIREMENTS=(krb5-libs krb5-devel)
 
 prepare_system() {
-  # Install system packages required by sasl & kerberos.
+  # Install system packages required by kerberos.
   yum install -y "${SYSTEM_REQUIREMENTS[@]}"
 
   # Add "krb5-config" to path if necessary
