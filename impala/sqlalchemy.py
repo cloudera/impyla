@@ -68,6 +68,9 @@ class ImpalaDDLCompiler(DDLCompiler):
 
         table_opts = []
 
+        if 'impala_partitioned_by' in table.kwargs:
+            table_opts.append('PARTITIONED BY %s' % table.kwargs.get('impala_partitioned_by'))
+
         if 'impala_partition_by' in table.kwargs:
             table_opts.append('PARTITION BY %s' % table.kwargs.get('impala_partition_by'))
 
