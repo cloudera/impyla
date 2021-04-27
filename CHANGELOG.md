@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.17a4
+------
+* **Improvements**
+  - Switch to using manylinux2010 docker build environment
+  - Upgrade to thrift-sasl 0.4.3a2
+
 0.17a3
 ------
 * **Bug Fixes**
