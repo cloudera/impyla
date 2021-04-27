@@ -52,7 +52,7 @@ if [ -z "$GIT_VERSION_TAG" ] || [ "$#" -gt 1 ]; then
 fi
 
 # Start build script in manylinux docker container
-DOCKER_IMAGE='quay.io/pypa/manylinux1_x86_64'
+DOCKER_IMAGE='quay.io/pypa/manylinux2010_x86_64'
 
 docker pull "$DOCKER_IMAGE"
 docker container run -t --rm  -v "$(pwd)/io:/io" "$DOCKER_IMAGE" \

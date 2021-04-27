@@ -31,7 +31,8 @@ WHEELHOUSE_DIR="${PIP_DISTS_BUILD_DIR}/wheelhouse"
 SDIST_DIR="${PIP_DISTS_BUILD_DIR}/sdist"
 
 # krb5-libs & krb5-devel are required by kerberos package
-SYSTEM_REQUIREMENTS=(krb5-libs krb5-devel)
+# python27 is required for testing
+SYSTEM_REQUIREMENTS=(krb5-libs krb5-devel python27)
 
 prepare_system() {
   # Install system packages required by kerberos.
@@ -133,6 +134,19 @@ tear_down_virt_env() {
   rm -rf impyla_test_env
 }
 
+set_up_virt_env_py27() {
+  local py27lib="$1"
+  local py27="$2"
+  LD_LIBRARY_PATH="$py27lib" "$py27" -m virtualenv impyla_test_env
+
+  # set -eu must be disabled temporarily for activating the env.
+  set +e +u
+  source impyla_test_env/bin/activate
+  set -eu
+
+  LD_LIBRARY_PATH="$py27lib" easy_install -U setuptools
+}
+
 sanity_check() {
   cat <<EOF >/tmp/sanity_check.py
 import impala.dbapi
@@ -156,6 +170,16 @@ EOF
     set_up_virt_env "$pydir"
     pip install --no-cache-dir --only-binary "$PKG_NAME" "${whlfn}[kerberos]"
     python /tmp/sanity_check.py
+    tear_down_virt_env
+  done
+
+  # Test with separately installed python27
+  local py27lib="/opt/rh/python27/root/usr/lib64"
+  local py27="/opt/rh/python27/root/usr/bin/python"
+  for pkgfn in "$sdistfn" "$whlfn"; do
+    set_up_virt_env_py27 "$py27lib" "$py27"
+    LD_LIBRARY_PATH="$py27lib" pip install --no-cache-dir "${pkgfn}[kerberos]"
+    LD_LIBRARY_PATH="$py27lib" python /tmp/sanity_check.py
     tear_down_virt_env
   done
 }
