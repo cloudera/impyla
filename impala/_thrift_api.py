@@ -428,6 +428,9 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
 
         transport.setGetCustomHeadersFunc(get_auth_headers)
 
+    # Without buffering Thrift would call socket.recv() each time it deserializes
+    # something (e.g. a member in a struct).
+    transport = TBufferedTransport(transport)
     return transport
 
 
