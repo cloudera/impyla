@@ -3,14 +3,13 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:new_style
+#  options string: py:new_style,no_utf8strings
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
 from thrift.protocol.TProtocol import TProtocolException
 from thrift.TRecursive import fix_spec
 
-import sys
 import impala._thrift_gen.hive_metastore.ttypes
 
 from thrift.transport import TTransport
@@ -93,7 +92,7 @@ class Query(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.query = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.query = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
@@ -101,14 +100,14 @@ class Query(object):
                     self.configuration = []
                     (_etype3, _size0) = iprot.readListBegin()
                     for _i4 in range(_size0):
-                        _elem5 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _elem5 = iprot.readString()
                         self.configuration.append(_elem5)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
                 if ftype == TType.STRING:
-                    self.hadoop_user = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.hadoop_user = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -123,18 +122,18 @@ class Query(object):
         oprot.writeStructBegin('Query')
         if self.query is not None:
             oprot.writeFieldBegin('query', TType.STRING, 1)
-            oprot.writeString(self.query.encode('utf-8') if sys.version_info[0] == 2 else self.query)
+            oprot.writeString(self.query)
             oprot.writeFieldEnd()
         if self.configuration is not None:
             oprot.writeFieldBegin('configuration', TType.LIST, 3)
             oprot.writeListBegin(TType.STRING, len(self.configuration))
             for iter6 in self.configuration:
-                oprot.writeString(iter6.encode('utf-8') if sys.version_info[0] == 2 else iter6)
+                oprot.writeString(iter6)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.hadoop_user is not None:
             oprot.writeFieldBegin('hadoop_user', TType.STRING, 4)
-            oprot.writeString(self.hadoop_user.encode('utf-8') if sys.version_info[0] == 2 else self.hadoop_user)
+            oprot.writeString(self.hadoop_user)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -177,12 +176,12 @@ class QueryHandle(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.id = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.id = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.log_context = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.log_context = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -197,11 +196,11 @@ class QueryHandle(object):
         oprot.writeStructBegin('QueryHandle')
         if self.id is not None:
             oprot.writeFieldBegin('id', TType.STRING, 1)
-            oprot.writeString(self.id.encode('utf-8') if sys.version_info[0] == 2 else self.id)
+            oprot.writeString(self.id)
             oprot.writeFieldEnd()
         if self.log_context is not None:
             oprot.writeFieldBegin('log_context', TType.STRING, 2)
-            oprot.writeString(self.log_context.encode('utf-8') if sys.version_info[0] == 2 else self.log_context)
+            oprot.writeString(self.log_context)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -242,7 +241,7 @@ class QueryExplanation(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.textual = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.textual = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -257,7 +256,7 @@ class QueryExplanation(object):
         oprot.writeStructBegin('QueryExplanation')
         if self.textual is not None:
             oprot.writeFieldBegin('textual', TType.STRING, 1)
-            oprot.writeString(self.textual.encode('utf-8') if sys.version_info[0] == 2 else self.textual)
+            oprot.writeString(self.textual)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -314,7 +313,7 @@ class Results(object):
                     self.columns = []
                     (_etype10, _size7) = iprot.readListBegin()
                     for _i11 in range(_size7):
-                        _elem12 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _elem12 = iprot.readString()
                         self.columns.append(_elem12)
                     iprot.readListEnd()
                 else:
@@ -324,7 +323,7 @@ class Results(object):
                     self.data = []
                     (_etype16, _size13) = iprot.readListBegin()
                     for _i17 in range(_size13):
-                        _elem18 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _elem18 = iprot.readString()
                         self.data.append(_elem18)
                     iprot.readListEnd()
                 else:
@@ -357,14 +356,14 @@ class Results(object):
             oprot.writeFieldBegin('columns', TType.LIST, 2)
             oprot.writeListBegin(TType.STRING, len(self.columns))
             for iter19 in self.columns:
-                oprot.writeString(iter19.encode('utf-8') if sys.version_info[0] == 2 else iter19)
+                oprot.writeString(iter19)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.data is not None:
             oprot.writeFieldBegin('data', TType.LIST, 3)
             oprot.writeListBegin(TType.STRING, len(self.data))
             for iter20 in self.data:
-                oprot.writeString(iter20.encode('utf-8') if sys.version_info[0] == 2 else iter20)
+                oprot.writeString(iter20)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.start_row is not None:
@@ -429,17 +428,17 @@ class ResultsMetadata(object):
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.table_dir = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.table_dir = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.in_tablename = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.in_tablename = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
                 if ftype == TType.STRING:
-                    self.delim = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.delim = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -458,15 +457,15 @@ class ResultsMetadata(object):
             oprot.writeFieldEnd()
         if self.table_dir is not None:
             oprot.writeFieldBegin('table_dir', TType.STRING, 2)
-            oprot.writeString(self.table_dir.encode('utf-8') if sys.version_info[0] == 2 else self.table_dir)
+            oprot.writeString(self.table_dir)
             oprot.writeFieldEnd()
         if self.in_tablename is not None:
             oprot.writeFieldBegin('in_tablename', TType.STRING, 3)
-            oprot.writeString(self.in_tablename.encode('utf-8') if sys.version_info[0] == 2 else self.in_tablename)
+            oprot.writeString(self.in_tablename)
             oprot.writeFieldEnd()
         if self.delim is not None:
             oprot.writeFieldBegin('delim', TType.STRING, 4)
-            oprot.writeString(self.delim.encode('utf-8') if sys.version_info[0] == 2 else self.delim)
+            oprot.writeString(self.delim)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -515,12 +514,12 @@ class BeeswaxException(TException):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.message = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.message = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.log_context = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.log_context = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
@@ -536,7 +535,7 @@ class BeeswaxException(TException):
                     iprot.skip(ftype)
             elif fid == 5:
                 if ftype == TType.STRING:
-                    self.SQLState = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.SQLState = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -551,11 +550,11 @@ class BeeswaxException(TException):
         oprot.writeStructBegin('BeeswaxException')
         if self.message is not None:
             oprot.writeFieldBegin('message', TType.STRING, 1)
-            oprot.writeString(self.message.encode('utf-8') if sys.version_info[0] == 2 else self.message)
+            oprot.writeString(self.message)
             oprot.writeFieldEnd()
         if self.log_context is not None:
             oprot.writeFieldBegin('log_context', TType.STRING, 2)
-            oprot.writeString(self.log_context.encode('utf-8') if sys.version_info[0] == 2 else self.log_context)
+            oprot.writeString(self.log_context)
             oprot.writeFieldEnd()
         if self.handle is not None:
             oprot.writeFieldBegin('handle', TType.STRUCT, 3)
@@ -567,7 +566,7 @@ class BeeswaxException(TException):
             oprot.writeFieldEnd()
         if self.SQLState is not None:
             oprot.writeFieldBegin('SQLState', TType.STRING, 5)
-            oprot.writeString(self.SQLState.encode('utf-8') if sys.version_info[0] == 2 else self.SQLState)
+            oprot.writeString(self.SQLState)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -662,17 +661,17 @@ class ConfigVariable(object):
                 break
             if fid == 1:
                 if ftype == TType.STRING:
-                    self.key = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.key = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.STRING:
-                    self.value = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.value = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.description = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.description = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
@@ -692,15 +691,15 @@ class ConfigVariable(object):
         oprot.writeStructBegin('ConfigVariable')
         if self.key is not None:
             oprot.writeFieldBegin('key', TType.STRING, 1)
-            oprot.writeString(self.key.encode('utf-8') if sys.version_info[0] == 2 else self.key)
+            oprot.writeString(self.key)
             oprot.writeFieldEnd()
         if self.value is not None:
             oprot.writeFieldBegin('value', TType.STRING, 2)
-            oprot.writeString(self.value.encode('utf-8') if sys.version_info[0] == 2 else self.value)
+            oprot.writeString(self.value)
             oprot.writeFieldEnd()
         if self.description is not None:
             oprot.writeFieldBegin('description', TType.STRING, 3)
-            oprot.writeString(self.description.encode('utf-8') if sys.version_info[0] == 2 else self.description)
+            oprot.writeString(self.description)
             oprot.writeFieldEnd()
         if self.level is not None:
             oprot.writeFieldBegin('level', TType.I32, 4)
@@ -725,28 +724,28 @@ class ConfigVariable(object):
 all_structs.append(Query)
 Query.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'query', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'query', None, None, ),  # 1
     None,  # 2
-    (3, TType.LIST, 'configuration', (TType.STRING, 'UTF8', False), None, ),  # 3
-    (4, TType.STRING, 'hadoop_user', 'UTF8', None, ),  # 4
+    (3, TType.LIST, 'configuration', (TType.STRING, None, False), None, ),  # 3
+    (4, TType.STRING, 'hadoop_user', None, None, ),  # 4
 )
 all_structs.append(QueryHandle)
 QueryHandle.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'id', 'UTF8', None, ),  # 1
-    (2, TType.STRING, 'log_context', 'UTF8', None, ),  # 2
+    (1, TType.STRING, 'id', None, None, ),  # 1
+    (2, TType.STRING, 'log_context', None, None, ),  # 2
 )
 all_structs.append(QueryExplanation)
 QueryExplanation.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'textual', 'UTF8', None, ),  # 1
+    (1, TType.STRING, 'textual', None, None, ),  # 1
 )
 all_structs.append(Results)
 Results.thrift_spec = (
     None,  # 0
     (1, TType.BOOL, 'ready', None, None, ),  # 1
-    (2, TType.LIST, 'columns', (TType.STRING, 'UTF8', False), None, ),  # 2
-    (3, TType.LIST, 'data', (TType.STRING, 'UTF8', False), None, ),  # 3
+    (2, TType.LIST, 'columns', (TType.STRING, None, False), None, ),  # 2
+    (3, TType.LIST, 'data', (TType.STRING, None, False), None, ),  # 3
     (4, TType.I64, 'start_row', None, None, ),  # 4
     (5, TType.BOOL, 'has_more', None, None, ),  # 5
 )
@@ -754,18 +753,18 @@ all_structs.append(ResultsMetadata)
 ResultsMetadata.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'schema', [impala._thrift_gen.hive_metastore.ttypes.Schema, None], None, ),  # 1
-    (2, TType.STRING, 'table_dir', 'UTF8', None, ),  # 2
-    (3, TType.STRING, 'in_tablename', 'UTF8', None, ),  # 3
-    (4, TType.STRING, 'delim', 'UTF8', None, ),  # 4
+    (2, TType.STRING, 'table_dir', None, None, ),  # 2
+    (3, TType.STRING, 'in_tablename', None, None, ),  # 3
+    (4, TType.STRING, 'delim', None, None, ),  # 4
 )
 all_structs.append(BeeswaxException)
 BeeswaxException.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'message', 'UTF8', None, ),  # 1
-    (2, TType.STRING, 'log_context', 'UTF8', None, ),  # 2
+    (1, TType.STRING, 'message', None, None, ),  # 1
+    (2, TType.STRING, 'log_context', None, None, ),  # 2
     (3, TType.STRUCT, 'handle', [QueryHandle, None], None, ),  # 3
     (4, TType.I32, 'errorCode', None, 0, ),  # 4
-    (5, TType.STRING, 'SQLState', 'UTF8', "     ", ),  # 5
+    (5, TType.STRING, 'SQLState', None, "     ", ),  # 5
 )
 all_structs.append(QueryNotFoundException)
 QueryNotFoundException.thrift_spec = (
@@ -773,9 +772,9 @@ QueryNotFoundException.thrift_spec = (
 all_structs.append(ConfigVariable)
 ConfigVariable.thrift_spec = (
     None,  # 0
-    (1, TType.STRING, 'key', 'UTF8', None, ),  # 1
-    (2, TType.STRING, 'value', 'UTF8', None, ),  # 2
-    (3, TType.STRING, 'description', 'UTF8', None, ),  # 3
+    (1, TType.STRING, 'key', None, None, ),  # 1
+    (2, TType.STRING, 'value', None, None, ),  # 2
+    (3, TType.STRING, 'description', None, None, ),  # 3
     (4, TType.I32, 'level', None, None, ),  # 4
 )
 fix_spec(all_structs)

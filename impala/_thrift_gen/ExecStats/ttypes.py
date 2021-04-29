@@ -3,14 +3,13 @@
 #
 # DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
 #
-#  options string: py:new_style
+#  options string: py:new_style,no_utf8strings
 #
 
 from thrift.Thrift import TType, TMessageType, TFrozenDict, TException, TApplicationException
 from thrift.protocol.TProtocol import TProtocolException
 from thrift.TRecursive import fix_spec
 
-import sys
 import impala._thrift_gen.Status.ttypes
 import impala._thrift_gen.Types.ttypes
 
@@ -182,12 +181,12 @@ class TPlanNodeExecSummary(object):
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.STRING:
-                    self.label = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.label = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 4:
                 if ftype == TType.STRING:
-                    self.label_detail = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.label_detail = iprot.readString()
                 else:
                     iprot.skip(ftype)
             elif fid == 5:
@@ -237,11 +236,11 @@ class TPlanNodeExecSummary(object):
             oprot.writeFieldEnd()
         if self.label is not None:
             oprot.writeFieldBegin('label', TType.STRING, 3)
-            oprot.writeString(self.label.encode('utf-8') if sys.version_info[0] == 2 else self.label)
+            oprot.writeString(self.label)
             oprot.writeFieldEnd()
         if self.label_detail is not None:
             oprot.writeFieldBegin('label_detail', TType.STRING, 4)
-            oprot.writeString(self.label_detail.encode('utf-8') if sys.version_info[0] == 2 else self.label_detail)
+            oprot.writeString(self.label_detail)
             oprot.writeFieldEnd()
         if self.num_children is not None:
             oprot.writeFieldBegin('num_children', TType.I32, 5)
@@ -426,7 +425,7 @@ class TExecSummary(object):
                     self.error_logs = []
                     (_etype23, _size20) = iprot.readListBegin()
                     for _i24 in range(_size20):
-                        _elem25 = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                        _elem25 = iprot.readString()
                         self.error_logs.append(_elem25)
                     iprot.readListEnd()
                 else:
@@ -444,7 +443,7 @@ class TExecSummary(object):
                     iprot.skip(ftype)
             elif fid == 8:
                 if ftype == TType.STRING:
-                    self.queued_reason = iprot.readString().decode('utf-8', errors='replace') if sys.version_info[0] == 2 else iprot.readString()
+                    self.queued_reason = iprot.readString()
                 else:
                     iprot.skip(ftype)
             else:
@@ -484,7 +483,7 @@ class TExecSummary(object):
             oprot.writeFieldBegin('error_logs', TType.LIST, 5)
             oprot.writeListBegin(TType.STRING, len(self.error_logs))
             for iter29 in self.error_logs:
-                oprot.writeString(iter29.encode('utf-8') if sys.version_info[0] == 2 else iter29)
+                oprot.writeString(iter29)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.progress is not None:
@@ -497,7 +496,7 @@ class TExecSummary(object):
             oprot.writeFieldEnd()
         if self.queued_reason is not None:
             oprot.writeFieldBegin('queued_reason', TType.STRING, 8)
-            oprot.writeString(self.queued_reason.encode('utf-8') if sys.version_info[0] == 2 else self.queued_reason)
+            oprot.writeString(self.queued_reason)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -530,8 +529,8 @@ TPlanNodeExecSummary.thrift_spec = (
     None,  # 0
     (1, TType.I32, 'node_id', None, None, ),  # 1
     (2, TType.I32, 'fragment_idx', None, None, ),  # 2
-    (3, TType.STRING, 'label', 'UTF8', None, ),  # 3
-    (4, TType.STRING, 'label_detail', 'UTF8', None, ),  # 4
+    (3, TType.STRING, 'label', None, None, ),  # 3
+    (4, TType.STRING, 'label_detail', None, None, ),  # 4
     (5, TType.I32, 'num_children', None, None, ),  # 5
     (6, TType.STRUCT, 'estimated_stats', [TExecStats, None], None, ),  # 6
     (7, TType.LIST, 'exec_stats', (TType.STRUCT, [TExecStats, None], False), None, ),  # 7
@@ -550,10 +549,10 @@ TExecSummary.thrift_spec = (
     (2, TType.STRUCT, 'status', [impala._thrift_gen.Status.ttypes.TStatus, None], None, ),  # 2
     (3, TType.LIST, 'nodes', (TType.STRUCT, [TPlanNodeExecSummary, None], False), None, ),  # 3
     (4, TType.MAP, 'exch_to_sender_map', (TType.I32, None, TType.I32, None, False), None, ),  # 4
-    (5, TType.LIST, 'error_logs', (TType.STRING, 'UTF8', False), None, ),  # 5
+    (5, TType.LIST, 'error_logs', (TType.STRING, None, False), None, ),  # 5
     (6, TType.STRUCT, 'progress', [TExecProgress, None], None, ),  # 6
     (7, TType.BOOL, 'is_queued', None, None, ),  # 7
-    (8, TType.STRING, 'queued_reason', 'UTF8', None, ),  # 8
+    (8, TType.STRING, 'queued_reason', None, None, ),  # 8
 )
 fix_spec(all_structs)
 del all_structs
