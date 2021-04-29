@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.17a5
+------
+* **Improvements**
+  - Add buffering to hs2-http (#442)
+  - Remove references to 'sasl', always use 'pure-sasl' package
+
 0.17a4
 ------
 * **Improvements**
