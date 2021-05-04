@@ -26,16 +26,21 @@ import time
 from bitarray import bitarray
 from six.moves import range
 
+from thrift.transport.TTransport import TTransportException
+from thrift.Thrift import TApplicationException
+from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated
+from impala._thrift_gen.TCLIService.ttypes import (
+    TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
+    TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
+    TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
+    TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
+    TGetOperationStatusReq, TOperationState, TCancelOperationReq,
+    TCloseOperationReq, TGetLogReq, TProtocolVersion)
+from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
+    TGetRuntimeProfileReq, TGetExecSummaryReq)
 from impala._thrift_api import (
-    get_socket, get_http_transport, get_transport, TTransportException, TBinaryProtocol, TOpenSessionReq,
-    TFetchResultsReq,
-    TCloseSessionReq, TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
-    TFetchOrientation, TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq,
-    TGetSchemasReq, TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq,
-    TOperationState, TCancelOperationReq, TCloseOperationReq, TGetLogReq,
-    TProtocolVersion, TGetRuntimeProfileReq, TRuntimeProfileFormat,
-    TGetExecSummaryReq, ImpalaHiveServer2Service, TExecStats, ThriftClient,
-    TApplicationException)
+    get_socket, get_http_transport, get_transport, ThriftClient)
+from impala._thrift_gen.RuntimeProfile.ttypes import TRuntimeProfileFormat
 from impala.compat import Decimal
 from impala.error import (NotSupportedError, OperationalError,
                           ProgrammingError, HiveServer2Error, HttpError)
@@ -823,27 +828,14 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
 
         if timeout is not None:
             timeout = timeout * 1000.  # TSocket expects millis
-        if six.PY2:
-            sock.setTimeout(timeout)
-        elif six.PY3:
-            try:
-                # thriftpy has a release where set_timeout is missing
-                sock.set_timeout(timeout)
-            except AttributeError:
-                sock.socket_timeout = timeout
-                sock.connect_timeout = timeout
+        sock.setTimeout(timeout)
         log.debug('sock=%s', sock)
         transport = get_transport(sock, kerberos_host, kerberos_service_name,
                                 auth_mechanism, user, password)
 
     transport.open()
-    protocol = TBinaryProtocol(transport)
-    if six.PY2:
-        # ThriftClient == ImpalaHiveServer2Service.Client
-        service = ThriftClient(protocol)
-    elif six.PY3:
-        # ThriftClient == TClient
-        service = ThriftClient(ImpalaHiveServer2Service, protocol)
+    protocol = TBinaryProtocolAccelerated(transport)
+    service = ThriftClient(protocol)
     log.debug('transport=%s protocol=%s service=%s', transport, protocol,
               service)
 
@@ -928,10 +920,6 @@ class CBatch(Batch):
             type_ = schema[j][1]
             nulls = tcols[j].nulls
             values = tcols[j].values
-
-            # thriftpy sometimes returns unicode instead of bytes
-            if six.PY3 and isinstance(nulls, str):
-                nulls = nulls.encode('utf-8')
 
             is_null = bitarray(endian='little')
             is_null.frombytes(nulls)
@@ -1082,18 +1070,9 @@ class ThriftRPC(object):
 
 def open_transport(transport):
     """
-    Open transport, accounting for API differences between thrift versus thriftpy2,
-    as well as TBufferedTransport versus THttpClient.
+    Open transport if needed.
     """
-    # python2 and thrift, or any THttpClient
-    if 'isOpen' in dir(transport):
-        transport_is_open = transport.isOpen()
-
-    # python3 and thriftpy2 (for TBufferedTransport only)
-    if 'is_open' in dir(transport):
-        transport_is_open = transport.is_open()
-
-    if not transport_is_open:
+    if not transport.isOpen():
         transport.open()
 
 

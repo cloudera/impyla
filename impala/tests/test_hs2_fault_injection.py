@@ -15,23 +15,14 @@ import logging
 
 import six
 
-if six.PY2:
-    from thrift.protocol.TBinaryProtocol import (
-        TBinaryProtocolAccelerated as TBinaryProtocol)
-    # noinspection PyProtectedMember
-    from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
+from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated
+# noinspection PyProtectedMember
+from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
 
-    ThriftClient = ImpalaHiveServer2Service.Client
-
-if six.PY3:
-    # When using python 3, import from thriftpy2 rather than thrift
-    # TODO: reenable cython
-    from thriftpy2.protocol.binary import TBinaryProtocol  # noqa
-    from thriftpy2.transport import (TSocket, TTransportException, TTransportBase)  # noqa
-    from thriftpy2.transport.buffered import TBufferedTransport  # noqa
+ThriftClient = ImpalaHiveServer2Service.Client
 
 from impala import hiveserver2 as hs2
-from impala._thrift_api import ThriftClient, ImpalaHttpClient, ImpalaHiveServer2Service
+from impala._thrift_api import ImpalaHttpClient
 from impala.error import HttpError
 from impala.hiveserver2 import HS2Service
 from impala.tests.util import ImpylaTestEnv
@@ -124,15 +115,8 @@ class TestHS2FaultInjection(object):
 
     def connect(self):
         self.transport.open()
-        protocol = TBinaryProtocol(self.transport)
-        service = None
-        if six.PY2:
-            # ThriftClient == ImpalaHiveServer2Service.Client
-            service = ThriftClient(protocol)
-        elif six.PY3:
-            # ThriftClient == TClient
-            # service = ThriftClient(protocol)
-            service = ThriftClient(ImpalaHiveServer2Service, protocol)
+        protocol = TBinaryProtocolAccelerated(self.transport)
+        service = ThriftClient(protocol)
         service = HS2Service(service, retries=3)
         return hs2.HiveServer2Connection(service, default_db=None)
 
