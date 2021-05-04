@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.17a6
+------
+* **Improvements**
+  - Unify Python 2 and 3 thrift handling and remove thriftpy2
+
 0.17a5
 ------
 * **Improvements**
