@@ -15,8 +15,7 @@ import logging
 
 import six
 
-from thrift.protocol.TBinaryProtocol import (
-    TBinaryProtocolAccelerated as TBinaryProtocol)
+from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated
 # noinspection PyProtectedMember
 from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
 
@@ -116,7 +115,7 @@ class TestHS2FaultInjection(object):
 
     def connect(self):
         self.transport.open()
-        protocol = TBinaryProtocol(self.transport)
+        protocol = TBinaryProtocolAccelerated(self.transport)
         service = ThriftClient(protocol)
         service = HS2Service(service, retries=3)
         return hs2.HiveServer2Connection(service, default_db=None)

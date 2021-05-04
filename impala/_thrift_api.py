@@ -48,9 +48,6 @@ log = get_logger_and_init_null(__name__)
 from thrift.transport.TSocket import TSocket
 from thrift.transport.TTransport import (
     TBufferedTransport, TTransportException, TTransportBase)
-from thrift.Thrift import TApplicationException
-from thrift.protocol.TBinaryProtocol import (
-    TBinaryProtocolAccelerated as TBinaryProtocol)
 
 # import HS2 codegen objects
 from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service

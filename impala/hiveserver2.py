@@ -28,8 +28,7 @@ from six.moves import range
 
 from thrift.transport.TTransport import TTransportException
 from thrift.Thrift import TApplicationException
-from thrift.protocol.TBinaryProtocol import (
-    TBinaryProtocolAccelerated as TBinaryProtocol)
+from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated
 from impala._thrift_gen.TCLIService.ttypes import (
     TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
     TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
@@ -835,7 +834,7 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
                                 auth_mechanism, user, password)
 
     transport.open()
-    protocol = TBinaryProtocol(transport)
+    protocol = TBinaryProtocolAccelerated(transport)
     service = ThriftClient(protocol)
     log.debug('transport=%s protocol=%s service=%s', transport, protocol,
               service)
