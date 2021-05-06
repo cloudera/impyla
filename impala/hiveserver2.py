@@ -41,11 +41,14 @@ from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
 from impala._thrift_api import (
     get_socket, get_http_transport, get_transport, ThriftClient)
 from impala._thrift_gen.RuntimeProfile.ttypes import TRuntimeProfileFormat
-from impala.compat import Decimal
+from impala.compat import (Decimal, _xrange as xrange)
 from impala.error import (NotSupportedError, OperationalError,
                           ProgrammingError, HiveServer2Error, HttpError)
 from impala.interface import Connection, Cursor, _bind_parameters
 from impala.util import get_logger_and_init_null
+
+if sys.version_info.major > 2:
+    xrange = range
 
 log = get_logger_and_init_null(__name__)
 
@@ -241,8 +244,8 @@ class HiveServer2Cursor(Cursor):
     @property
     def buffersize(self):
         # this is for internal use.  it provides an alternate default value for
-        # the size of the buffer, so that calling .next() will read multiple
-        # rows into a buffer if arraysize hasn't been set.  (otherwise, we'd
+        # the size of the buffer, so that calling ._ensure_buffer_is_filled() will read
+        # multiple rows into a buffer if arraysize hasn't been set.  (otherwise, we'd
         # get an unbuffered impl because the PEP 249 default value of arraysize
         # is 1)
         return self._buffersize if self._buffersize else 1024
@@ -514,7 +517,6 @@ class HiveServer2Cursor(Cursor):
         else:
            return None
 
-
     def fetchmany(self, size=None):
         # PEP 249
         self._wait_to_finish()
@@ -524,11 +526,12 @@ class HiveServer2Cursor(Cursor):
             size = self.arraysize
         log.debug('Fetching up to %s result rows', size)
         local_buffer = []
-        i = 0
-        while i < size:
+        while size > 0:
             try:
-                local_buffer.append(next(self))
-                i += 1
+                elements = self._pop_from_buffer(size)
+                local_buffer.extend(elements)
+                size -= len(elements)
+                assert size >= 0
             except StopIteration:
                 break
         return local_buffer
@@ -537,10 +540,14 @@ class HiveServer2Cursor(Cursor):
         # PEP 249
         self._wait_to_finish()
         log.debug('Fetching all result rows')
-        try:
-            return list(self)
-        except StopIteration:
-            return []
+        local_buffer = []
+        while True:
+            try:
+                elements = self._pop_from_buffer(self.buffersize)
+                local_buffer.extend(elements)
+            except StopIteration:
+                break
+        return local_buffer
 
     def fetchcolumnar(self):
         """Executes a fetchall operation returning a list of CBatches"""
@@ -574,29 +581,37 @@ class HiveServer2Cursor(Cursor):
         return self.__next__()
 
     def __next__(self):
+        self._ensure_buffer_is_filled()
+        log.debug('__next__: popping row out of buffer')
+        return self._buffer.pop()
+
+    def _ensure_buffer_is_filled(self):
         while True:
             if not self.has_result_set:
                 raise ProgrammingError(
                     "Trying to fetch results on an operation with no results.")
             if len(self._buffer) > 0:
-                log.debug('__next__: popping row out of buffer')
-                return self._buffer.pop()
+                return
             elif self._last_operation_active:
-                log.debug('__next__: buffer empty and op is active => fetching '
-                          'more data')
+                log.debug('_ensure_buffer_is_filled: buffer empty and op is active '
+                          '=> fetching more data')
                 self._buffer = self._last_operation.fetch(self.description,
                                                           self.buffersize,
                                                           convert_types=self.convert_types)
                 if len(self._buffer) > 0:
-                  log.debug('__next__: popping row out of buffer')
-                  return self._buffer.pop()
+                    return
                 if not self._buffer.expect_more_rows:
-                    log.debug('__next__: no more data to fetch')
+                    log.debug('_ensure_buffer_is_filled: no more data to fetch')
                     raise StopIteration
                 # If we didn't get rows, but more are expected, need to iterate again.
             else:
-                log.debug('__next__: buffer empty')
+                log.debug('_ensure_buffer_is_filled: buffer empty')
                 raise StopIteration
+
+    def _pop_from_buffer(self, size):
+        self._ensure_buffer_is_filled()
+        log.debug('pop_from_buffer: popping row out of buffer')
+        return self._buffer.pop_many(size)
 
     def ping(self):
         """Checks connection to server by requesting some info."""
@@ -702,6 +717,10 @@ class HiveServer2DictCursor(HiveServer2Cursor):
     def __next__(self):
         record = super(self.__class__, self).__next__()
         return dict(zip(self.fields, record))
+
+    def _pop_from_buffer(self, size):
+        records = super(self.__class__, self)._pop_from_buffer(size)
+        return [dict(zip(self.fields, record)) for record in records]
 
 
 # This work builds off of:
@@ -901,6 +920,19 @@ class Column(object):
         value = self.values[pos]
         return value
 
+    def pop_to_preallocated_list(self, output_list, count, offset=0, stride=1):
+        """ Tries to pop 'count' values and write them to every 'stride'th element of
+            'output_list' starting with 'offset'.
+            Returns the number of values popped.
+        """
+        count = min(count, self.rows_left)
+        start_pos = self.num_rows - self.rows_left
+        self.rows_left -= count
+        for pos in xrange(start_pos, start_pos + count):
+            output_list[offset] = None if self.nulls[pos] else self.values[pos]
+            offset += stride
+        return count
+
 
 class CBatch(Batch):
 
@@ -911,6 +943,7 @@ class CBatch(Batch):
                  for (i, col) in enumerate(trowset.columns)]
         num_cols = len(tcols)
         num_rows = len(tcols[0].values)
+        self.remaining_rows = num_rows
 
         log.debug('CBatch: input TRowSet num_cols=%s num_rows=%s tcols=%s',
                   num_cols, num_rows, tcols)
@@ -949,14 +982,32 @@ class CBatch(Batch):
         return values
 
     def __len__(self):
-        return len(self.columns[0]) if len(self.columns) > 0 else 0
+        return self.remaining_rows
 
     def pop(self):
+        self.remaining_rows -= 1
         return tuple([c.pop() for c in self.columns])
 
     def __str__(self):
         col_string = ','.join([str(col) for col in self.columns])
         return 'CBatch({0})'.format(col_string)
+
+    def pop_many(self, row_count):
+        """Returns a list of tuples with min('row_count', rows in batch) elements."""
+        row_count = min(row_count, self.remaining_rows)
+        self.remaining_rows -= row_count
+        col_count = len(self.columns)
+        # 'dataset' holds all rows x columns in list in row major order.
+        # The transposition of columnar data is done by writing 'dataset' per-column
+        # and then returning it per-row.
+        dataset = [None] * (col_count * row_count)
+        for col_id, col in enumerate(self.columns):
+            rows_returned = col.pop_to_preallocated_list(
+                dataset, row_count, offset=col_id, stride=col_count)
+            assert row_count == rows_returned
+        # Split 'dataset' to 'col_count' sized sublists and create tuples from them.
+        return [tuple(dataset[i * col_count: (i + 1) * col_count])
+                for i in xrange(row_count)]
 
 
 class RBatch(Batch):
@@ -982,7 +1033,14 @@ class RBatch(Batch):
         return len(self.rows)
 
     def pop(self):
+        # TODO: this looks extremely inefficient
         return self.rows.pop(0)
+
+    def pop_many(self, row_count):
+        row_count = min(row_count, len(self.rows))
+        result = self.rows[:row_count]
+        self.rows = self.rows[row_count:]
+        return result
 
 
 class ThriftRPC(object):
@@ -1316,6 +1374,7 @@ class Operation(ThriftRPC):
             return CBatch(results, expect_more_rows, schema, convert_types=convert_types)
         else:
             log.debug('fetch_results: constructing RBatch')
+            # TODO: RBatch ignores 'convert_types'
             return RBatch(results, expect_more_rows, schema)
 
     @property
