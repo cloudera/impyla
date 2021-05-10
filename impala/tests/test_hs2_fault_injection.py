@@ -268,7 +268,7 @@ class TestHS2FaultInjection(object):
         con = self.connect()
         cur = con.cursor(configuration=self.configuration)
         caplog.set_level(logging.DEBUG)
-        cur.execute('select 1', {})
+        cur.execute_async('select 1', {})
         self.transport.enable_fault(502, "Injected Fault", 0.1)
         cur.fetchall()
         cur.close()
