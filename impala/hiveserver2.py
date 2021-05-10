@@ -47,9 +47,6 @@ from impala.error import (NotSupportedError, OperationalError,
 from impala.interface import Connection, Cursor, _bind_parameters
 from impala.util import get_logger_and_init_null
 
-if sys.version_info.major > 2:
-    xrange = range
-
 log = get_logger_and_init_null(__name__)
 
 V6_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6
@@ -165,6 +162,7 @@ class HiveServer2Cursor(Cursor):
 
         self._last_operation_string = None
         self._last_operation_active = False
+        self._last_operation_finished = False
         self._buffersize = None
         self._buffer = Batch()  # zero-length
 
@@ -199,6 +197,8 @@ class HiveServer2Cursor(Cursor):
     @property
     def rowcount(self):
         # PEP 249
+        # Note that _rowcount will be always -1 as we do not know the number of rows
+        # until all rows are fetched from the query.
         return self._rowcount
 
     @property
@@ -308,6 +308,7 @@ class HiveServer2Cursor(Cursor):
             self._last_operation_active = False
 
             self._last_operation.close()
+        self._last_operation_finished = False
         self._last_operation_string = None
         self._last_operation = None
 
@@ -407,6 +408,8 @@ class HiveServer2Cursor(Cursor):
         # Prior to IMPALA-1633 GetOperationStatus does not populate errorMessage
         # in case of failure. If not populated, queries that return results
         # can get a failure description with a further call to FetchResults rpc.
+        if self._last_operation_finished:
+            return
         loop_start = time.time()
         while True:
             req = TGetOperationStatusReq(operationHandle=self._last_operation.handle)
@@ -426,6 +429,7 @@ class HiveServer2Cursor(Cursor):
                     else:
                         raise OperationalError("Operation is in ERROR_STATE")
             if not self._op_state_is_executing(operation_state):
+                self._last_operation_finished = True
                 break
             time.sleep(self._get_sleep_interval(loop_start))
 
