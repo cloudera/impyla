@@ -2348,7 +2348,7 @@ class TStringColumn(object):
                     self.values = []
                     (_etype93, _size90) = iprot.readListBegin()
                     for _i94 in range(_size90):
-                        _elem95 = iprot.readString()
+                        _elem95 = iprot.readBinary()
                         self.values.append(_elem95)
                     iprot.readListEnd()
                 else:
@@ -2372,7 +2372,7 @@ class TStringColumn(object):
             oprot.writeFieldBegin('values', TType.LIST, 1)
             oprot.writeListBegin(TType.STRING, len(self.values))
             for iter96 in self.values:
-                oprot.writeString(iter96)
+                oprot.writeBinary(iter96)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.nulls is not None:
@@ -6299,7 +6299,7 @@ TDoubleColumn.thrift_spec = (
 all_structs.append(TStringColumn)
 TStringColumn.thrift_spec = (
     None,  # 0
-    (1, TType.LIST, 'values', (TType.STRING, None, False), None, ),  # 1
+    (1, TType.LIST, 'values', (TType.STRING, 'BINARY', False), None, ),  # 1
     (2, TType.STRING, 'nulls', 'BINARY', None, ),  # 2
 )
 all_structs.append(TBinaryColumn)

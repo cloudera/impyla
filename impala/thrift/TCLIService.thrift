@@ -363,7 +363,10 @@ struct TDoubleColumn {
 }
 
 struct TStringColumn {
-  1: required list<string> values
+  // This was modified in Impyla (compared to Hive/Impala).
+  // Changed from list<binary> to list<string> to be able to do handle non-valid utf-8
+  // strings in Python 3.
+  1: required list<binary> values
   2: required binary nulls
 }
 
