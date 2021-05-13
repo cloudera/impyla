@@ -30,3 +30,8 @@ elif six.PY2:
         from cdecimal import Decimal
     except ImportError:
         from decimal import Decimal  # noqa
+
+try:
+  _xrange = xrange
+except NameError:
+  _xrange = range  # python3 compatibilty

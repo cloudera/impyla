@@ -68,3 +68,11 @@ def test_date_basic(cur, date_table):
     cur.execute('select d from {0} order by d'.format(date_table))
     results = cur.fetchall()
     assert results == [(datetime.date(1, 1, 1),), (datetime.date(1999, 9, 9),)]
+
+@pytest.mark.connect
+def test_utf8_strings(cur):
+    """Use a string with multi byte unicode code points in a query."""
+    cur.execute('select "\xE4\xBD\xA0\xE5\xA5\xBD"')
+    results = cur.fetchall()
+    assert results == [("\xE4\xBD\xA0\xE5\xA5\xBD",)]
+

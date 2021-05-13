@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This package is here to clean up references to thrift, because we're using
-# thriftpy2 for Py3 at the moment.  This should all be temporary, as Apache
-# Thrift gains Py3 compatibility.
+# This package's main goal in the past was to clean up references to thrift, because
+# we were using thriftpy2 for Py3. This is no longer necessary since upgrading to
+# Thrift 0.11.0, as Thrift supports Python 3 since 0.10.0. Now there are only some
+# leftover utility classes and functions.
 
 # pylint: disable=wrong-import-position
 
@@ -42,74 +43,16 @@ from impala.util import get_first_matching_cookie, get_cookie_expiry
 log = get_logger_and_init_null(__name__)
 
 
-if six.PY2:
-    # pylint: disable=import-error,unused-import
-    # import Apache Thrift code
-    from thrift.transport.TSocket import TSocket
-    from thrift.transport.TTransport import (
-        TBufferedTransport, TTransportException, TTransportBase)
-    from thrift.Thrift import TApplicationException
-    from thrift.protocol.TBinaryProtocol import (
-        TBinaryProtocolAccelerated as TBinaryProtocol)
+# pylint: disable=import-error,unused-import
+# import Apache Thrift code
+from thrift.transport.TSocket import TSocket
+from thrift.transport.TTransport import (
+    TBufferedTransport, TTransportException, TTransportBase)
 
-    # import HS2 codegen objects
-    from impala._thrift_gen.TCLIService.ttypes import (
-        TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
-        TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
-        TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
-        TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
-        TGetOperationStatusReq, TOperationState, TCancelOperationReq,
-        TCloseOperationReq, TGetLogReq, TProtocolVersion)
-    from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
-        TGetRuntimeProfileReq, TGetExecSummaryReq)
-    from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
-    from impala._thrift_gen.ExecStats.ttypes import TExecStats
-    ThriftClient = ImpalaHiveServer2Service.Client
-    from impala._thrift_gen.RuntimeProfile.ttypes import TRuntimeProfileFormat
+# import HS2 codegen objects
+from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
+ThriftClient = ImpalaHiveServer2Service.Client
 
-
-if six.PY3:
-    # When using python 3, import from thriftpy2 rather than thrift
-    from thriftpy2 import load
-    from thriftpy2.thrift import TClient, TApplicationException
-    # TODO: reenable cython
-    # from thriftpy2.protocol import TBinaryProtocol
-    from thriftpy2.protocol.binary import TBinaryProtocol  # noqa
-    from thriftpy2.transport import (TSocket, TTransportException, TTransportBase) # noqa
-    # TODO: reenable cython
-    # from thriftpy2.transport import TBufferedTransport
-    from thriftpy2.transport.buffered import TBufferedTransport  # noqa
-    thrift_dir = os.path.join(os.path.dirname(__file__), 'thrift')
-
-    # dynamically load the HS2 modules
-    # Put them under the impala module to avoid conflicts with PyHive and other packages
-    # (see #277).
-    ExecStats = load(os.path.join(thrift_dir, 'ExecStats.thrift'),
-                     include_dirs=[thrift_dir], module_name="impala.ExecStats_thrift")
-    TCLIService = load(os.path.join(thrift_dir, 'TCLIService.thrift'),
-                       include_dirs=[thrift_dir], module_name="impala.TCLIService_thrift")
-    ImpalaService = load(os.path.join(thrift_dir, 'ImpalaService.thrift'),
-                         include_dirs=[thrift_dir], module_name="impala.ImpalaService_thrift")
-    RuntimeProfile = load(os.path.join(thrift_dir, 'RuntimeProfile.thrift'),
-                          include_dirs=[thrift_dir], module_name="impala.RuntimeProfile_thrift")
-    sys.modules[ExecStats.__name__] = ExecStats
-    sys.modules[TCLIService.__name__] = TCLIService
-    sys.modules[ImpalaService.__name__] = ImpalaService
-    sys.modules[RuntimeProfile.__name__] = RuntimeProfile
-
-    # import the HS2 objects
-    from impala.TCLIService_thrift import (  # noqa
-        TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
-        TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
-        TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
-        TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
-        TGetOperationStatusReq, TOperationState, TCancelOperationReq,
-        TCloseOperationReq, TGetLogReq, TProtocolVersion)
-    from impala.ImpalaService_thrift import (  # noqa
-        TGetRuntimeProfileReq, TGetExecSummaryReq, ImpalaHiveServer2Service)
-    from impala.ExecStats_thrift import TExecStats  # noqa
-    from impala.RuntimeProfile_thrift import TRuntimeProfileFormat
-    ThriftClient = TClient
 
 # ImpalaHttpClient is copied from Impala Shell.
 # The implementations should be kept in sync as much as possible.
@@ -349,18 +292,11 @@ def get_socket(host, port, use_ssl, ca_cert):
               host, port, use_ssl, ca_cert)
 
     if use_ssl:
-        if six.PY2:
-            from thrift.transport.TSSLSocket import TSSLSocket
-            if ca_cert is None:
-                return TSSLSocket(host, port, validate=False)
-            else:
-                return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
+        from thrift.transport.TSSLSocket import TSSLSocket
+        if ca_cert is None:
+            return TSSLSocket(host, port, validate=False)
         else:
-            from thriftpy2.transport.sslsocket import TSSLSocket
-            if ca_cert is None:
-                return TSSLSocket(host, port, validate=False)
-            else:
-                return TSSLSocket(host, port, validate=True, cafile=ca_cert)
+            return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
     else:
         return TSocket(host, port)
 
@@ -428,6 +364,9 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
 
         transport.setGetCustomHeadersFunc(get_auth_headers)
 
+    # Without buffering Thrift would call socket.recv() each time it deserializes
+    # something (e.g. a member in a struct).
+    transport = TBufferedTransport(transport)
     return transport
 
 
@@ -462,24 +401,10 @@ def get_transport(socket, host, kerberos_service_name, auth_mechanism='NOSASL',
         auth_mechanism = 'PLAIN'  # sasl doesn't know mechanism LDAP
     # Initializes a sasl client
     from thrift_sasl import TSaslClientTransport
-    try:
-        import sasl  # pylint: disable=import-error
+    from impala.sasl_compat import PureSASLClient
 
-        def sasl_factory():
-            sasl_client = sasl.Client()
-            sasl_client.setAttr('host', host)
-            sasl_client.setAttr('service', kerberos_service_name)
-            if auth_mechanism.upper() in ['PLAIN', 'LDAP']:
-                sasl_client.setAttr('username', user)
-                sasl_client.setAttr('password', password)
-            sasl_client.init()
-            return sasl_client
-    except ImportError:
-        log.warn("Unable to import 'sasl'. Fallback to 'puresasl'.")
-        from impala.sasl_compat import PureSASLClient
-
-        def sasl_factory():
-            return PureSASLClient(host, username=user, password=password,
-                                  service=kerberos_service_name)
+    def sasl_factory():
+        return PureSASLClient(host, username=user, password=password,
+                              service=kerberos_service_name)
 
     return TSaslClientTransport(sasl_factory, auth_mechanism, socket)
