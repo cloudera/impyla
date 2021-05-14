@@ -248,7 +248,10 @@ class HiveServer2Cursor(Cursor):
         # multiple rows into a buffer if arraysize hasn't been set.  (otherwise, we'd
         # get an unbuffered impl because the PEP 249 default value of arraysize
         # is 1)
-        return self._buffersize if self._buffersize else 1024
+        # Impala's batch size is 1024 and older versions of Impala will not return
+        # more than 1024 rows in one fetch call. Using a bigger value (same as in
+        # impala-shell) is useful if result spooling is enabled in Impala.
+        return self._buffersize if self._buffersize else 10240
 
     @property
     def has_result_set(self):
