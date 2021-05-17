@@ -102,8 +102,11 @@ class ImpalaTypeCompiler(GenericTypeCompiler):
     def visit_DATETIME(self, type_):
         return 'TIMESTAMP'
 
-    visit_DATE = visit_DATETIME
     visit_TIME = visit_DATETIME
+
+    # Impala > 3.4.0 support the DATE type - https://issues.apache.org/jira/browse/IMPALA-6169
+    def visit_DATE(self, type_):
+        return 'DATE'
 
     def visit_TINYINT(self, type_):
         return 'TINYINT'
