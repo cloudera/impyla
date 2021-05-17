@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.17a7
+------
+* **Improvements**
+  - Speed up fetchmany() and fetchall()
+  - Avoid unnecessary GetOperationStatus RPCs
+  - Bump fetch size to 10240 (from 1024)
+
+* **Bug Fixes**
+  - Update setup.py: thrift-sasl is needed for ldap/plain authentication
+  - Hack to fix non-valid utf-8 stings handling in Python 3
+
 0.17a6
 ------
 * **Improvements**

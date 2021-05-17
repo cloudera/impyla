@@ -248,7 +248,10 @@ class HiveServer2Cursor(Cursor):
         # multiple rows into a buffer if arraysize hasn't been set.  (otherwise, we'd
         # get an unbuffered impl because the PEP 249 default value of arraysize
         # is 1)
-        return self._buffersize if self._buffersize else 1024
+        # Impala's batch size is 1024 and older versions of Impala will not return
+        # more than 1024 rows in one fetch call. Using a bigger value (same as in
+        # impala-shell) is useful if result spooling is enabled in Impala.
+        return self._buffersize if self._buffersize else 10240
 
     @property
     def has_result_set(self):
@@ -966,6 +969,11 @@ class CBatch(Batch):
                 to_append = ((len(values) - len(nulls) + 7) // 8)
                 is_null.frombytes(b'\x00' * to_append)
 
+            # STRING columns are read as binary and decoded here to be able to handle
+            # non-valid utf-8 strings in Python 3.
+            if six.PY3:
+                self._convert_strings_to_unicode(type_, is_null, values)
+
             if convert_types:
                 values = self._convert_values(type_, is_null, values)
 
@@ -984,6 +992,20 @@ class CBatch(Batch):
             for i in range(len(values)):
                 values[i] = (None if is_null[i] else _parse_date(values[i]))
         return values
+
+    def _convert_strings_to_unicode(self, type_, is_null, values):
+        if type_ in ["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "DECIMAL", "DATE", "NULL"]:
+            for i in range(len(values)):
+                if is_null[i]:
+                    values[i] = None
+                    continue
+                try:
+                    # Do similar handling of non-valid UTF-8 strings as Thriftpy2:
+                    # https://github.com/Thriftpy/thriftpy2/blob/8e218b3fd89c597c2e83d129efecfe4d280bdd89/thriftpy2/protocol/binary.py#L241
+                    # If decoding fails then keep the original bytearray.
+                    values[i] = values[i].decode("UTF-8")
+                except UnicodeDecodeError:
+                    pass
 
     def __len__(self):
         return self.remaining_rows
