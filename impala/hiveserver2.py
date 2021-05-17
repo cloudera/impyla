@@ -994,7 +994,7 @@ class CBatch(Batch):
         return values
 
     def _convert_strings_to_unicode(self, type_, is_null, values):
-        if type_ in ["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "DECIMAL", "DATE", "NULL"]:
+        if type_ in ["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "DECIMAL", "DATE", "TIMESTAMP", "NULL"]:
             for i in range(len(values)):
                 if is_null[i]:
                     values[i] = None
