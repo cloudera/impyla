@@ -89,14 +89,11 @@ class ImpalaTypeCompiler(GenericTypeCompiler):
     # pylint: disable=unused-argument
 
     # https://docs.cloudera.com/documentation/enterprise/6/6.3/topics/impala_porting.html
-    # Impala only supports the STRING type
-    def visit_VARCHAR(self, type_):
+    def visit_TEXT(self, type_):
         return 'STRING'
 
-    visit_NCHAR = visit_VARCHAR
-    visit_VARCHAR = visit_VARCHAR
-    visit_NVARCHAR = visit_VARCHAR
-    visit_TEXT = visit_VARCHAR
+    visit_NCHAR = visit_TEXT
+    visit_NVARCHAR = visit_TEXT
 
     # Impala only supports the TIMESTAMP type
     def visit_DATETIME(self, type_):
