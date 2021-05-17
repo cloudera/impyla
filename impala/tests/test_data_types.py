@@ -69,6 +69,32 @@ def test_date_basic(cur, date_table):
     results = cur.fetchall()
     assert results == [(datetime.date(1, 1, 1),), (datetime.date(1999, 9, 9),)]
 
+
+@yield_fixture(scope='module')
+def timestamp_table(cur):
+    table_name = 'tmp_timestamp_table'
+    ddl = """CREATE TABLE {0} (ts timestamp)""".format(table_name)
+    cur.execute(ddl)
+    try:
+        yield table_name
+    finally:
+        cur.execute("DROP TABLE {0}".format(table_name))
+
+
+@pytest.mark.connect
+def test_timestamp_basic(cur, timestamp_table):
+    """Insert and read back a couple of timestamp values in a wide range."""
+    cur.execute('''insert into {0}
+                   values (cast("1400-01-01 00:00:00" as timestamp)),
+                          (cast("2014-06-23 13:30:51" as timestamp)),
+                          (cast("9999-12-31 23:59:59" as timestamp))'''.format(timestamp_table))
+    cur.execute('select ts from {0} order by ts'.format(timestamp_table))
+    results = cur.fetchall()
+    assert results == [(datetime.datetime(1400, 1, 1, 0, 0),),
+                       (datetime.datetime(2014, 6, 23, 13, 30, 51),),
+                       (datetime.datetime(9999, 12, 31, 23, 59, 59),)]
+
+
 @pytest.mark.connect
 def test_utf8_strings(cur):
     """Use a string with multi byte unicode code points in a query."""
