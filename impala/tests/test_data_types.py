@@ -83,15 +83,21 @@ def timestamp_table(cur):
 
 @pytest.mark.connect
 def test_timestamp_basic(cur, timestamp_table):
-    """Insert and read back a couple of timestamp values in a wide range."""
+    """Insert and read back a few timestamp values in a wide range."""
     cur.execute('''insert into {0}
                    values (cast("1400-01-01 00:00:00" as timestamp)),
                           (cast("2014-06-23 13:30:51" as timestamp)),
+                          (cast("2014-06-23 13:30:51.123" as timestamp)),
+                          (cast("2014-06-23 13:30:51.123456" as timestamp)),
+                          (cast("2014-06-23 13:30:51.123456789" as timestamp)),
                           (cast("9999-12-31 23:59:59" as timestamp))'''.format(timestamp_table))
     cur.execute('select ts from {0} order by ts'.format(timestamp_table))
     results = cur.fetchall()
     assert results == [(datetime.datetime(1400, 1, 1, 0, 0),),
                        (datetime.datetime(2014, 6, 23, 13, 30, 51),),
+                       (datetime.datetime(2014, 6, 23, 13, 30, 51, 123000),),
+                       (datetime.datetime(2014, 6, 23, 13, 30, 51, 123456),),
+                       (datetime.datetime(2014, 6, 23, 13, 30, 51, 123456),),
                        (datetime.datetime(9999, 12, 31, 23, 59, 59),)]
 
 
