@@ -48,11 +48,11 @@ class STRING(String):
 
 
 class ImpalaDDLCompiler(DDLCompiler):
-    # Impala has no support for foreign keys.
+    # Omit support for foreign keys due to Impala's limited support - https://issues.apache.org/jira/browse/IMPALA-2112
     def visit_foreign_key_constraint(self, constraint):
         return None
 
-    # Impala has no support for primary keys.
+    # Omit support for primary keys due to Impala's limited support - https://issues.apache.org/jira/browse/IMPALA-2112
     def visit_primary_key_constraint(self, constraint):
         return None
 
