@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 # Copyright 2015 Cloudera Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +16,6 @@
 import datetime
 import pytest
 from pytest import yield_fixture
-
 
 @yield_fixture(scope='module')
 def decimal_table(cur):
@@ -68,3 +68,23 @@ def test_date_basic(cur, date_table):
     cur.execute('select d from {0} order by d'.format(date_table))
     results = cur.fetchall()
     assert results == [(datetime.date(1, 1, 1),), (datetime.date(1999, 9, 9),)]
+
+@pytest.mark.connect
+def test_utf8_strings(cur):
+    """Use a string with multi byte unicode code points in a query."""
+    cur.execute('select "引擎"')
+    result = cur.fetchone()[0]
+    assert result == "引擎"
+
+    # Tests returning strings that are not valid UTF-8.
+    # With Python 3 and Thrift 0.11.0 these tests needed TCLIService.thrift to be
+    # modified. Syncing thrift files from Hive/Impala is likely to break these tests.
+    cur.execute('select substr("引擎", 1, 4)')
+    result = cur.fetchone()[0]
+    assert result == b"\xe5\xbc\x95\xe6"
+    assert result.decode("UTF-8", "replace") == u"引�"
+
+    cur.execute('select unhex("AA")')
+    result = cur.fetchone()[0]
+    assert result == b"\xaa"
+    assert result.decode("UTF-8", "replace") == u"�"

@@ -1,6 +1,51 @@
 Changelog
 =========
 
+0.17a7
+------
+* **Improvements**
+  - Speed up fetchmany() and fetchall()
+  - Avoid unnecessary GetOperationStatus RPCs
+  - Bump fetch size to 10240 (from 1024)
+
+* **Bug Fixes**
+  - Update setup.py: thrift-sasl is needed for ldap/plain authentication
+  - Hack to fix non-valid utf-8 stings handling in Python 3
+
+0.17a6
+------
+* **Improvements**
+  - Unify Python 2 and 3 thrift handling and remove thriftpy2
+
+0.17a5
+------
+* **Improvements**
+  - Add buffering to hs2-http (#442)
+  - Remove references to 'sasl', always use 'pure-sasl' package
+
+0.17a4
+------
+* **Improvements**
+  - Switch to using manylinux2010 docker build environment
+  - Upgrade to thrift-sasl 0.4.3a2
+
+0.17a3
+------
+* **Bug Fixes**
+  - Add no_utf8strings to thrift compiler option (#440)
+
+0.17a2
+------
+* **Improvements**
+  - Implement simple retry which throws the underlying HttpError if retrying fails
+  - Ugprade Thift to 0.11.0 for Python 2
+  - Add build script
+
+* **Bug Fixes**
+  - Server certs should not be verified if SSL is enabled and ca_cert is not specified
+  - Added "fetchType" to TFetchResultsReq.
+  - Fix Thrift compilation with current Impala
+
 0.17a1
 ------
 * **Improvements**

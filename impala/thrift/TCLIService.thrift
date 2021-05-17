@@ -363,7 +363,10 @@ struct TDoubleColumn {
 }
 
 struct TStringColumn {
-  1: required list<string> values
+  // This was modified in Impyla (compared to Hive/Impala).
+  // Changed from list<binary> to list<string> to be able to do handle non-valid utf-8
+  // strings in Python 3.
+  1: required list<binary> values
   2: required binary nulls
 }
 
@@ -1058,6 +1061,9 @@ struct TFetchResultsReq {
   // Max number of rows that should be returned in
   // the rowset.
   3: required i64 maxRows
+
+  // The type of a fetch results request. 0 represents Query output. 1 represents Log
+  4: optional i16 fetchType = 0
 }
 
 struct TFetchResultsResp {

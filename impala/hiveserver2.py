@@ -26,17 +26,22 @@ import time
 from bitarray import bitarray
 from six.moves import range
 
+from thrift.transport.TTransport import TTransportException
+from thrift.Thrift import TApplicationException
+from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated
+from impala._thrift_gen.TCLIService.ttypes import (
+    TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
+    TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
+    TFetchOrientation, TGetResultSetMetadataReq, TStatusCode,
+    TGetColumnsReq, TGetSchemasReq, TGetTablesReq, TGetFunctionsReq,
+    TGetOperationStatusReq, TOperationState, TCancelOperationReq,
+    TCloseOperationReq, TGetLogReq, TProtocolVersion)
+from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
+    TGetRuntimeProfileReq, TGetExecSummaryReq)
 from impala._thrift_api import (
-    get_socket, get_http_transport, get_transport, TTransportException, TBinaryProtocol, TOpenSessionReq,
-    TFetchResultsReq,
-    TCloseSessionReq, TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
-    TFetchOrientation, TGetResultSetMetadataReq, TStatusCode, TGetColumnsReq,
-    TGetSchemasReq, TGetTablesReq, TGetFunctionsReq, TGetOperationStatusReq,
-    TOperationState, TCancelOperationReq, TCloseOperationReq, TGetLogReq,
-    TProtocolVersion, TGetRuntimeProfileReq, TRuntimeProfileFormat,
-    TGetExecSummaryReq, ImpalaHiveServer2Service, TExecStats, ThriftClient,
-    TApplicationException)
-from impala.compat import Decimal
+    get_socket, get_http_transport, get_transport, ThriftClient)
+from impala._thrift_gen.RuntimeProfile.ttypes import TRuntimeProfileFormat
+from impala.compat import (Decimal, _xrange as xrange)
 from impala.error import (NotSupportedError, OperationalError,
                           ProgrammingError, HiveServer2Error, HttpError)
 from impala.interface import Connection, Cursor, _bind_parameters
@@ -157,6 +162,7 @@ class HiveServer2Cursor(Cursor):
 
         self._last_operation_string = None
         self._last_operation_active = False
+        self._last_operation_finished = False
         self._buffersize = None
         self._buffer = Batch()  # zero-length
 
@@ -191,6 +197,8 @@ class HiveServer2Cursor(Cursor):
     @property
     def rowcount(self):
         # PEP 249
+        # Note that _rowcount will be always -1 as we do not know the number of rows
+        # until all rows are fetched from the query.
         return self._rowcount
 
     @property
@@ -236,11 +244,14 @@ class HiveServer2Cursor(Cursor):
     @property
     def buffersize(self):
         # this is for internal use.  it provides an alternate default value for
-        # the size of the buffer, so that calling .next() will read multiple
-        # rows into a buffer if arraysize hasn't been set.  (otherwise, we'd
+        # the size of the buffer, so that calling ._ensure_buffer_is_filled() will read
+        # multiple rows into a buffer if arraysize hasn't been set.  (otherwise, we'd
         # get an unbuffered impl because the PEP 249 default value of arraysize
         # is 1)
-        return self._buffersize if self._buffersize else 1024
+        # Impala's batch size is 1024 and older versions of Impala will not return
+        # more than 1024 rows in one fetch call. Using a bigger value (same as in
+        # impala-shell) is useful if result spooling is enabled in Impala.
+        return self._buffersize if self._buffersize else 10240
 
     @property
     def has_result_set(self):
@@ -300,6 +311,7 @@ class HiveServer2Cursor(Cursor):
             self._last_operation_active = False
 
             self._last_operation.close()
+        self._last_operation_finished = False
         self._last_operation_string = None
         self._last_operation = None
 
@@ -399,6 +411,8 @@ class HiveServer2Cursor(Cursor):
         # Prior to IMPALA-1633 GetOperationStatus does not populate errorMessage
         # in case of failure. If not populated, queries that return results
         # can get a failure description with a further call to FetchResults rpc.
+        if self._last_operation_finished:
+            return
         loop_start = time.time()
         while True:
             req = TGetOperationStatusReq(operationHandle=self._last_operation.handle)
@@ -418,6 +432,7 @@ class HiveServer2Cursor(Cursor):
                     else:
                         raise OperationalError("Operation is in ERROR_STATE")
             if not self._op_state_is_executing(operation_state):
+                self._last_operation_finished = True
                 break
             time.sleep(self._get_sleep_interval(loop_start))
 
@@ -509,7 +524,6 @@ class HiveServer2Cursor(Cursor):
         else:
            return None
 
-
     def fetchmany(self, size=None):
         # PEP 249
         self._wait_to_finish()
@@ -519,11 +533,12 @@ class HiveServer2Cursor(Cursor):
             size = self.arraysize
         log.debug('Fetching up to %s result rows', size)
         local_buffer = []
-        i = 0
-        while i < size:
+        while size > 0:
             try:
-                local_buffer.append(next(self))
-                i += 1
+                elements = self._pop_from_buffer(size)
+                local_buffer.extend(elements)
+                size -= len(elements)
+                assert size >= 0
             except StopIteration:
                 break
         return local_buffer
@@ -532,10 +547,14 @@ class HiveServer2Cursor(Cursor):
         # PEP 249
         self._wait_to_finish()
         log.debug('Fetching all result rows')
-        try:
-            return list(self)
-        except StopIteration:
-            return []
+        local_buffer = []
+        while True:
+            try:
+                elements = self._pop_from_buffer(self.buffersize)
+                local_buffer.extend(elements)
+            except StopIteration:
+                break
+        return local_buffer
 
     def fetchcolumnar(self):
         """Executes a fetchall operation returning a list of CBatches"""
@@ -569,29 +588,37 @@ class HiveServer2Cursor(Cursor):
         return self.__next__()
 
     def __next__(self):
+        self._ensure_buffer_is_filled()
+        log.debug('__next__: popping row out of buffer')
+        return self._buffer.pop()
+
+    def _ensure_buffer_is_filled(self):
         while True:
             if not self.has_result_set:
                 raise ProgrammingError(
                     "Trying to fetch results on an operation with no results.")
             if len(self._buffer) > 0:
-                log.debug('__next__: popping row out of buffer')
-                return self._buffer.pop()
+                return
             elif self._last_operation_active:
-                log.debug('__next__: buffer empty and op is active => fetching '
-                          'more data')
+                log.debug('_ensure_buffer_is_filled: buffer empty and op is active '
+                          '=> fetching more data')
                 self._buffer = self._last_operation.fetch(self.description,
                                                           self.buffersize,
                                                           convert_types=self.convert_types)
                 if len(self._buffer) > 0:
-                  log.debug('__next__: popping row out of buffer')
-                  return self._buffer.pop()
+                    return
                 if not self._buffer.expect_more_rows:
-                    log.debug('__next__: no more data to fetch')
+                    log.debug('_ensure_buffer_is_filled: no more data to fetch')
                     raise StopIteration
                 # If we didn't get rows, but more are expected, need to iterate again.
             else:
-                log.debug('__next__: buffer empty')
+                log.debug('_ensure_buffer_is_filled: buffer empty')
                 raise StopIteration
+
+    def _pop_from_buffer(self, size):
+        self._ensure_buffer_is_filled()
+        log.debug('pop_from_buffer: popping row out of buffer')
+        return self._buffer.pop_many(size)
 
     def ping(self):
         """Checks connection to server by requesting some info."""
@@ -697,6 +724,10 @@ class HiveServer2DictCursor(HiveServer2Cursor):
     def __next__(self):
         record = super(self.__class__, self).__next__()
         return dict(zip(self.fields, record))
+
+    def _pop_from_buffer(self, size):
+        records = super(self.__class__, self)._pop_from_buffer(size)
+        return [dict(zip(self.fields, record)) for record in records]
 
 
 # This work builds off of:
@@ -823,27 +854,14 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
 
         if timeout is not None:
             timeout = timeout * 1000.  # TSocket expects millis
-        if six.PY2:
-            sock.setTimeout(timeout)
-        elif six.PY3:
-            try:
-                # thriftpy has a release where set_timeout is missing
-                sock.set_timeout(timeout)
-            except AttributeError:
-                sock.socket_timeout = timeout
-                sock.connect_timeout = timeout
+        sock.setTimeout(timeout)
         log.debug('sock=%s', sock)
         transport = get_transport(sock, kerberos_host, kerberos_service_name,
                                 auth_mechanism, user, password)
 
     transport.open()
-    protocol = TBinaryProtocol(transport)
-    if six.PY2:
-        # ThriftClient == ImpalaHiveServer2Service.Client
-        service = ThriftClient(protocol)
-    elif six.PY3:
-        # ThriftClient == TClient
-        service = ThriftClient(ImpalaHiveServer2Service, protocol)
+    protocol = TBinaryProtocolAccelerated(transport)
+    service = ThriftClient(protocol)
     log.debug('transport=%s protocol=%s service=%s', transport, protocol,
               service)
 
@@ -909,6 +927,19 @@ class Column(object):
         value = self.values[pos]
         return value
 
+    def pop_to_preallocated_list(self, output_list, count, offset=0, stride=1):
+        """ Tries to pop 'count' values and write them to every 'stride'th element of
+            'output_list' starting with 'offset'.
+            Returns the number of values popped.
+        """
+        count = min(count, self.rows_left)
+        start_pos = self.num_rows - self.rows_left
+        self.rows_left -= count
+        for pos in xrange(start_pos, start_pos + count):
+            output_list[offset] = None if self.nulls[pos] else self.values[pos]
+            offset += stride
+        return count
+
 
 class CBatch(Batch):
 
@@ -919,6 +950,7 @@ class CBatch(Batch):
                  for (i, col) in enumerate(trowset.columns)]
         num_cols = len(tcols)
         num_rows = len(tcols[0].values)
+        self.remaining_rows = num_rows
 
         log.debug('CBatch: input TRowSet num_cols=%s num_rows=%s tcols=%s',
                   num_cols, num_rows, tcols)
@@ -929,10 +961,6 @@ class CBatch(Batch):
             nulls = tcols[j].nulls
             values = tcols[j].values
 
-            # thriftpy sometimes returns unicode instead of bytes
-            if six.PY3 and isinstance(nulls, str):
-                nulls = nulls.encode('utf-8')
-
             is_null = bitarray(endian='little')
             is_null.frombytes(nulls)
 
@@ -940,6 +968,11 @@ class CBatch(Batch):
             if len(values) > len(nulls):
                 to_append = ((len(values) - len(nulls) + 7) // 8)
                 is_null.frombytes(b'\x00' * to_append)
+
+            # STRING columns are read as binary and decoded here to be able to handle
+            # non-valid utf-8 strings in Python 3.
+            if six.PY3:
+                self._convert_strings_to_unicode(type_, is_null, values)
 
             if convert_types:
                 values = self._convert_values(type_, is_null, values)
@@ -960,15 +993,47 @@ class CBatch(Batch):
                 values[i] = (None if is_null[i] else _parse_date(values[i]))
         return values
 
+    def _convert_strings_to_unicode(self, type_, is_null, values):
+        if type_ in ["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "DECIMAL", "DATE", "NULL"]:
+            for i in range(len(values)):
+                if is_null[i]:
+                    values[i] = None
+                    continue
+                try:
+                    # Do similar handling of non-valid UTF-8 strings as Thriftpy2:
+                    # https://github.com/Thriftpy/thriftpy2/blob/8e218b3fd89c597c2e83d129efecfe4d280bdd89/thriftpy2/protocol/binary.py#L241
+                    # If decoding fails then keep the original bytearray.
+                    values[i] = values[i].decode("UTF-8")
+                except UnicodeDecodeError:
+                    pass
+
     def __len__(self):
-        return len(self.columns[0]) if len(self.columns) > 0 else 0
+        return self.remaining_rows
 
     def pop(self):
+        self.remaining_rows -= 1
         return tuple([c.pop() for c in self.columns])
 
     def __str__(self):
         col_string = ','.join([str(col) for col in self.columns])
         return 'CBatch({0})'.format(col_string)
+
+    def pop_many(self, row_count):
+        """Returns a list of tuples with min('row_count', rows in batch) elements."""
+        row_count = min(row_count, self.remaining_rows)
+        self.remaining_rows -= row_count
+        col_count = len(self.columns)
+        # 'dataset' holds all rows x columns in list in row major order.
+        # The transposition of columnar data is done by writing 'dataset' per-column
+        # and then returning it per-row.
+        dataset = [None] * (col_count * row_count)
+        for col_id, col in enumerate(self.columns):
+            rows_returned = col.pop_to_preallocated_list(
+                dataset, row_count, offset=col_id, stride=col_count)
+            assert row_count == rows_returned
+        # Split 'dataset' to 'col_count' sized sublists and create tuples from them.
+        return [tuple(dataset[i * col_count: (i + 1) * col_count])
+                for i in xrange(row_count)]
 
 
 class RBatch(Batch):
@@ -994,7 +1059,14 @@ class RBatch(Batch):
         return len(self.rows)
 
     def pop(self):
+        # TODO: this looks extremely inefficient
         return self.rows.pop(0)
+
+    def pop_many(self, row_count):
+        row_count = min(row_count, len(self.rows))
+        result = self.rows[:row_count]
+        self.rows = self.rows[row_count:]
+        return result
 
 
 class ThriftRPC(object):
@@ -1082,18 +1154,9 @@ class ThriftRPC(object):
 
 def open_transport(transport):
     """
-    Open transport, accounting for API differences between thrift versus thriftpy2,
-    as well as TBufferedTransport versus THttpClient.
+    Open transport if needed.
     """
-    # python2 and thrift, or any THttpClient
-    if 'isOpen' in dir(transport):
-        transport_is_open = transport.isOpen()
-
-    # python3 and thriftpy2 (for TBufferedTransport only)
-    if 'is_open' in dir(transport):
-        transport_is_open = transport.is_open()
-
-    if not transport_is_open:
+    if not transport.isOpen():
         transport.open()
 
 
@@ -1337,6 +1400,7 @@ class Operation(ThriftRPC):
             return CBatch(results, expect_more_rows, schema, convert_types=convert_types)
         else:
             log.debug('fetch_results: constructing RBatch')
+            # TODO: RBatch ignores 'convert_types'
             return RBatch(results, expect_more_rows, schema)
 
     @property

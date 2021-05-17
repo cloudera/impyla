@@ -79,7 +79,7 @@ conda info -a
 CONDA_ENV_NAME=pyenv-impyla-dbapi-test
 conda create -y -q -n $CONDA_ENV_NAME python=$PYTHON_VERSION pip
 source activate $CONDA_ENV_NAME
-pip install thriftpy2 sqlalchemy
+pip install sqlalchemy
 pip install unittest2 pytest-cov
 
 # build impyla

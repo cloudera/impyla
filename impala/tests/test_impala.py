@@ -14,13 +14,10 @@
 import sys
 
 import pytest
+from impala.compat import _xrange as xrange
 from pytest import yield_fixture
 
 BIGGER_TABLE_NUM_ROWS = 100
-
-if sys.version_info >= (3, 0):
-    def xrange(*args, **kwargs):
-        return iter(range(*args, **kwargs))
 
 @yield_fixture(scope='module')
 def bigger_table(cur):
