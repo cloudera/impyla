@@ -194,8 +194,14 @@ class ImpalaDialect(DefaultDialect):
     def get_table_names(self, connection, schema=None, **kw):
         query = 'SHOW TABLES'
         if schema is not None:
-            query += ' IN %s' % schema
-        return [tup[0] for tup in connection.execute(query).fetchall()]
+            escaped_schema = re.sub(r"^[\`]{1,}|[\`]{1,}$", '', schema)
+            escaped_schema = re.sub(r"^|$", '`', escaped_schema)
+            query += ' IN %s' % escaped_schema
+        tables = [
+            tup[1] if len(tup) > 1 else tup[0]
+            for tup in connection.execute(query).fetchall()
+        ]
+        return tables
 
     def get_schema_names(self, connection, **kw):
         rp = connection.execute("SHOW SCHEMAS")
