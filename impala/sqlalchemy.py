@@ -95,15 +95,14 @@ class ImpalaTypeCompiler(GenericTypeCompiler):
     visit_NCHAR = visit_TEXT
     visit_NVARCHAR = visit_TEXT
 
-    # Impala only supports the TIMESTAMP type
     def visit_DATETIME(self, type_):
         return 'TIMESTAMP'
 
+    # Most Impala versions only support the TIMESTAMP type
+    # TODO Impala > 3.4.0 supports the DATE type - https://issues.apache.org/jira/browse/IMPALA-6169
+    #      A future improvement would be to introduce an additional impala4 dialect that supports DATE
     visit_TIME = visit_DATETIME
-
-    # Impala > 3.4.0 support the DATE type - https://issues.apache.org/jira/browse/IMPALA-6169
-    def visit_DATE(self, type_):
-        return 'DATE'
+    visit_DATE = visit_DATETIME
 
     def visit_TINYINT(self, type_):
         return 'TINYINT'
