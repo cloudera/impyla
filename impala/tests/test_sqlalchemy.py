@@ -47,7 +47,7 @@ def test_sqlalchemy_compilation():
                     })
     observed = str(CreateTable(mytable, bind=engine))
     expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
-                '\n\tcol3 INT, \n\tcol4 DOUBLE, \n\tcol5 DATE, \n\tcol6 VARCHAR(10)\n)'
+                '\n\tcol3 INT, \n\tcol4 DOUBLE, \n\tcol5 TIMESTAMP, \n\tcol6 VARCHAR(10)\n)'
                 '\nPARTITION BY HASH PARTITIONS 16\nSTORED AS KUDU\n'
                 "TBLPROPERTIES ('kudu.table_name' = 'my_kudu_table', "
                 "'kudu.master_addresses' = 'kudu-master.example.com:7051')\n\n")
