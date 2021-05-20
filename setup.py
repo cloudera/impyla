@@ -61,5 +61,7 @@ setup(
         'Programming Language :: Python :: 3.9'
     ],
     entry_points={
-        'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect']},
+        'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect',
+                                'impala4 = impala.sqlalchemy:Impala4Dialect']
+    },
     zip_safe=False)

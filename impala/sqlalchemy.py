@@ -29,6 +29,7 @@ from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
 
 
 registry.register('impala', 'impala.sqlalchemy', 'ImpalaDialect')
+registry.register('impala4', 'impala.sqlalchemy', 'Impala4Dialect')
 
 
 class TINYINT(Integer):
@@ -85,6 +86,7 @@ class ImpalaDDLCompiler(DDLCompiler):
         return '\n%s' % '\n'.join(table_opts)
 
 
+# Impala type compiler for Impala <= 3.4.0
 class ImpalaTypeCompiler(GenericTypeCompiler):
     # pylint: disable=unused-argument
 
@@ -98,9 +100,7 @@ class ImpalaTypeCompiler(GenericTypeCompiler):
     def visit_DATETIME(self, type_):
         return 'TIMESTAMP'
 
-    # Most Impala versions only support the TIMESTAMP type
-    # TODO Impala > 3.4.0 supports the DATE type - https://issues.apache.org/jira/browse/IMPALA-6169
-    #      A future improvement would be to introduce an additional impala4 dialect that supports DATE
+    # Impala <= 3.4.0 only supports the TIMESTAMP type
     visit_TIME = visit_DATETIME
     visit_DATE = visit_DATETIME
 
@@ -116,6 +116,12 @@ class ImpalaTypeCompiler(GenericTypeCompiler):
     def visit_STRING(self, type_):
         return 'STRING'
 
+
+# Impala type compiler for Impala >= 4.0
+class Impala4TypeCompiler(ImpalaTypeCompiler):
+    # Impala >= 4.0 supports the DATE type - https://issues.apache.org/jira/browse/IMPALA-6169
+    def visit_DATE(self, type_):
+        return 'DATE'
 
 class ImpalaIdentifierPreparer(IdentifierPreparer):
     # https://github.com/cloudera/Impala/blob/master/fe/src/main/jflex/sql-scanner.flex
@@ -175,6 +181,7 @@ class ImpalaExecutionContext(DefaultExecutionContext):
            return self._dbapi_connection.cursor(configuration=cursor_configuration)
 
 
+# Dialect to be used with Impala <= 3.4.0
 class ImpalaDialect(DefaultDialect):
     name = 'impala'
     driver = 'impala'
@@ -278,3 +285,10 @@ class ImpalaDialect(DefaultDialect):
     def do_rollback(self, dbapi_connection):
         # no transactions in impala
         pass
+
+
+# Dialect to be used with Impala >= 4.0
+class Impala4Dialect(ImpalaDialect):
+    name = 'impala4'
+    driver = 'impala4'
+    type_compiler = Impala4TypeCompiler
