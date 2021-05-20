@@ -48,10 +48,28 @@ class STRING(String):
 
 
 class ImpalaDDLCompiler(DDLCompiler):
+    # Omit support for foreign keys due to Impala's limited support - https://issues.apache.org/jira/browse/IMPALA-2112
+    def visit_foreign_key_constraint(self, constraint):
+        return None
+
+    # Omit support for primary keys due to Impala's limited support - https://issues.apache.org/jira/browse/IMPALA-2112
+    def visit_primary_key_constraint(self, constraint):
+        return None
+
+    def get_column_specification(self, column, **kwargs):
+        column.nullable = True  # Prevent adding NOT NULL constraints; since all columns in Impala are nullable
+        colspec = super(ImpalaDDLCompiler, self).get_column_specification(
+            column, **kwargs
+        )
+        return colspec
+
     def post_create_table(self, table):
         """Build table-level CREATE options."""
 
         table_opts = []
+
+        if 'impala_partitioned_by' in table.kwargs:
+            table_opts.append('PARTITIONED BY %s' % table.kwargs.get('impala_partitioned_by'))
 
         if 'impala_partition_by' in table.kwargs:
             table_opts.append('PARTITION BY %s' % table.kwargs.get('impala_partition_by'))
@@ -69,6 +87,22 @@ class ImpalaDDLCompiler(DDLCompiler):
 
 class ImpalaTypeCompiler(GenericTypeCompiler):
     # pylint: disable=unused-argument
+
+    # https://docs.cloudera.com/documentation/enterprise/6/6.3/topics/impala_porting.html
+    def visit_TEXT(self, type_):
+        return 'STRING'
+
+    visit_NCHAR = visit_TEXT
+    visit_NVARCHAR = visit_TEXT
+
+    def visit_DATETIME(self, type_):
+        return 'TIMESTAMP'
+
+    # Most Impala versions only support the TIMESTAMP type
+    # TODO Impala > 3.4.0 supports the DATE type - https://issues.apache.org/jira/browse/IMPALA-6169
+    #      A future improvement would be to introduce an additional impala4 dialect that supports DATE
+    visit_TIME = visit_DATETIME
+    visit_DATE = visit_DATETIME
 
     def visit_TINYINT(self, type_):
         return 'TINYINT'
