@@ -23,11 +23,11 @@ from impala.tests.util import ImpylaTestEnv
 
 TEST_ENV = ImpylaTestEnv()
 
-def create_test_engine():
-   return create_engine('impala://{0}:{1}'.format(TEST_ENV.host, TEST_ENV.port))
 
+def test_sqlalchemy_impala_compilation():
+    def create_test_engine():
+        return create_engine('impala://{0}:{1}'.format(TEST_ENV.host, TEST_ENV.port))
 
-def test_sqlalchemy_compilation():
     engine = create_test_engine()
     metadata = MetaData(engine)
     # TODO: add other types to this table (e.g., functional.all_types)
@@ -39,16 +39,47 @@ def test_sqlalchemy_compilation():
                     Column('col4', DOUBLE),
                     Column('col5', DATE),
                     Column('col6', VARCHAR(10)),
-                    impala_partition_by='HASH PARTITIONS 16',
-                    impala_stored_as='KUDU',
+                    impala_partitioned_by='(part_col STRING)',
+                    impala_stored_as='PARQUET',
                     impala_table_properties={
-                        'kudu.table_name': 'my_kudu_table',
-                        'kudu.master_addresses': 'kudu-master.example.com:7051'
+                        'transactional': 'true',
+                        'transactional_properties': 'insert_only'
                     })
     observed = str(CreateTable(mytable, bind=engine))
+    # The DATE column type of 'col5' will be replaced with TIMESTAMP.
     expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
                 '\n\tcol3 INT, \n\tcol4 DOUBLE, \n\tcol5 TIMESTAMP, \n\tcol6 VARCHAR(10)\n)'
-                '\nPARTITION BY HASH PARTITIONS 16\nSTORED AS KUDU\n'
-                "TBLPROPERTIES ('kudu.table_name' = 'my_kudu_table', "
-                "'kudu.master_addresses' = 'kudu-master.example.com:7051')\n\n")
+                '\nPARTITIONED BY (part_col STRING)\nSTORED AS PARQUET\n'
+                "TBLPROPERTIES ('transactional' = 'true', "
+                "'transactional_properties' = 'insert_only')\n\n")
+    assert expected == observed
+
+def test_sqlalchemy_impala4_compilation():
+    def create_test_engine():
+        return create_engine('impala4://{0}:{1}'.format(TEST_ENV.host, TEST_ENV.port))
+
+    engine = create_test_engine()
+    metadata = MetaData(engine)
+    # TODO: add other types to this table (e.g., functional.all_types)
+    mytable = Table("mytable",
+                    metadata,
+                    Column('col1', STRING),
+                    Column('col2', TINYINT),
+                    Column('col3', INT),
+                    Column('col4', DOUBLE),
+                    Column('col5', DATE),
+                    Column('col6', VARCHAR(10)),
+                    impala_partitioned_by='(part_col STRING)',
+                    impala_stored_as='PARQUET',
+                    impala_table_properties={
+                        'transactional': 'true',
+                        'transactional_properties': 'insert_only'
+                    })
+    observed = str(CreateTable(mytable, bind=engine))
+    # The DATE column type of 'col5' will be left as is.
+    expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
+                '\n\tcol3 INT, \n\tcol4 DOUBLE, \n\tcol5 DATE, \n\tcol6 VARCHAR(10)\n)'
+                '\nPARTITIONED BY (part_col STRING)\nSTORED AS PARQUET\n'
+                "TBLPROPERTIES ('transactional' = 'true', "
+                "'transactional_properties' = 'insert_only')\n\n")
     assert expected == observed
