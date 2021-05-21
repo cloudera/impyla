@@ -39,18 +39,19 @@ def test_sqlalchemy_impala_compilation():
                     Column('col4', DOUBLE),
                     Column('col5', DATE),
                     Column('col6', VARCHAR(10)),
-                    impala_partition_by='HASH PARTITIONS 16',
-                    impala_stored_as='KUDU',
+                    impala_partitioned_by='HASH PARTITIONS 16',
+                    impala_stored_as='PARQUET',
                     impala_table_properties={
-                        'kudu.table_name': 'my_kudu_table',
-                        'kudu.master_addresses': 'kudu-master.example.com:7051'
+                        'transactional': 'true',
+                        'transactional_properties': 'insert_only'
                     })
     observed = str(CreateTable(mytable, bind=engine))
+    # The DATE column type of 'col5' will be replaced with TIMESTAMP.
     expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
                 '\n\tcol3 INT, \n\tcol4 DOUBLE, \n\tcol5 TIMESTAMP, \n\tcol6 VARCHAR(10)\n)'
-                '\nPARTITION BY HASH PARTITIONS 16\nSTORED AS KUDU\n'
-                "TBLPROPERTIES ('kudu.table_name' = 'my_kudu_table', "
-                "'kudu.master_addresses' = 'kudu-master.example.com:7051')\n\n")
+                '\nPARTITIONED BY HASH PARTITIONS 16\nSTORED AS PARQUET\n'
+                "TBLPROPERTIES ('transactional' = 'true', "
+                "'transactional_properties' = 'insert_only')\n\n")
     assert expected == observed
 
 def test_sqlalchemy_impala4_compilation():
@@ -68,16 +69,17 @@ def test_sqlalchemy_impala4_compilation():
                     Column('col4', DOUBLE),
                     Column('col5', DATE),
                     Column('col6', VARCHAR(10)),
-                    impala_partition_by='HASH PARTITIONS 16',
-                    impala_stored_as='KUDU',
+                    impala_partitioned_by='HASH PARTITIONS 16',
+                    impala_stored_as='PARQUET',
                     impala_table_properties={
-                        'kudu.table_name': 'my_kudu_table',
-                        'kudu.master_addresses': 'kudu-master.example.com:7051'
+                        'transactional': 'true',
+                        'transactional_properties': 'insert_only'
                     })
     observed = str(CreateTable(mytable, bind=engine))
+    # The DATE column type of 'col5' will be left as is.
     expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
                 '\n\tcol3 INT, \n\tcol4 DOUBLE, \n\tcol5 DATE, \n\tcol6 VARCHAR(10)\n)'
-                '\nPARTITION BY HASH PARTITIONS 16\nSTORED AS KUDU\n'
-                "TBLPROPERTIES ('kudu.table_name' = 'my_kudu_table', "
-                "'kudu.master_addresses' = 'kudu-master.example.com:7051')\n\n")
+                '\nPARTITIONED BY HASH PARTITIONS 16\nSTORED AS PARQUET\n'
+                "TBLPROPERTIES ('transactional' = 'true', "
+                "'transactional_properties' = 'insert_only')\n\n")
     assert expected == observed

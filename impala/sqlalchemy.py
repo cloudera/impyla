@@ -81,7 +81,7 @@ class ImpalaDDLCompiler(DDLCompiler):
         if 'impala_table_properties' in table.kwargs:
             table_properties = ["'{0}' = '{1}'".format(property_, value)
                                 for property_, value
-                                in table.kwargs.get('impala_table_properties', {}).items()]
+                                in sorted(table.kwargs.get('impala_table_properties', {}).items())]
             table_opts.append('TBLPROPERTIES (%s)' % ', '.join(table_properties))
         return '\n%s' % '\n'.join(table_opts)
 
