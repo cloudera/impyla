@@ -39,7 +39,7 @@ def test_sqlalchemy_impala_compilation():
                     Column('col4', DOUBLE),
                     Column('col5', DATE),
                     Column('col6', VARCHAR(10)),
-                    impala_partitioned_by='HASH PARTITIONS 16',
+                    impala_partitioned_by='(part_col STRING)',
                     impala_stored_as='PARQUET',
                     impala_table_properties={
                         'transactional': 'true',
@@ -49,7 +49,7 @@ def test_sqlalchemy_impala_compilation():
     # The DATE column type of 'col5' will be replaced with TIMESTAMP.
     expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
                 '\n\tcol3 INT, \n\tcol4 DOUBLE, \n\tcol5 TIMESTAMP, \n\tcol6 VARCHAR(10)\n)'
-                '\nPARTITIONED BY HASH PARTITIONS 16\nSTORED AS PARQUET\n'
+                '\nPARTITIONED BY (part_col STRING)\nSTORED AS PARQUET\n'
                 "TBLPROPERTIES ('transactional' = 'true', "
                 "'transactional_properties' = 'insert_only')\n\n")
     assert expected == observed
@@ -69,7 +69,7 @@ def test_sqlalchemy_impala4_compilation():
                     Column('col4', DOUBLE),
                     Column('col5', DATE),
                     Column('col6', VARCHAR(10)),
-                    impala_partitioned_by='HASH PARTITIONS 16',
+                    impala_partitioned_by='(part_col STRING)',
                     impala_stored_as='PARQUET',
                     impala_table_properties={
                         'transactional': 'true',
@@ -79,7 +79,7 @@ def test_sqlalchemy_impala4_compilation():
     # The DATE column type of 'col5' will be left as is.
     expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
                 '\n\tcol3 INT, \n\tcol4 DOUBLE, \n\tcol5 DATE, \n\tcol6 VARCHAR(10)\n)'
-                '\nPARTITIONED BY HASH PARTITIONS 16\nSTORED AS PARQUET\n'
+                '\nPARTITIONED BY (part_col STRING)\nSTORED AS PARQUET\n'
                 "TBLPROPERTIES ('transactional' = 'true', "
                 "'transactional_properties' = 'insert_only')\n\n")
     assert expected == observed
