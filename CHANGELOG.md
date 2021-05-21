@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.17a8
+------
+* **Improvements**
+  - Fix schema description returns for HiveServer2 when using dot in naming convention.
+  - Extensions to SQLAlchemy ImpalaDLLCompiler to support Alembic schema migrations 
+  - Add impala4 sqlalchemy dialect for Impala >= 4.0 
+
+* **Bug Fixes**
+  - Fix regression in #445 (non-valid utf-8 strings handling in Python 3) 
+
 0.17a7
 ------
 * **Improvements**
