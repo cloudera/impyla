@@ -26,18 +26,18 @@ experience
 
 Required:
 
-* Python 2.6+ or 3.3+
+* Python 2.7+ or 3.5+
 
 * `six`, `bitarray`
 
 * `thrift==0.11.0`
 
+* `thrift_sasl==0.4.3`
+
 Optional:
 
-* `thrift_sasl==0.4.2` for hive and/or Kerberos support. This also requires a SASL
-   library to be installed on your system - see [System SASL](#system-sasl)
-
-* `kerberos>=1.3.0` for Kerberos over HTTP support.
+* `kerberos>=1.3.0` for Kerberos over HTTP support. This also requires Kerberos libraries
+   to be installed on your system - see [System Kerberos](#system-kerberos)
 
 * `pandas` for conversion to `DataFrame` objects; but see the [Ibis project][ibis] instead
 
@@ -46,19 +46,19 @@ Optional:
 * `pytest` for running tests; `unittest2` for testing on Python 2.6
 
 
-#### System SASL
-Different systems require different packages to be installed to enable SASL support
-in Impyla. Some examples of how to install the packages on different distributions
-follow.
+#### System Kerberos
+
+Different systems require different packages to be installed to enable Kerberos support in
+Impyla. Some examples of how to install the packages on different distributions follow.
 
 Ubuntu:
 ```bash
-apt-get install libsasl2-dev libsasl2-2 libsasl2-modules-gssapi-mit
+apt-get install libkrb5-dev krb5-user
 ```
 
 RHEL/CentOS:
 ```bash
-yum install cyrus-sasl-md5 cyrus-sasl-plain cyrus-sasl-gssapi cyrus-sasl-devel
+yum install krb5-libs krb5-devel krb5-server krb5-workstation
 ```
 
 ### Installation

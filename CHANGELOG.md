@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.17.0
+------
+* **Improvements**
+  -  Upgrade to thrift-sasl 0.4.3
+
 0.17a8
 ------
 * **Improvements**
