@@ -103,18 +103,18 @@ def test_timestamp_basic(cur, timestamp_table):
 
 @pytest.mark.connect
 def test_utf8_strings(cur):
-    """Use a string with multi byte unicode code points in a query."""
-    cur.execute('select "引擎"')
-    result = cur.fetchone()[0]
-    assert result == "引擎"
+    """Use STRING/VARCHAR/CHAR values  with multi byte unicode code points in a query."""
+    cur.execute('select "引擎", cast("引擎" as varchar(6)), cast("引擎" as char(6))')
+    result = cur.fetchone()
+    assert result == ("引擎",) * 3
 
-    # Tests returning strings that are not valid UTF-8.
+    # Tests returning STRING/VARCHAR/CHAR strings that are not valid UTF-8.
     # With Python 3 and Thrift 0.11.0 these tests needed TCLIService.thrift to be
     # modified. Syncing thrift files from Hive/Impala is likely to break these tests.
-    cur.execute('select substr("引擎", 1, 4)')
-    result = cur.fetchone()[0]
-    assert result == b"\xe5\xbc\x95\xe6"
-    assert result.decode("UTF-8", "replace") == u"引�"
+    cur.execute('select substr("引擎", 1, 4), cast("引擎" as varchar(4)), cast("引擎" as char(4))')
+    result = cur.fetchone()
+    assert result == (b"\xe5\xbc\x95\xe6",) * 3
+    assert result[0].decode("UTF-8", "replace") == u"引�"
 
     cur.execute('select unhex("AA")')
     result = cur.fetchone()[0]
