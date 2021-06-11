@@ -1342,7 +1342,8 @@ class Operation(ThriftRPC):
                                    fetchType=1)
             resp = self._rpc('FetchResults', req, False)
             schema = [('Log', 'STRING', None, None, None, None, None)]
-            log = self._wrap_results(resp.results, schema, convert_types=True)
+            log = self._wrap_results(resp.results, resp.hasMoreRows, schema,
+                                     convert_types=True)
             log = '\n'.join(l[0] for l in log)
         return log
 
