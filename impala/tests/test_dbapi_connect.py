@@ -34,6 +34,11 @@ ENV = ImpylaTestEnv()
 DEFAULT_AUTH = True
 DEFAULT_AUTH_ERROR = "Non-default authorization method"
 
+# JWT tests require the Impala coordinator to have the following startup flags:
+# --jwt_token_auth=true --jwt_validate_signature=false --jwt_allow_without_tls=true
+JWT_DISABLED = True
+JWT_DISABLED_ERROR = "JWT authentication disabled"
+
 
 class ImpalaConnectionTests(unittest.TestCase):
 
@@ -61,6 +66,23 @@ class ImpalaConnectionTests(unittest.TestCase):
             con.commit()
         except:
             raise
+
+    def _execute_query_get_username(self, con):
+        query = "select user()"
+        username_rows = None
+        try:
+            cur = con.cursor()
+            cur.execute(query)
+            username_rows = cur.fetchall()
+        except:
+            raise
+
+        # Expecting the username as a single row with single column
+        assert(username_rows is not None)
+        assert(len(username_rows) == 1)
+        assert(len(username_rows[0]) == 1)
+        username = username_rows[0][0]
+        return username
 
     def test_impala_nosasl_connect(self):
         self.connection = connect(ENV.host, ENV.port, timeout=5)
@@ -95,6 +117,51 @@ class ImpalaConnectionTests(unittest.TestCase):
             assert False, "should have got exception"
         except NotSupportedError as e:
             assert 'Unsupported authentication mechanism: FOO' in str(e)
+
+
+    @pytest.mark.skipif(JWT_DISABLED, reason=JWT_DISABLED_ERROR)
+    def test_jwt_auth(self):
+        """Test for connecting via the auth_mechanism=JWT"""
+        # This is a JWT generated via jwt.io's online generator
+        # The content is:
+        # Header:
+        # {
+        #   "alg": "HS256",
+        #   "typ": "JWT"
+        # }
+        # Payload:
+        # {
+        #   "sub": "1234567890",
+        #   "username": "impylajwttest",
+        #   "iat": 1516239022
+        # }
+        # Signature by key "impylaimpylaimpylaimpylaimpylaimp"
+        jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidXNlcm5hbWUiOiJpbXB5bGFqd3R0ZXN0IiwiaWF0IjoxNTE2MjM5MDIyfQ.Uvq2TZ9nRtM-JgFEd_fL2Z0kFcflx0Tr5cbJR4yySyc"
+        self.connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
+                                  http_path="cliservice", auth_mechanism="JWT",
+                                  timeout=5, jwt=jwt)
+        username = self._execute_query_get_username(self.connection)
+        assert(username == "impylajwttest")
+        print("Username: {0}".format(username))
+        self._execute_queries(self.connection)
+
+    @pytest.mark.skipif(JWT_DISABLED, reason=JWT_DISABLED_ERROR)
+    def test_jwt_auth_negative(self):
+        """Test negative cases for connecting via the auth_mechanism=JWT"""
+        # Case 1: Connect without specifying JWT
+        try:
+            connect(ENV.host, ENV.http_port, use_http_transport=True,
+                    http_path="cliservice", auth_mechanism="JWT",
+                    timeout=5)
+        except NotSupportedError as e:
+            assert "JWT authentication requires specifying the 'jwt' argument" in str(e)
+
+        # Case 2: Connect with JWT to non-HTTP
+        try:
+            connect(ENV.host, ENV.http_port, http_path="cliservice", auth_mechanism="JWT",
+                    timeout=5, jwt="dummy.jwt.arg")
+        except NotSupportedError as e:
+            assert "JWT authentication is only supported for HTTP transport" in str(e)
 
 
 class ImpalaSocketTests(unittest.TestCase):

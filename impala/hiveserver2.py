@@ -827,7 +827,7 @@ def threaded(func):
 def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
             user=None, password=None, kerberos_service_name='impala',
             auth_mechanism=None, krb_host=None, use_http_transport=False,
-            http_path='', auth_cookie_names=None, retries=3):
+            http_path='', auth_cookie_names=None, retries=3, jwt=None):
     log.debug('Connecting to HiveServer2 %s:%s with %s authentication '
               'mechanism', host, port, auth_mechanism)
 
@@ -848,7 +848,8 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
                                        user=user, password=password,
                                        kerberos_host=kerberos_host,
                                        kerberos_service_name=kerberos_service_name,
-                                       auth_cookie_names=auth_cookie_names)
+                                       auth_cookie_names=auth_cookie_names,
+                                       jwt=jwt)
     else:
         sock = get_socket(host, port, use_ssl, ca_cert)
 
