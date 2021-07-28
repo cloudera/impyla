@@ -26,6 +26,7 @@ import datetime
 import getpass
 import os
 import os.path
+from collections import namedtuple
 from io import BytesIO
 
 from six.moves import urllib, http_client
@@ -37,8 +38,10 @@ import sys
 
 from impala.error import HttpError
 from impala.util import get_logger_and_init_null
-from impala.util import get_first_matching_cookie, get_cookie_expiry
+from impala.util import get_all_matching_cookies, get_cookie_expiry
 
+# Declare namedtuple for Cookie with named fields - cookie and expiry_time
+Cookie = namedtuple('Cookie', ['cookie', 'expiry_time'])
 
 log = get_logger_and_init_null(__name__)
 
@@ -65,20 +68,22 @@ class ImpalaHttpClient(TTransportBase):
   MIN_REQUEST_SIZE_FOR_EXPECT = 1024
 
   def __init__(self, uri_or_host, port=None, path=None, cafile=None, cert_file=None,
-               key_file=None, ssl_context=None, auth_cookie_names=None):
+               key_file=None, ssl_context=None, http_cookie_names=None):
     """ImpalaHttpClient supports two different types of construction:
 
     ImpalaHttpClient(host, port, path) - deprecated
     ImpalaHttpClient(uri, [port=<n>, path=<s>, cafile=<filename>, cert_file=<filename>,
-        key_file=<filename>, ssl_context=<context>, auth_cookie_names=<cookienamelist>])
+        key_file=<filename>, ssl_context=<context>, http_cookie_names=<cookienamelist>])
 
     Only the second supports https.  To properly authenticate against the server,
     provide the client's identity by specifying cert_file and key_file.  To properly
     authenticate the server, specify either cafile or ssl_context with a CA defined.
     NOTE: if both cafile and ssl_context are defined, ssl_context will override cafile.
-    auth_cookie_names is used to specify the list of possible cookie names used for
-    cookie-based authentication. If there's only one name in the cookie name list, a str
-    value can be specified instead of the list.
+    http_cookie_names is used to specify the list of possible cookie names used for
+    cookie-based authentication or session management. If there's only one name in the
+    cookie name list, a str value can be specified instead of the list. If a cookie with
+    one of these names is returned in an http response by the server or an intermediate
+    proxy then it will be included in each subsequent request for the same connection.
     """
     if port is not None:
       warnings.warn(
@@ -122,13 +127,28 @@ class ImpalaHttpClient(TTransportBase):
       self.proxy_auth = self.basic_proxy_auth_header(parsed)
     else:
       self.realhost = self.realport = self.proxy_auth = None
-    self.__auth_cookie_names = auth_cookie_names
-    self.__auth_cookie = None
-    self.__auth_cookie_expiry = None
+    if not http_cookie_names:
+      # 'http_cookie_names' was explicitly set as an empty value ([], or '') in connect().
+      self.__http_cookie_dict = None
+      self.__auth_cookie_names = None
+    else:
+      if isinstance(http_cookie_names, six.string_types):
+        http_cookie_names = [http_cookie_names]
+      # Build a dictionary that maps cookie name to namedtuple.
+      self.__http_cookie_dict = \
+          { cn: Cookie(cookie=None, expiry_time=None) for cn in http_cookie_names }
+      # Store the auth cookie names in __auth_cookie_names.
+      # Assume auth cookie names end with ".auth".
+      self.__auth_cookie_names = \
+          [ cn for cn in http_cookie_names if cn.endswith(".auth") ]
+    # Set __are_matching_cookies_found as True if matching cookies are found in response.
+    self.__are_matching_cookies_found = False
     self.__wbuf = BytesIO()
     self.__http = None
     self.__http_response = None
     self.__timeout = None
+    # __custom_headers is used to store HTTP headers which are generated in runtime for
+    # new request.
     self.__custom_headers = None
     self.__get_custom_headers_func = None
 
@@ -178,32 +198,63 @@ class ImpalaHttpClient(TTransportBase):
   def setCustomHeaders(self, headers):
     self.__custom_headers = headers
 
+  # Set callback function which generate HTTP headers for a specific auth mechanism.
   def setGetCustomHeadersFunc(self, func):
     self.__get_custom_headers_func = func
 
+  # Update HTTP headers based on the saved cookies and auth mechanism.
   def refreshCustomHeaders(self):
     if self.__get_custom_headers_func:
-      self.__custom_headers = self.__get_custom_headers_func(self.getAuthCookie())
+      cookie_header, has_auth_cookie = self.getHttpCookieHeaderForRequest()
+      self.__custom_headers = \
+          self.__get_custom_headers_func(cookie_header, has_auth_cookie)
 
-  def setAuthCookie(self):
-    if self.__auth_cookie_names:
-      c = get_first_matching_cookie(self.__auth_cookie_names, self.path, self.headers)
-      if c:
-        self.__auth_cookie = c
-        self.__auth_cookie_expiry = get_cookie_expiry(c)
+  # Return first value as a cookie list for Cookie header. It's a list of name-value
+  # pairs in the form of <cookie-name>=<cookie-value>. Pairs in the list are separated by
+  # a semicolon and a space ('; ').
+  # Return second value as True if the cookie list contains auth cookie.
+  def getHttpCookieHeaderForRequest(self):
+    if (self.__http_cookie_dict is None) or not self.__are_matching_cookies_found:
+      return None, False
+    cookie_headers = []
+    has_auth_cookie = False
+    for cn, c_tuple in self.__http_cookie_dict.items():
+      if c_tuple.cookie:
+        if c_tuple.expiry_time and c_tuple.expiry_time <= datetime.datetime.now():
+          self.__http_cookie_dict[cn] = Cookie(cookie=None, expiry_time=None)
+        else:
+          cookie_header = c_tuple.cookie.output(attrs=['value'], header='').strip()
+          cookie_headers.append(cookie_header)
+          if not has_auth_cookie and self.__auth_cookie_names \
+              and cn in self.__auth_cookie_names:
+            has_auth_cookie = True
+    if not cookie_headers:
+      self.__are_matching_cookies_found = False
+      return None, False
+    else:
+      return '; '.join(cookie_headers), has_auth_cookie
 
-  def getAuthCookie(self):
-    if self.__auth_cookie and self.__auth_cookie_expiry and \
-        self.__auth_cookie_expiry <= datetime.datetime.now():
-      self.__auth_cookie = None
-    return self.__auth_cookie
+  # Extract cookies from response and save those cookies for which the cookie names
+  # are in the cookie name list specified in the connect() API.
+  def extractHttpCookiesFromResponse(self):
+    if self.__http_cookie_dict is not None:
+      matching_cookies = get_all_matching_cookies(
+          self.__http_cookie_dict.keys(), self.path, self.headers)
+      if matching_cookies:
+        self.__are_matching_cookies_found = True
+        for c in matching_cookies:
+          self.__http_cookie_dict[c.key] = Cookie(c, get_cookie_expiry(c))
 
-  def isAuthCookieSet(self):
-    return self.__auth_cookie is not None
+  # Return True if there are any saved cookies which are sent in previous request.
+  def areHttpCookiesSaved(self):
+    return self.__are_matching_cookies_found
 
-  def deleteAuthCookie(self):
-    self.__auth_cookie = None
-    self.__auth_cookie_expiry = None
+  # Clean all saved cookies.
+  def cleanHttpCookies(self):
+    if (self.__http_cookie_dict is not None) and self.__are_matching_cookies_found:
+      self.__are_matching_cookies_found = False
+      self.__http_cookie_dict = \
+          { cn: Cookie(cookie=None, expiry_time=None) for cn in self.__http_cookie_dict }
 
   def read(self, sz):
     return self.__http_response.read(sz)
@@ -215,6 +266,8 @@ class ImpalaHttpClient(TTransportBase):
     self.__wbuf.write(buf)
 
   def flush(self):
+    # Send HTTP request and receive response.
+    # Return True if the client should retry this method.
     def sendRequestRecvResp(data):
       if self.isOpen():
         self.close()
@@ -233,8 +286,8 @@ class ImpalaHttpClient(TTransportBase):
       data_len = len(data)
       self.__http.putheader('Content-Length', str(data_len))
       if data_len > ImpalaHttpClient.MIN_REQUEST_SIZE_FOR_EXPECT:
-        # Add the 'Expect' header to large requests. Note that we do not explicitly wait for
-        # the '100 continue' response before sending the data - HTTPConnection simply
+        # Add the 'Expect' header to large requests. Note that we do not explicitly wait
+        # for the '100 continue' response before sending the data - HTTPConnection simply
         # ignores these types of responses, but we'll get the right behavior anyways.
         self.__http.putheader("Expect", "100-continue")
       if self.using_proxy() and self.scheme == "http" and self.proxy_auth is not None:
@@ -262,21 +315,24 @@ class ImpalaHttpClient(TTransportBase):
       self.code = self.__http_response.status
       self.message = self.__http_response.reason
       self.headers = self.__http_response.msg
-      self.setAuthCookie()
+      # A '401 Unauthorized' response might mean that we tried cookie-based
+      # authentication with one or more expired cookies.
+      # Delete the cookies and try again.
+      if self.code == 401 and self.areHttpCookiesSaved():
+        self.cleanHttpCookies()
+        return True
+      else:
+        self.extractHttpCookiesFromResponse()
+        return False
 
     # Pull data out of buffer
     data = self.__wbuf.getvalue()
     self.__wbuf = BytesIO()
 
-    sendRequestRecvResp(data)
-
-    # A '401 Unauthorized' response might mean that we tried cookie-based authentication
-    # with an expired cookie.
-    # Delete the cookie and try again.
-    if self.code == 401 and self.isAuthCookieSet():
+    retry = sendRequestRecvResp(data)
+    if retry:
       log.debug('Received "401 Unauthorized" response. '
-                'Delete auth cookie and then retry.')
-      self.deleteAuthCookie()
+                'Delete HTTP cookies and then retry.')
       sendRequestRecvResp(data)
 
     if self.code >= 300:
@@ -304,7 +360,7 @@ def get_socket(host, port, use_ssl, ca_cert):
 def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
                        ca_cert=None, auth_mechanism='NOSASL', user=None,
                        password=None, kerberos_host=None, kerberos_service_name=None,
-                       auth_cookie_names=None, jwt=None):
+                       http_cookie_names=None, jwt=None):
     # TODO: support timeout
     if timeout is not None:
         log.error('get_http_transport does not support a timeout')
@@ -320,11 +376,11 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
         log.debug('get_http_transport url=%s', url)
         # TODO(#362): Add server authentication with thrift 0.12.
         transport = ImpalaHttpClient(url, ssl_context=ssl_ctx,
-                                     auth_cookie_names=auth_cookie_names)
+                                     http_cookie_names=http_cookie_names)
     else:
         url = 'http://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
-        transport = ImpalaHttpClient(url, auth_cookie_names=auth_cookie_names)
+        transport = ImpalaHttpClient(url, http_cookie_names=http_cookie_names)
 
     if auth_mechanism in ['PLAIN', 'LDAP']:
         # Set defaults for PLAIN SASL / LDAP connections.
@@ -346,23 +402,37 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
         except AttributeError:
             auth = base64.encodestring(user_password).decode().strip('\n')
 
-        transport.setCustomHeaders({'Authorization': 'Basic %s' % auth})
+        def get_custom_headers(cookie_header, has_auth_cookie):
+            custom_headers = {}
+            if cookie_header:
+                log.debug('add cookies to HTTP header')
+                custom_headers['Cookie'] = cookie_header
+            # Add the 'Authorization' header to request even if the auth cookie is
+            # present to avoid a round trip in case the cookie is expired when server
+            # receive the request. Since the 'auth' value is calculated once, so it
+            # won't cause a performance issue.
+            custom_headers['Authorization'] = "Basic " + auth
+            return custom_headers
+
+        transport.setGetCustomHeadersFunc(get_custom_headers)
 
     elif auth_mechanism == 'GSSAPI':
         # For GSSAPI over http we need to dynamically generate custom request headers.
-        def get_auth_headers(auth_cookie):
+        def get_custom_headers(cookie_header, has_auth_cookie):
             import kerberos
-            if auth_cookie:
-                cookie_value = auth_cookie.output(attrs=['value'], header='' ).strip()
-                return {'Cookie': cookie_value}
-            else:
+            custom_headers = {}
+            if cookie_header:
+                log.debug('add cookies to HTTP header')
+                custom_headers['Cookie'] = cookie_header
+            if not has_auth_cookie:
                 _, krb_context = kerberos.authGSSClientInit("%s@%s" %
                                     (kerberos_service_name, kerberos_host))
                 kerberos.authGSSClientStep(krb_context, "")
                 negotiate_details = kerberos.authGSSClientResponse(krb_context)
-                return {"Authorization": "Negotiate " + negotiate_details}
+                custom_headers['Authorization'] = "Negotiate " + negotiate_details
+            return custom_headers
 
-        transport.setGetCustomHeadersFunc(get_auth_headers)
+        transport.setGetCustomHeadersFunc(get_custom_headers)
     elif auth_mechanism == 'JWT':
       # For JWT authentication, the JWT is sent on the Authorization Bearer
       # HTTP header.
