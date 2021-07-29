@@ -167,6 +167,17 @@ def warn_deprecate(functionality='This', alternative=None):
     warnings.warn(msg, Warning)
 
 
+def warn_unused_jwt():
+    msg = ("The JWT argument is ignored as auth_mechanism is not 'JWT'. "
+           "Specify auth_mechanism='JWT' to make use of JWT authentication.")
+    warnings.warn(msg, Warning)
+
+
+def warn_nontls_jwt():
+    msg = ("JWT authentication is running without SSL/TLS. This is not a secure "
+           "configuration unless other layers are providing transport security.")
+    warnings.warn(msg, Warning)
+
 # Cookie-related utils
 
 

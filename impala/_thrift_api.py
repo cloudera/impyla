@@ -304,7 +304,7 @@ def get_socket(host, port, use_ssl, ca_cert):
 def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
                        ca_cert=None, auth_mechanism='NOSASL', user=None,
                        password=None, kerberos_host=None, kerberos_service_name=None,
-                       auth_cookie_names=None):
+                       auth_cookie_names=None, jwt=None):
     # TODO: support timeout
     if timeout is not None:
         log.error('get_http_transport does not support a timeout')
@@ -363,6 +363,10 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
                 return {"Authorization": "Negotiate " + negotiate_details}
 
         transport.setGetCustomHeadersFunc(get_auth_headers)
+    elif auth_mechanism == 'JWT':
+      # For JWT authentication, the JWT is sent on the Authorization Bearer
+      # HTTP header.
+      transport.setCustomHeaders({'Authorization': 'Bearer {0}'.format(jwt)})
 
     # Without buffering Thrift would call socket.recv() each time it deserializes
     # something (e.g. a member in a struct).

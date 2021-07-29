@@ -24,11 +24,12 @@ from impala.error import (  # noqa
     Error, Warning, InterfaceError, DatabaseError, InternalError,
     OperationalError, ProgrammingError, IntegrityError, DataError,
     NotSupportedError)
-from impala.util import warn_deprecate, warn_protocol_param
+from impala.util import (
+    warn_deprecate, warn_protocol_param, warn_unused_jwt, warn_nontls_jwt)
 import impala.hiveserver2 as hs2
 
 
-AUTH_MECHANISMS = ['NOSASL', 'PLAIN', 'GSSAPI', 'LDAP']
+AUTH_MECHANISMS = ['NOSASL', 'PLAIN', 'GSSAPI', 'LDAP', 'JWT']
 
 
 # PEP 249 module globals
@@ -43,7 +44,7 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
             ldap_user=None, ldap_password=None, use_kerberos=None,
             protocol=None, krb_host=None, use_http_transport=False,
             http_path='', auth_cookie_names=['impala.auth', 'hive.server2.auth'],
-            retries=3):
+            retries=3, jwt=None):
     """Get a connection to HiveServer2 (HS2).
 
     These options are largely compatible with the impala-shell command line
@@ -67,11 +68,12 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
         Local path to the the third-party CA certificate. If SSL is enabled but
         the certificate is not specified, the server certificate will not be
         validated.
-    auth_mechanism : {'NOSASL', 'PLAIN', 'GSSAPI', 'LDAP'}
+    auth_mechanism : {'NOSASL', 'PLAIN', 'GSSAPI', 'LDAP', 'JWT'}
         Specify the authentication mechanism. `'NOSASL'` for unsecured Impala.
         `'PLAIN'` for unsecured Hive (because Hive requires the SASL
         transport). `'GSSAPI'` for Kerberos and `'LDAP'` for Kerberos with
-        LDAP.
+        LDAP. `'JWT'` requires providing a JSON Web Token via the jwt parameter
+        and only works with use_http_transport=True.
     user : str, optional
         LDAP user, if applicable.
     password : str, optional
@@ -79,8 +81,6 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
     kerberos_service_name : str, optional
         Authenticate to a particular `impalad` service principal. Uses
         `'impala'` by default.
-    use_ldap : bool, optional
-        Specify `auth_mechanism='LDAP'` instead.
     use_http_transport: bool optional
         Set it to True to use http transport of False to use binary transport.
     http_path: str, optional
@@ -95,6 +95,10 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
         If 'auth_cookie_names' is explicitly set to an empty value (None, [], or ''),
         Impyla won't attempt to do cookie based authentication.
         Currently cookie-based authentication is only supported for GSSAPI over http.
+    jwt: string containing a JSON Web Token
+        This is used for auth_mechanism=JWT when using the HTTP transport.
+    use_ldap : bool, optional
+        Specify `auth_mechanism='LDAP'` instead.
 
         .. deprecated:: 0.11.0
     ldap_user : str, optional
@@ -140,6 +144,18 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
         raise NotSupportedError(
             'Unsupported authentication mechanism: {0}'.format(auth_mechanism))
 
+    if auth_mechanism == 'JWT':
+        if jwt is None:
+            raise NotSupportedError("JWT authentication requires specifying the 'jwt' argument")
+        if not use_http_transport:
+            raise NotSupportedError('JWT authentication is only supported for HTTP transport')
+        if not use_ssl:
+            warn_nontls_jwt()
+    else:
+        if jwt is not None:
+            warn_unused_jwt()
+
+
     if ldap_user is not None:
         warn_deprecate('ldap_user', 'user')
         user = ldap_user
@@ -164,7 +180,8 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
                           use_http_transport=use_http_transport,
                           http_path=http_path,
                           auth_cookie_names=auth_cookie_names,
-                          retries=retries)
+                          retries=retries,
+                          jwt=jwt)
     return hs2.HiveServer2Connection(service, default_db=database)
 
 
