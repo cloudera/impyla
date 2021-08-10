@@ -207,7 +207,7 @@ def get_cookie_expiry(c):
     return None
 
 
-def get_first_matching_cookie(cookie_names, path, resp_headers):
+def get_all_matching_cookies(cookie_names, path, resp_headers):
     if 'Set-Cookie' not in resp_headers:
         return None
 
@@ -217,11 +217,10 @@ def get_first_matching_cookie(cookie_names, path, resp_headers):
     except:
         return None
 
-    if isinstance(cookie_names, six.string_types):
-        cookie_names = [cookie_names]
+    matching_cookies = []
     for cn in cookie_names:
         if cn in cookies:
             c = cookies[cn]
             if c and cookie_matches_path(c, path):
-                return c
-    return None
+                matching_cookies.append(c)
+    return matching_cookies

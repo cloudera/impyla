@@ -43,7 +43,7 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
             password=None, kerberos_service_name='impala', use_ldap=None,
             ldap_user=None, ldap_password=None, use_kerberos=None,
             protocol=None, krb_host=None, use_http_transport=False,
-            http_path='', auth_cookie_names=['impala.auth', 'hive.server2.auth'],
+            http_path='', auth_cookie_names=None, http_cookie_names=None,
             retries=3, jwt=None):
     """Get a connection to HiveServer2 (HS2).
 
@@ -85,20 +85,30 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
         Set it to True to use http transport of False to use binary transport.
     http_path: str, optional
         Specify the path in the http URL. Used only when `use_http_transport` is True.
-    auth_cookie_names: list of str or str, optional
-        Specify the list of possible names for the cookie used for cookie-based
-        authentication. If the list of names contains one cookie name only, a str value
-        can be specified instead of a list.
+    http_cookie_names: list of str or str, optional
+        Specify the list of possible names for the cookies used for cookie-based
+        authentication or session management. If the list of names contains one cookie
+        name only, a str value can be specified instead of a list.
+        If a cookie with one of these names is returned in an http response by the server
+        or an intermediate proxy then it will be included in each subsequent request for
+        the same connection.
         Used only when `use_http_transport` is True.
-        By default 'auth_cookie_names' is set to the list of auth cookie names used by
-        Impala and Hive.
-        If 'auth_cookie_names' is explicitly set to an empty value (None, [], or ''),
-        Impyla won't attempt to do cookie based authentication.
-        Currently cookie-based authentication is only supported for GSSAPI over http.
+        By default 'http_cookie_names' is set to the list of HTTP cookie names used by
+        Impala and Hive. The names of authentication cookies are expected to end with
+        ".auth" string, for example, "impala.auth" for Impala authentication cookies.
+        If 'http_cookie_names' is explicitly set to a not None empty value ([], or ''),
+        Impyla won't attempt to do cookie based authentication or session management.
+        Currently cookie retention is supported for GSSAPI/LDAP/SASL over http.
     jwt: string containing a JSON Web Token
         This is used for auth_mechanism=JWT when using the HTTP transport.
     use_ldap : bool, optional
         Specify `auth_mechanism='LDAP'` instead.
+
+        .. deprecated:: 0.18.0
+    auth_cookie_names : list of str or str, optional
+        Use `http_cookie_names` parameter instead.
+
+        .. deprecated:: 0.18.0
 
         .. deprecated:: 0.11.0
     ldap_user : str, optional
@@ -172,6 +182,13 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
                 "'{0}' is not a supported protocol; only HiveServer2 is "
                 "supported".format(protocol))
 
+    if auth_cookie_names is not None and http_cookie_names is None:
+        warn_deprecate('auth_cookie_names', 'http_cookie_names')
+        http_cookie_names = auth_cookie_names
+    elif http_cookie_names is None:
+        # Set default value as the list of HTTP cookie names used by Impala and Hive.
+        http_cookie_names = ['impala.auth', 'impala.session.id', 'hive.server2.auth']
+
     service = hs2.connect(host=host, port=port,
                           timeout=timeout, use_ssl=use_ssl,
                           ca_cert=ca_cert, user=user, password=password,
@@ -179,7 +196,7 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
                           auth_mechanism=auth_mechanism, krb_host=krb_host,
                           use_http_transport=use_http_transport,
                           http_path=http_path,
-                          auth_cookie_names=auth_cookie_names,
+                          http_cookie_names=http_cookie_names,
                           retries=retries,
                           jwt=jwt)
     return hs2.HiveServer2Connection(service, default_db=database)
