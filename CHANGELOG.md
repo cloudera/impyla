@@ -1,6 +1,21 @@
 Changelog
 =========
 
+0.18a1
+------
+* **Improvements**
+  - Add support for retaining cookies among http requests for LDAP and GSSAPI/PLAIN
+    SASL (#465)
+    Notes: Authentication cookie is enabled by default. The connect() API parameter
+    auth_cookie_names is deprecated. If a user uses GSSAPI authentication with
+    existing client code to call connect() API with auth_cookie_names set as None
+    explicitly, the auth cookie will be enabled after upgrading Impyla to 0.18a1.
+  - Add support for authentication via JWT token (#463)
+
+* **Bug Fixes**
+  - Convert the values of VARCHAR/CHAR columns to unicode strings (#457)
+  - Add missing expect_more_rows argument (#453)
+
 0.17.0
 ------
 * **Improvements**
