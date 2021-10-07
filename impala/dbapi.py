@@ -98,7 +98,7 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
         ".auth" string, for example, "impala.auth" for Impala authentication cookies.
         If 'http_cookie_names' is explicitly set to a not None empty value ([], or ''),
         Impyla won't attempt to do cookie based authentication or session management.
-        Currently cookie retention is supported for GSSAPI/LDAP/SASL over http.
+        Currently cookie retention is supported for GSSAPI/LDAP/SASL/NOSASL/JWT over http.
     jwt: string containing a JSON Web Token
         This is used for auth_mechanism=JWT when using the HTTP transport.
     use_ldap : bool, optional
