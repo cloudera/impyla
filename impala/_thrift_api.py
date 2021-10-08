@@ -433,10 +433,30 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
             return custom_headers
 
         transport.setGetCustomHeadersFunc(get_custom_headers)
+
     elif auth_mechanism == 'JWT':
-      # For JWT authentication, the JWT is sent on the Authorization Bearer
-      # HTTP header.
-      transport.setCustomHeaders({'Authorization': 'Bearer {0}'.format(jwt)})
+        # For JWT authentication, the JWT is sent on the Authorization Bearer
+        # HTTP header.
+        def get_custom_headers(cookie_header, has_auth_cookie):
+            custom_headers = {}
+            if cookie_header:
+                log.debug('add cookies to HTTP header')
+                custom_headers['Cookie'] = cookie_header
+
+            custom_headers['Authorization'] = "Bearer " + jwt
+            return custom_headers
+
+        transport.setGetCustomHeadersFunc(get_custom_headers)
+
+    elif auth_mechanism == 'NOSASL':
+        def get_custom_headers(cookie_header, has_auth_cookie):
+            custom_headers = {}
+            if cookie_header:
+                log.debug('add cookies to HTTP header')
+                custom_headers['Cookie'] = cookie_header
+            return custom_headers
+
+        transport.setGetCustomHeadersFunc(get_custom_headers)
 
     # Without buffering Thrift would call socket.recv() each time it deserializes
     # something (e.g. a member in a struct).
