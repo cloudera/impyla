@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.18a2
+------
+* **Improvements**
+  - Add support for retaining cookies among http requests for NOSASL and JWT
+    authentication (#477)
+
 0.18a1
 ------
 * **Improvements**
