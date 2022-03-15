@@ -21,6 +21,8 @@ from pytest import raises
 from impala.interface import _bind_parameters
 from impala.dbapi import ProgrammingError
 
+import datetime
+
 
 def dt(expected, query, params, **kwargs):
     result = _bind_parameters(query, params, **kwargs)
@@ -197,6 +199,15 @@ def test_qmark():
         with raises(ProgrammingError):
             dt("should have raised exception", q[0], q[1])
 
+def test_datetime_format():
+    dt("select * from test where datetime = '1980-12-03 02:30:00'",
+       "select * from test where datetime = %s",
+       [datetime.datetime(1980,12,3,2,30)], paramstyle='format')
+
+def test_date_format():
+    dt("select * from test where datetime = '1980-12-03'",
+       "select * from test where datetime = %s",
+       [datetime.date(1980,12,3)], paramstyle='format')
 
 def test_format():
     dt("select * from test where int = 1",

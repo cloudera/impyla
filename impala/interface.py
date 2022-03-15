@@ -243,6 +243,10 @@ def _bind_parameters_list(operation, parameters, paramstyle):
             string_parameters.append('NULL')
         elif isinstance(value, six.string_types):
             string_parameters.append("'" + _escape(value) + "'")
+        elif isinstance(value, datetime.datetime):
+            string_parameters.append("'" + str(value) + "'")
+        elif isinstance(value, datetime.date):
+            string_parameters.append("'" + str(value) + "'")
         else:
             string_parameters.append(str(value))
 
