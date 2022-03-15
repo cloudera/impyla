@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.18a3
+------
+* **Improvements**
+  - Fix an issue where datetime or date is not correctly quoted as string when
+    performing sql substitutions (#487)
+
 0.18a2
 ------
 * **Improvements**
