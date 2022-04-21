@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pytest import yield_fixture
+from pytest import fixture
 
 
-@yield_fixture(scope='session')
+@fixture(scope='session')
 def cur2(con):
     cur = con.cursor(dictify=True)
     yield cur

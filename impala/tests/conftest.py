@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 import logging
 
-from pytest import fixture, yield_fixture, skip
+from pytest import fixture, skip
 
 from impala.dbapi import connect
 from impala.util import (
@@ -46,7 +46,7 @@ def pytest_configure(config):
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.INFO)
         root_logger.addHandler(logging.StreamHandler())
-
+    config.addinivalue_line("markers", "connect")
 
 def pytest_runtest_setup(item):
     if (getattr(item.obj, 'connect', None) and
@@ -81,7 +81,7 @@ def tmp_db():
     return _random_id('tmp_impyla_')
 
 
-@yield_fixture(scope='session')
+@fixture(scope='session')
 def con(host, port, auth_mech, tmp_db):
     # create the temporary database
     con = connect(host=host, port=port, auth_mechanism=auth_mech)
@@ -107,7 +107,7 @@ def con(host, port, auth_mech, tmp_db):
     con.close()
 
 
-@yield_fixture(scope='session')
+@fixture(scope='session')
 def cur(con):
     cur = con.cursor()
     yield cur

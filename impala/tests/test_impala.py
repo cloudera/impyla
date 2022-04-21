@@ -15,11 +15,11 @@ import sys
 
 import pytest
 from impala.compat import _xrange as xrange
-from pytest import yield_fixture
+from pytest import fixture
 
 BIGGER_TABLE_NUM_ROWS = 100
 
-@yield_fixture(scope='module')
+@fixture(scope='module')
 def bigger_table(cur):
     table_name = 'tmp_bigger_table'
     ddl = """CREATE TABLE {0} (s string)
