@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.18a4
+------
+* **Improvements**
+  - Upgrade Thrift to 0.16.0 (#490)
+    Notes: this fixes compatibility with Python 3.10
+  - Resolve py.test warnings (#482, #491)
+
 0.18a3
 ------
 * **Improvements**
