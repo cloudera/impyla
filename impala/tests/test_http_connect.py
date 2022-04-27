@@ -27,7 +27,7 @@ from impala.tests.util import ImpylaTestEnv
 
 ENV = ImpylaTestEnv()
 
-@pytest.yield_fixture
+@pytest.fixture
 def http_503_server():
   class RequestHandler503(SimpleHTTPServer.SimpleHTTPRequestHandler):
     """A custom http handler that checks for duplicate 'Host' headers from the most

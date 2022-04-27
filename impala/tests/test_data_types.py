@@ -15,9 +15,9 @@
 
 import datetime
 import pytest
-from pytest import yield_fixture
+from pytest import fixture
 
-@yield_fixture(scope='module')
+@fixture(scope='module')
 def decimal_table(cur):
     table_name = 'tmp_decimal_table'
     ddl = """CREATE TABLE {0} (
@@ -49,7 +49,7 @@ def test_cursor_description_precision_scale(cur, decimal_table):
     for (exp, obs) in zip(expected, observed):
         assert exp == obs
 
-@yield_fixture(scope='module')
+@fixture(scope='module')
 def date_table(cur):
     table_name = 'tmp_date_table'
     ddl = """CREATE TABLE {0} (d date)""".format(table_name)
@@ -70,7 +70,7 @@ def test_date_basic(cur, date_table):
     assert results == [(datetime.date(1, 1, 1),), (datetime.date(1999, 9, 9),)]
 
 
-@yield_fixture(scope='module')
+@fixture(scope='module')
 def timestamp_table(cur):
     table_name = 'tmp_timestamp_table'
     ddl = """CREATE TABLE {0} (ts timestamp)""".format(table_name)
