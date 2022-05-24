@@ -30,7 +30,7 @@ Required:
 
 * `six`, `bitarray`
 
-* `thrift==0.11.0`
+* `thrift==0.16.0`
 
 * `thrift_sasl==0.4.3`
 
