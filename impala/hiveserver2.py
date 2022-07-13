@@ -368,7 +368,8 @@ class HiveServer2Cursor(Cursor):
         log.debug('Executing query %s', operation)
 
         paramstyle = None
-        if configuration:
+        if configuration and 'paramstyle' in configuration:
+            configuration = configuration.copy()
             paramstyle = configuration.pop('paramstyle', None)
 
         def op():
