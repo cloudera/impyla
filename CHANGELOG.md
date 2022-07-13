@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.18a5
+------
+* **Improvements**
+  - Fix parameter substitution in execetutemany() (#494)
+
 0.18a4
 ------
 * **Improvements**
