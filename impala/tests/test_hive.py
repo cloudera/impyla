@@ -43,6 +43,20 @@ def test_hive_queries(cur):
     assert len(results) == 1
     assert results[0][0] is None
 
+    # Test executemany() with parameter substitution. The %s should be ignored
+    # as paramstyle is "qmark".
+    cur.executemany("INSERT INTO tmp_hive VALUES (?, ?, ?)",
+                    [['a', 4, 1.0], ['%s', 5, None]],
+                    {'paramstyle': 'qmark'})
+
+    cur.execute("SELECT * from tmp_hive WHERE b = 4")
+    results = cur.fetchall()
+    assert results == [('a', 4, 1.0)]
+
+    cur.execute("SELECT * from tmp_hive WHERE b = 5")
+    results = cur.fetchall()
+    assert results == [('%s', 5, None)]
+
     cur.execute('DROP TABLE tmp_hive')
 
     cur.execute('SHOW TABLES')
