@@ -1,9 +1,14 @@
 Changelog
 =========
 
+0.18a6
+------
+* **Bug Fixes**
+  - Fix SSL connections (broken by THRIFT-5595) (#496)
+
 0.18a5
 ------
-* **Improvements**
+* **Bug Fixes**
   - Fix parameter substitution in execetutemany() (#494)
 
 0.18a4
