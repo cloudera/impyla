@@ -349,10 +349,18 @@ def get_socket(host, port, use_ssl, ca_cert):
 
     if use_ssl:
         from thrift.transport.TSSLSocket import TSSLSocket
+
+        # This copies the solution in IMPALA-11343.
+        # TODO: remove once Thrit 0.17.0 is released
+        class ImpalaTSSLSocket(TSSLSocket):
+          # THRIFT-5595: override TSocket.isOpen because it's broken for TSSLSocket
+          def isOpen(self):
+            return self.handle is not None
+
         if ca_cert is None:
-            return TSSLSocket(host, port, validate=False)
+            return ImpalaTSSLSocket(host, port, validate=False)
         else:
-            return TSSLSocket(host, port, validate=True, ca_certs=ca_cert)
+            return ImpalaTSSLSocket(host, port, validate=True, ca_certs=ca_cert)
     else:
         return TSocket(host, port)
 

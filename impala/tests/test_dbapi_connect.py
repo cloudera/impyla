@@ -40,6 +40,15 @@ JWT_DISABLED = True
 JWT_DISABLED_ERROR = "JWT authentication disabled"
 
 
+# SSL can be enabled in Impala dev environment with the following commands:
+# export IMPALA_SSL_CERT_DIR=$IMPALA_HOME/be/src/testutil
+# export IMPALA_SSL_ARGS="--ssl_client_ca_certificate=$IMPALA_SSL_CERT_DIR/server-cert.pem --ssl_server_certificate=$IMPALA_SSL_CERT_DIR/server-cert.pem --ssl_private_key=$IMPALA_SSL_CERT_DIR/server-key.pem --hostname=localhost"
+# bin/start-impala-cluster.py --impalad_args="$IMPALA_SSL_ARGS" --catalogd_args="$IMPALA_SSL_ARGS" --state_store_args="$IMPALA_SSL_ARGS"
+# export IMPYLA_SSL_CERT=$IMPALA_SSL_CERT_DIR/server-cert.pem
+SSL_DISABLED = ENV.ssl_cert == ""
+SSL_DISABLED_ERROR = "No ssl certificate set."
+
+
 class ImpalaConnectionTests(unittest.TestCase):
 
     table_prefix = _random_id(prefix='dbapi20test_')
@@ -163,6 +172,17 @@ class ImpalaConnectionTests(unittest.TestCase):
         except NotSupportedError as e:
             assert "JWT authentication is only supported for HTTP transport" in str(e)
 
+    @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    def test_ssl_connection_no_cert(self):
+        self.connection = connect(ENV.host, ENV.port, timeout=5, use_ssl=True)
+        self._execute_queries(self.connection)
+
+
+    @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    def test_ssl_connection_with_cert(self):
+        self.connection = connect(
+            ENV.host, ENV.port, use_ssl=True, timeout=5, ca_cert=ENV.ssl_cert)
+        self._execute_queries(self.connection)
 
 class ImpalaSocketTests(unittest.TestCase):
 

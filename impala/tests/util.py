@@ -64,6 +64,8 @@ class ImpylaTestEnv(object):
             self.auth_mech = get_env_var('IMPYLA_TEST_AUTH_MECH', identity,
                                          'NOSASL')
 
+        self.ssl_cert = get_env_var('IMPYLA_SSL_CERT', identity, "")
+
     def __repr__(self):
         kvs = ['{0}={1}'.format(k, v)
                for (k, v) in six.iteritems(self.__dict__)]
