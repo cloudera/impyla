@@ -151,6 +151,8 @@ class ImpalaHttpClient(TTransportBase):
     # new request.
     self.__custom_headers = None
     self.__get_custom_headers_func = None
+    # the default user agent if none is provied
+    self.__custom_user_agent = 'Python/ImpylaHttpClient'
 
   @staticmethod
   def basic_proxy_auth_header(proxy):
@@ -197,6 +199,9 @@ class ImpalaHttpClient(TTransportBase):
 
   def setCustomHeaders(self, headers):
     self.__custom_headers = headers
+
+  def setCustomUserAgent(self, user_agent):
+    self.__custom_user_agent = user_agent
 
   # Set callback function which generate HTTP headers for a specific auth mechanism.
   def setGetCustomHeadersFunc(self, func):
@@ -295,7 +300,7 @@ class ImpalaHttpClient(TTransportBase):
 
       self.refreshCustomHeaders()
       if not self.__custom_headers or 'User-Agent' not in self.__custom_headers:
-        user_agent = 'Python/ImpalaHttpClient'
+        user_agent = self.__custom_user_agent
         script = os.path.basename(sys.argv[0])
         if script:
           user_agent = '%s (%s)' % (user_agent, urllib.parse.quote(script))
@@ -368,7 +373,7 @@ def get_socket(host, port, use_ssl, ca_cert):
 def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
                        ca_cert=None, auth_mechanism='NOSASL', user=None,
                        password=None, kerberos_host=None, kerberos_service_name=None,
-                       http_cookie_names=None, jwt=None):
+                       http_cookie_names=None, jwt=None, user_agent=None):
     # TODO: support timeout
     if timeout is not None:
         log.error('get_http_transport does not support a timeout')
@@ -389,6 +394,10 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
         url = 'http://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
         transport = ImpalaHttpClient(url, http_cookie_names=http_cookie_names)
+
+    # set custom user agent if provided by user
+    if user_agent:
+        transport.setCustomUserAgent(user_agent)
 
     if auth_mechanism in ['PLAIN', 'LDAP']:
         # Set defaults for PLAIN SASL / LDAP connections.
