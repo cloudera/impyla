@@ -190,6 +190,7 @@ class ImpalaDialect(DefaultDialect):
     max_identifier_length = 128
     supports_sane_rowcount = False
     supports_sane_multi_rowcount = False
+    supports_multivalues_insert = True
     supports_sequences = False
     supports_native_decimal = True
     supports_native_boolean = True
