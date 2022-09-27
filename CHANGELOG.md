@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.18a7
+------
+* **Improvements**
+  - Enable setting user_agent in http protocol (#498)
+
 0.18a6
 ------
 * **Bug Fixes**
