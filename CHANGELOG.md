@@ -1,41 +1,7 @@
 Changelog
 =========
 
-0.18a7
-------
-* **Improvements**
-  - Enable setting user_agent in http protocol (#498)
-
-0.18a6
-------
-* **Bug Fixes**
-  - Fix SSL connections (broken by THRIFT-5595) (#496)
-
-0.18a5
-------
-* **Bug Fixes**
-  - Fix parameter substitution in execetutemany() (#494)
-
-0.18a4
-------
-* **Improvements**
-  - Upgrade Thrift to 0.16.0 (#490)
-    Notes: this fixes compatibility with Python 3.10
-  - Resolve py.test warnings (#482, #491)
-
-0.18a3
-------
-* **Improvements**
-  - Fix an issue where datetime or date is not correctly quoted as string when
-    performing sql substitutions (#487)
-
-0.18a2
-------
-* **Improvements**
-  - Add support for retaining cookies among http requests for NOSASL and JWT
-    authentication (#477)
-
-0.18a1
+0.18.0
 ------
 * **Improvements**
   - Add support for retaining cookies among http requests for LDAP and GSSAPI/PLAIN
@@ -43,10 +9,19 @@ Changelog
     Notes: Authentication cookie is enabled by default. The connect() API parameter
     auth_cookie_names is deprecated. If a user uses GSSAPI authentication with
     existing client code to call connect() API with auth_cookie_names set as None
-    explicitly, the auth cookie will be enabled after upgrading Impyla to 0.18a1.
+    explicitly, the auth cookie will be enabled after upgrading Impyla to 0.18.
   - Add support for authentication via JWT token (#463)
+  - Add support for retaining cookies among http requests for NOSASL and JWT
+    authentication (#477)
+  - Upgrade Thrift to 0.16.0 (#490)
+    Notes: this fixes compatibility with Python 3.10
+  - Enable supports_multivalues_insert in SQLAlchemy (#499)
+  - Enable setting user_agent in http protocol (#498)
 
 * **Bug Fixes**
+  - Fix an issue where datetime or date is not correctly quoted as string when
+    performing sql substitutions (#487)
+  - Fix parameter substitution in executemany() (#494)
   - Convert the values of VARCHAR/CHAR columns to unicode strings (#457)
   - Add missing expect_more_rows argument (#453)
 
