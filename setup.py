@@ -43,7 +43,10 @@ setup(
     package_data={'impala.thrift': ['*.thrift']},
     install_requires=['six', 'bitarray', 'thrift==0.16.0', 'thrift_sasl==0.4.3'],
     extras_require={
-        "kerberos": ['kerberos>=1.3.0'],
+        "kerberos": [
+            'kerberos>=1.3.0;platform_system!="Windows"',
+            'winkerberos;platform_system=="Windows"',
+        ],
     },
     keywords=('cloudera impala python hadoop sql hdfs mpp spark pydata '
               'pandas distributed db api pep 249 hive hiveserver2 hs2'),
