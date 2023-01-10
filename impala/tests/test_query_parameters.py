@@ -155,6 +155,15 @@ def test_numeric():
        "d=:4 and e=:5 and f=:6 and g=:7 and h=:8 and i=:9 and " +
        "j=:10 and k=:11",
        ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'])
+    bad_bindings = [
+        ("select * from test where int = :1", []),
+        ("select * from test where int = :1 or int = :2", [1]),
+        ("select * from test where int = :1", [1, 2]),
+        ("select * from test where int = :1 or float = :1", [1, 2])
+    ]
+    for q in bad_bindings:
+        with raises(ProgrammingError):
+            dt("should have raised exception", q[0], q[1])
 
 
 def test_qmark():
@@ -284,9 +293,7 @@ def test_avoid_substitution():
       "select * from test where a=:x and b=:y",
       {'x': 'string :2 ? %s :named', 'y':'42'}, paramstyle='named')
 
-  # BUG: if a parameter is substituted with a string containing another parameter
-  # specifier, double substitution can occur.
-  dt("select * from test where a='string '42'' and b='42'",
+  dt("select * from test where a='string :2' and b='42'",
      "select * from test where a=%s and b=%s",
      ['string :2', '42'])
 

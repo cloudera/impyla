@@ -181,57 +181,60 @@ class Cursor(object):
 
 def _replace_numeric_markers(operation, string_parameters, paramstyle):
     """
-    Replaces qname, format, and numeric markers in the given operation, from
+    Replaces qmark, format, and numeric markers in the given operation, from
     the string_parameters list.
 
-    Raises ProgrammingError on wrong number of parameters or bindings
-    when using qmark. There is no error checking on numeric parameters.
+    Raises ProgrammingError on wrong number of parameters or markers.
+    For numeric markers there has to be enough parameters to satisfy
+    every marker and there has to bo no unused parameter.
     """
-    def replace_markers(marker, op, parameters):
-        param_count = len(parameters)
-        marker_index = 0
-        start_offset = 0
-        while True:
-            found_offset = op.find(marker, start_offset)
-            if not found_offset > -1:
-                break
-            if marker_index < param_count:
-                op = op[:found_offset]+op[found_offset:].replace(marker, parameters[marker_index], 1)
-                start_offset = found_offset + len(parameters[marker_index])
-                marker_index += 1
-            else:
-                raise ProgrammingError("Incorrect number of bindings "
-                                       "supplied. The current statement uses "
-                                       "%d or more, and there are %d "
-                                       "supplied." % (marker_index + 1,
-                                                      param_count))
-        if marker_index != 0 and marker_index != param_count:
-            raise ProgrammingError("Incorrect number of bindings "
-                                   "supplied. The current statement uses "
-                                   "%d or more, and there are %d supplied." %
-                                   (marker_index + 1, param_count))
-        return op
+    RE_QMARK = r'(?P<qmark>\?)'
+    RE_FORMAT = r'(?P<format>%s)'
+    RE_NUMERIC = r'(?P<numeric>:(?P<index>\d+))'
+    RE_ALL = '|'.join([RE_QMARK, RE_FORMAT, RE_NUMERIC])
 
-    # replace qmark parameters and format parameters
-    # If paramstyle is explicitly specified don't try to substitue them all
-    if paramstyle == 'qmark' or paramstyle is None:
-        operation = replace_markers('?', operation, string_parameters)
-    if paramstyle == 'format' or paramstyle is None:
-        operation = replace_markers(r'%s', operation, string_parameters)
+    if paramstyle is not None:
+        if paramstyle in ['named', 'pyformat']:
+            raise ProgrammingError(
+                "Paramstyle '%s' is not compatible with parameters passed as "
+                "list. Please use a dict for your parameters instead "
+                "or specify a different paramstyle" % paramstyle)
 
-    # replace numbered parameters
-    if paramstyle == 'numeric' or paramstyle is None:
-        operation = re.sub(r'(:)(\d+)', r'{\2}', operation)
-        # offset by one
-        operation = operation.format(*[''] + string_parameters)
+        if paramstyle not in ['qmark', 'format', 'numeric']:
+            raise ProgrammingError(
+                "Paramstyle '%s' is not supported. Please use a different one")
 
-    if paramstyle in ['named', 'pyformat']:
+    param_count = len(string_parameters)
+    used_positional_indexes = set()
+    used_numeric_indexes = set()
+
+    def replace_marker(match):
+        if paramstyle is not None and match.group(paramstyle) is None:
+            return match.group(0)
+
+        if match.group('index') is not None:
+            param_index = int(match.group('index')) - 1
+            used_numeric_indexes.add(param_index)
+        else:
+            param_index = len(used_positional_indexes)
+            used_positional_indexes.add(param_index)
+
+        if param_index >= param_count:
+            raise ProgrammingError(
+                "Incorrect number of bindings supplied. The current statement "
+                "uses %d or more, and there are %d supplied." % (
+                    param_index, param_count))
+
+        return string_parameters[param_index]
+
+    operation = re.sub(RE_ALL, replace_marker, operation)
+
+    marker_count = len(used_numeric_indexes | used_positional_indexes)
+    if marker_count < param_count:
         raise ProgrammingError(
-            "paramstyle '%s' is not compatible with parameters passed as List."
-            "please use a dict for you parameters instead or specify"
-            " a different paramstyle",
-            paramstyle
-        )
+            "Incorrect number of bindings supplied. The current statement "
+            "uses %d, and there are %d supplied." % (
+                marker_count, param_count))
 
     return operation
 
