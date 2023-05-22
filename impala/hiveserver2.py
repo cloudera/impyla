@@ -127,8 +127,11 @@ class HiveServer2Connection(Connection):
 
         log.debug('.cursor(): getting new session_handle')
 
-        session_configuration = {**self.cursor_configuration, **configuration}
-        session = self.service.open_session(user, session_configuration)
+        session_configuration = {}
+        for conf in [self.cursor_configuration, configuration]:
+            if conf is not None:
+                session_configuration.update(conf)
+        session = self.service.open_session(user, session_configuration if session_configuration else None)
 
         log.debug('HiveServer2Cursor(service=%s, session_handle=%s, '
                   'default_config=%s, hs2_protocol_version=%s)',
