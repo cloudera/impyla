@@ -24,7 +24,7 @@ from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.sql.compiler import (DDLCompiler, GenericTypeCompiler,
                                      IdentifierPreparer)
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
-                              DECIMAL, Integer, Float, String, VARCHAR,
+                              DECIMAL, Integer, Float, String, CHAR, VARCHAR,
                               DATE)
 
 
@@ -170,6 +170,7 @@ _impala_type_to_sqlalchemy_type = {
     'DOUBLE': DOUBLE,
     'STRING': STRING,
     'DECIMAL': DECIMAL,
+    'CHAR': CHAR,
     'VARCHAR': VARCHAR,
     'DATE': DATE
     }
