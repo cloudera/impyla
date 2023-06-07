@@ -25,7 +25,7 @@ else:
 
 import pytest
 
-from impala.dbapi import connect
+from impala.dbapi import connect, AUTH_MECHANISMS
 from impala.util import _random_id
 from impala.tests.util import ImpylaTestEnv, SocketTracker
 
@@ -131,14 +131,14 @@ class ImpalaConnectionTests(unittest.TestCase):
         self.connection = connect(ENV.host, ENV.hive_port, timeout=5)
         self._execute_queries(self.connection)
 
+    @pytest.mark.params_neg
     def test_bad_auth(self):
         """Test some simple error messages"""
         try:
             connect(ENV.host, ENV.port, auth_mechanism="foo")
-            assert False, "should have got exception"
+            assert False, "'connect' method should have thrown an exception but did not"
         except NotSupportedError as e:
             assert 'Unsupported authentication mechanism: FOO' in str(e)
-
 
     @pytest.mark.skipif(JWT_DISABLED, reason=JWT_DISABLED_ERROR)
     def test_jwt_auth(self):
@@ -166,23 +166,73 @@ class ImpalaConnectionTests(unittest.TestCase):
         print("Username: {0}".format(username))
         self._execute_queries(self.connection)
 
-    @pytest.mark.skipif(JWT_DISABLED, reason=JWT_DISABLED_ERROR)
-    def test_jwt_auth_negative(self):
-        """Test negative cases for connecting via the auth_mechanism=JWT"""
-        # Case 1: Connect without specifying JWT
+    @pytest.mark.params_neg
+    def test_jwt_auth_missing_jwt(self):
+        """Test for the expected error when JWT auth is used and a JWT is not provided"""
         try:
-            connect(ENV.host, ENV.http_port, use_http_transport=True,
-                    http_path="cliservice", auth_mechanism="JWT",
-                    timeout=5)
+            connect(use_http_transport=True, auth_mechanism="JWT")
+            assert False, "'connect' method should have thrown an exception but did not"
         except NotSupportedError as e:
             assert "JWT authentication requires specifying the 'jwt' argument" in str(e)
 
-        # Case 2: Connect with JWT to non-HTTP
+    @pytest.mark.params_neg
+    def test_jwt_auth_invalid_transport(self):
+        """Test for the expected error when JWT auth is used without the HTTP transport"""
         try:
-            connect(ENV.host, ENV.http_port, http_path="cliservice", auth_mechanism="JWT",
-                    timeout=5, jwt="dummy.jwt.arg")
+            connect(auth_mechanism="JWT", jwt="dummy.jwt.arg")
+            assert False, "'connect' method should have thrown an exception but did not"
         except NotSupportedError as e:
             assert "JWT authentication is only supported for HTTP transport" in str(e)
+
+    @pytest.mark.params_neg
+    def test_non_jwt_auth_with_jwt(self):
+        """Test for the expected error when authentication is anything other than JWT and the 'jwt' parameter is specified"""
+        def run_test(auth_mechanism):
+            try:
+                connect(auth_mechanism=auth_mechanism, jwt="dummy.jwt.arg")
+                assert False, "'connect' method should have thrown an exception but did not"
+            except NotSupportedError as e:
+                assert "'jwt' argument cannot be specified with '{0}' authentication".format(auth_mechanism) in str(e)
+
+        for auth_mech in AUTH_MECHANISMS:
+            if auth_mech is not "JWT":
+                run_test(auth_mech)
+
+    @pytest.mark.params_neg
+    def test_jwt_auth_with_user(self):
+        """Test for the expected error when authentication is JWT and the 'user' parameter is specified"""
+        try:
+            connect(auth_mechanism="JWT", jwt="dummy.jwt.arg", use_http_transport=True, user="any_user")
+            assert False, "'connect' method should have thrown an exception but did not"
+        except NotSupportedError as e:
+            assert "'user' argument cannot be specified with 'JWT' authentication" in str(e)
+
+    @pytest.mark.params_neg
+    def test_jwt_auth_with_ldap_user(self):
+        """Test for the expected error when authentication is JWT and the 'ldap_user' parameter is specified"""
+        try:
+            connect(auth_mechanism="JWT", jwt="dummy.jwt.arg", use_http_transport=True, ldap_user="any_user")
+            assert False, "'connect' method should have thrown an exception but did not"
+        except NotSupportedError as e:
+            assert "'user' argument cannot be specified with 'JWT' authentication" in str(e)
+
+    @pytest.mark.params_neg
+    def test_jwt_auth_with_password(self):
+        """Test for the expected error when authentication is JWT and the 'password' parameter is specified"""
+        try:
+            connect(auth_mechanism="JWT", jwt="dummy.jwt.arg", use_http_transport=True, password="any_password")
+            assert False, "'connect' method should have thrown an exception but did not"
+        except NotSupportedError as e:
+            assert "'password' argument cannot be specified with 'JWT' authentication" in str(e)
+
+    @pytest.mark.params_neg
+    def test_jwt_auth_with_ldap_password(self):
+        """Test for the expected error when authentication is JWT and the 'ldap_password' parameter is specified"""
+        try:
+            connect(auth_mechanism="JWT", jwt="dummy.jwt.arg", use_http_transport=True, ldap_password="any_password")
+            assert False, "'connect' method should have thrown an exception but did not"
+        except NotSupportedError as e:
+            assert "'password' argument cannot be specified with 'JWT' authentication" in str(e)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
     def test_ssl_connection_no_cert(self):

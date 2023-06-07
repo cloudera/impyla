@@ -47,6 +47,7 @@ def pytest_configure(config):
         root_logger.setLevel(logging.INFO)
         root_logger.addHandler(logging.StreamHandler())
     config.addinivalue_line("markers", "connect")
+    config.addinivalue_line("markers", "params_neg: marks tests that verify invalid parameters are not allowed")
 
 def pytest_runtest_setup(item):
     if (getattr(item.obj, 'connect', None) and

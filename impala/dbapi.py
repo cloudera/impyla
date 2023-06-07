@@ -25,7 +25,7 @@ from impala.error import (  # noqa
     OperationalError, ProgrammingError, IntegrityError, DataError,
     NotSupportedError)
 from impala.util import (
-    warn_deprecate, warn_protocol_param, warn_unused_jwt, warn_nontls_jwt)
+    warn_deprecate, warn_protocol_param, warn_nontls_jwt)
 import impala.hiveserver2 as hs2
 
 
@@ -163,10 +163,13 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
             raise NotSupportedError('JWT authentication is only supported for HTTP transport')
         if not use_ssl:
             warn_nontls_jwt()
+        if user is not None or ldap_user is not None:
+            raise NotSupportedError("'user' argument cannot be specified with '{0}' authentication".format(auth_mechanism))
+        if password is not None or ldap_password is not None:
+            raise NotSupportedError("'password' argument cannot be specified with '{0}' authentication".format(auth_mechanism))
     else:
         if jwt is not None:
-            warn_unused_jwt()
-
+            raise NotSupportedError("'jwt' argument cannot be specified with '{0}' authentication".format(auth_mechanism))
 
     if ldap_user is not None:
         warn_deprecate('ldap_user', 'user')
