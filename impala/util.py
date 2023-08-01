@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 
+import sys
 import warnings
 import logging
 import string
@@ -207,8 +208,13 @@ def get_all_matching_cookies(cookie_names, path, resp_headers):
 
     cookies = http_cookies.SimpleCookie()
     try:
-        cookies.load(resp_headers['Set-Cookie'])
-    except:
+        if sys.version_info.major == 2:
+            cookies.load(resp_headers['Set-Cookie'])
+        else:
+            cookie_headers = resp_headers.get_all('Set-Cookie')
+            for header in cookie_headers:
+                cookies.load(header)
+    except Exception:
         return None
 
     matching_cookies = []
