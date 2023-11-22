@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.19.0
+------
+* **Improvements**
+  - Add get_view_name support to SQLAlchemy (#511)
+    SHOW VIEWS is expected to be supported in Impala soon.
+  - Add additional checks to ensure connection arguments (#515)
+
+* **Bug Fixes**
+  - Fix Cookie handling with Python 3 (#518)
+  - Fix numeric parameter substitution bug (#508)
+
 0.18.0
 ------
 * **Improvements**
