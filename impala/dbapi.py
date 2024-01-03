@@ -191,8 +191,8 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
         warn_deprecate('auth_cookie_names', 'http_cookie_names')
         http_cookie_names = auth_cookie_names
     elif http_cookie_names is None:
-        # Set default value as the list of HTTP cookie names used by Impala and Hive.
-        http_cookie_names = ['impala.auth', 'impala.session.id', 'hive.server2.auth']
+        # Set default value as the list of HTTP cookie names used by Impala, Hive and Knox.
+        http_cookie_names = ['impala.auth', 'impala.session.id', 'hive.server2.auth', 'KNOXSESSIONID', 'KNOX_BACKEND-HIVE', 'JSESSIONID']
 
     service = hs2.connect(host=host, port=port,
                           timeout=timeout, use_ssl=use_ssl,
