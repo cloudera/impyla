@@ -111,7 +111,7 @@ Impyla implements the [Python DB API v2.0 (PEP 249)][pep249] database interface
 
 ```python
 from impala.dbapi import connect
-conn = connect(host='my.host.com', port=21050)
+conn = connect(host='my.host.com', port=21050) # auth_mechanism='PLAIN' for unsecured Hive connection, see function doc
 cursor = conn.cursor()
 cursor.execute('SELECT * FROM mytable LIMIT 100')
 print cursor.description  # prints the result set's schema
