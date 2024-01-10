@@ -15,7 +15,7 @@
 from __future__ import absolute_import
 
 from sqlalchemy.engine import create_engine
-from sqlalchemy import Table, Column, select
+from sqlalchemy import Table, Column, select, insert
 from sqlalchemy.schema import MetaData, CreateTable
 
 from impala.sqlalchemy import STRING, INT, DOUBLE, TINYINT, DATE, VARCHAR
@@ -24,8 +24,8 @@ from impala.tests.util import ImpylaTestEnv
 TEST_ENV = ImpylaTestEnv()
 
 
-def create_partitioned_test_table(engine):
-    metadata = MetaData(engine)
+def create_partitioned_test_table():
+    metadata = MetaData()
     # TODO: add other types to this table (e.g., functional.all_types)
     return Table("mytable",
                     metadata,
@@ -42,8 +42,8 @@ def create_partitioned_test_table(engine):
                       'transactional_properties': 'insert_only'
                     })
 
-def create_simple_test_table(engine):
-  metadata = MetaData(engine)
+def create_simple_test_table():
+  metadata = MetaData()
   return Table("mytable",
                metadata,
                Column('col1', STRING),
@@ -57,7 +57,7 @@ def create_test_engine(diealect):
 
 def test_sqlalchemy_impala_compilation():
     engine = create_test_engine("impala")
-    observed = CreateTable(create_partitioned_test_table(engine), bind=engine)
+    observed = CreateTable(create_partitioned_test_table()).compile(engine)
     # The DATE column type of 'col5' will be replaced with TIMESTAMP.
     expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
                 '\n\tcol3 INT, \n\tcol4 DOUBLE, \n\tcol5 TIMESTAMP, \n\tcol6 VARCHAR(10)\n)'
@@ -69,7 +69,7 @@ def test_sqlalchemy_impala_compilation():
 
 def test_sqlalchemy_impala4_compilation():
     engine = create_test_engine("impala4")
-    observed = CreateTable(create_partitioned_test_table(engine), bind=engine)
+    observed = CreateTable(create_partitioned_test_table()).compile(engine)
     # The DATE column type of 'col5' will be left as is.
     expected = ('\nCREATE TABLE mytable (\n\tcol1 STRING, \n\tcol2 TINYINT, '
                 '\n\tcol3 INT, \n\tcol4 DOUBLE, \n\tcol5 DATE, \n\tcol6 VARCHAR(10)\n)'
@@ -80,26 +80,27 @@ def test_sqlalchemy_impala4_compilation():
 
 def test_sqlalchemy_multiinsert():
     engine = create_test_engine("impala4")
-    table = create_simple_test_table(engine)
+    table = create_simple_test_table()
     # TODO: Creating a non partitioned table as I am not sure about how to insert to
     #       a partitioned table in SQL alchemy
-    create_table_stmt = CreateTable(table, bind=engine)
+    create_table_stmt = CreateTable(table)
 
     data = [
         {"col1": "a", "col2": 1, "col3": 1, "col4": 1.0},
         {"col1": "b", "col2": 2, "col3": 3, "col4": 2.0}
     ]
-    insert_stmt = table.insert(data)
+    insert_stmt = insert(table).values(data).compile(engine)
     expected_insert = 'INSERT INTO mytable (col1, col2, col3, col4) VALUES '\
         '(%(col1_m0)s, %(col2_m0)s, %(col3_m0)s, %(col4_m0)s), '\
         '(%(col1_m1)s, %(col2_m1)s, %(col3_m1)s, %(col4_m1)s)'
     assert expected_insert == str(insert_stmt)
 
-    engine.execute(create_table_stmt)
-    try:
-        engine.execute(insert_stmt)
-        result = engine.execute(select(table.c).order_by(table.c.col1)).fetchall()
-        expected_result = [('a', 1, 1, 1.0), ('b', 2, 3, 2.0)]
-        assert expected_result == result
-    finally:
-        table.drop()
+    with engine.connect() as conn:
+        conn.execute(create_table_stmt)
+        try:
+            conn.execute(insert_stmt)
+            result = conn.execute(select(table.c).order_by(table.c.col1)).fetchall()
+            expected_result = [('a', 1, 1, 1.0), ('b', 2, 3, 2.0)]
+            assert expected_result == result
+        finally:
+            table.drop(conn)
