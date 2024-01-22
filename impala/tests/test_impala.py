@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import sys
+import time
 
 import pytest
 from impala.compat import _xrange as xrange
@@ -52,3 +53,44 @@ def test_has_more_rows(cur, bigger_table):
                    where s != cast(sleep(2) as string)""".format(bigger_table))
     expected_rows = [("row{0}".format(i),) for i in xrange(BIGGER_TABLE_NUM_ROWS)]
     assert sorted(cur.fetchall()) == sorted(expected_rows)
+
+@fixture(scope='function')
+def empty_table(cur):
+    table_name = 'tmp_empty_table'
+    ddl = """CREATE TABLE {0} (i int)""".format(table_name)
+    cur.execute(ddl)
+    try:
+        yield table_name
+    finally:
+        cur.execute("DROP TABLE {0}".format(table_name))
+
+def test_dml_rowcount(cur, empty_table):
+    """Test that impyla correctly sets rowcount for insert statements."""
+    dml = """INSERT INTO {0}
+	     VALUES (0)""".format(empty_table)
+    cur.execute(dml)
+    assert cur.rowcount == 1
+
+def test_row_count_in_empty_result(cur, empty_table):
+    """Test that impyla correctly sets rowcount when 0 rows are returned.
+       This case is missing from dbapi2 compliance tests.
+    """
+    query = """SELECT * FROM {0}""".format(empty_table)
+    cur.execute(query)
+    cur.fetchall()
+    assert cur.rowcount == 0
+
+def test_get_log(cur, empty_table):
+    """Test that impyla correctly sets rowcount for insert statements."""
+    query = """SELECT * FROM {0}""".format(empty_table)
+    cur.execute(query)
+    cur.fetchall()
+    # The query should be closed at this point.
+    assert not cur._last_operation_active
+    log = cur.get_log()
+    assert "100% Complete" in log
+    # Also check that summary and runtime profile are available
+    summary = cur.get_summary()
+    assert summary is not None
+    profile = cur.get_profile()
+    assert profile is not None

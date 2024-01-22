@@ -322,7 +322,7 @@ class TestHS2FaultInjection(object):
         self.transport.disable_fault()
         cur.close()
         con.close()
-        assert self.__expect_msg_no_retry("CloseOperation") in caplog.text
+        assert self.__expect_msg_no_retry("CloseImpalaOperation") in caplog.text
 
     def test_get_runtime_profile_summary(self, caplog):
         """Tests fault injection in get_profile(), get_summary(), and get_log().
