@@ -81,7 +81,7 @@ if [ "$SYNC_IMPYLA_THRIFT_FILES" = true ] ; then
 fi
 
 echo "Generating thrift python modules"
-THRIFT_BIN="$IMPALA_TOOLCHAIN_PACKAGES_HOME/thrift-$IMPALA_THRIFT_VERSION/bin/thrift"
+THRIFT_BIN="$IMPALA_TOOLCHAIN_PACKAGES_HOME/thrift-$IMPALA_THRIFT_CPP_VERSION/bin/thrift"
 $THRIFT_BIN -r --gen py:new_style,no_utf8strings -out $IMPYLA_REPO $IMPYLA_REPO/impala/thrift/ImpalaService.thrift
 
 echo "Removing extraneous $IMPYLA_REPO/__init__.py"

@@ -28,7 +28,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('  TStatus ResetCatalog()')
     print('  TStatus ResetTable(TResetTableReq request)')
     print('  string GetRuntimeProfile(QueryHandle query_id)')
-    print('  TInsertResult CloseInsert(QueryHandle handle)')
+    print('  TDmlResult CloseInsert(QueryHandle handle)')
     print('  TPingImpalaServiceResp PingImpalaService()')
     print('  TExecSummary GetExecSummary(QueryHandle handle)')
     print('  QueryHandle query(Query query)')

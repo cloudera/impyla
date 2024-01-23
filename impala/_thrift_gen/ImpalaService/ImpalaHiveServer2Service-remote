@@ -26,6 +26,8 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('Functions:')
     print('  TGetExecSummaryResp GetExecSummary(TGetExecSummaryReq req)')
     print('  TGetRuntimeProfileResp GetRuntimeProfile(TGetRuntimeProfileReq req)')
+    print('  TPingImpalaHS2ServiceResp PingImpalaHS2Service(TPingImpalaHS2ServiceReq req)')
+    print('  TCloseImpalaOperationResp CloseImpalaOperation(TCloseImpalaOperationReq req)')
     print('  TOpenSessionResp OpenSession(TOpenSessionReq req)')
     print('  TCloseSessionResp CloseSession(TCloseSessionReq req)')
     print('  TGetInfoResp GetInfo(TGetInfoReq req)')
@@ -136,6 +138,18 @@ elif cmd == 'GetRuntimeProfile':
         print('GetRuntimeProfile requires 1 args')
         sys.exit(1)
     pp.pprint(client.GetRuntimeProfile(eval(args[0]),))
+
+elif cmd == 'PingImpalaHS2Service':
+    if len(args) != 1:
+        print('PingImpalaHS2Service requires 1 args')
+        sys.exit(1)
+    pp.pprint(client.PingImpalaHS2Service(eval(args[0]),))
+
+elif cmd == 'CloseImpalaOperation':
+    if len(args) != 1:
+        print('CloseImpalaOperation requires 1 args')
+        sys.exit(1)
+    pp.pprint(client.CloseImpalaOperation(eval(args[0]),))
 
 elif cmd == 'OpenSession':
     if len(args) != 1:

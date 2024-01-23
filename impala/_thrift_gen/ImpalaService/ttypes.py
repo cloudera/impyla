@@ -100,6 +100,99 @@ class TImpalaQueryOptions(object):
     NUM_REMOTE_EXECUTOR_CANDIDATES = 75
     NUM_ROWS_PRODUCED_LIMIT = 76
     PLANNER_TESTCASE_MODE = 77
+    DEFAULT_FILE_FORMAT = 78
+    PARQUET_TIMESTAMP_TYPE = 79
+    PARQUET_READ_PAGE_INDEX = 80
+    PARQUET_WRITE_PAGE_INDEX = 81
+    PARQUET_PAGE_ROW_COUNT_LIMIT = 82
+    DISABLE_HDFS_NUM_ROWS_ESTIMATE = 83
+    DEFAULT_HINTS_INSERT_STATEMENT = 84
+    SPOOL_QUERY_RESULTS = 85
+    DEFAULT_TRANSACTIONAL_TYPE = 86
+    STATEMENT_EXPRESSION_LIMIT = 87
+    MAX_STATEMENT_LENGTH_BYTES = 88
+    DISABLE_DATA_CACHE = 89
+    MAX_RESULT_SPOOLING_MEM = 90
+    MAX_SPILLED_RESULT_SPOOLING_MEM = 91
+    DISABLE_HBASE_NUM_ROWS_ESTIMATE = 92
+    FETCH_ROWS_TIMEOUT_MS = 93
+    NOW_STRING = 94
+    PARQUET_OBJECT_STORE_SPLIT_SIZE = 95
+    MEM_LIMIT_EXECUTORS = 96
+    BROADCAST_BYTES_LIMIT = 97
+    PREAGG_BYTES_LIMIT = 98
+    ENABLE_CNF_REWRITES = 99
+    MAX_CNF_EXPRS = 100
+    KUDU_SNAPSHOT_READ_TIMESTAMP_MICROS = 101
+    RETRY_FAILED_QUERIES = 102
+    ENABLED_RUNTIME_FILTER_TYPES = 103
+    ASYNC_CODEGEN = 104
+    ENABLE_DISTINCT_SEMI_JOIN_OPTIMIZATION = 105
+    SORT_RUN_BYTES_LIMIT = 106
+    MAX_FS_WRITERS = 107
+    REFRESH_UPDATED_HMS_PARTITIONS = 108
+    SPOOL_ALL_RESULTS_FOR_RETRIES = 109
+    RUNTIME_FILTER_ERROR_RATE = 110
+    USE_LOCAL_TZ_FOR_UNIX_TIMESTAMP_CONVERSIONS = 111
+    CONVERT_LEGACY_HIVE_PARQUET_UTC_TIMESTAMPS = 112
+    ENABLE_OUTER_JOIN_TO_INNER_TRANSFORMATION = 113
+    TARGETED_KUDU_SCAN_RANGE_LENGTH = 114
+    REPORT_SKEW_LIMIT = 115
+    OPTIMIZE_SIMPLE_LIMIT = 116
+    USE_DOP_FOR_COSTING = 117
+    BROADCAST_TO_PARTITION_FACTOR = 118
+    JOIN_ROWS_PRODUCED_LIMIT = 119
+    UTF8_MODE = 120
+    ANALYTIC_RANK_PUSHDOWN_THRESHOLD = 121
+    MINMAX_FILTER_THRESHOLD = 122
+    MINMAX_FILTERING_LEVEL = 123
+    COMPUTE_COLUMN_MINMAX_STATS = 124
+    SHOW_COLUMN_MINMAX_STATS = 125
+    DEFAULT_NDV_SCALE = 126
+    KUDU_REPLICA_SELECTION = 127
+    DELETE_STATS_IN_TRUNCATE = 128
+    PARQUET_BLOOM_FILTERING = 129
+    MINMAX_FILTER_SORTED_COLUMNS = 130
+    MINMAX_FILTER_FAST_CODE_PATH = 131
+    ENABLE_KUDU_TRANSACTION = 132
+    MINMAX_FILTER_PARTITION_COLUMNS = 133
+    PARQUET_BLOOM_FILTER_WRITE = 134
+    ORC_READ_STATISTICS = 135
+    ENABLE_ASYNC_DDL_EXECUTION = 136
+    ENABLE_ASYNC_LOAD_DATA_EXECUTION = 137
+    PARQUET_LATE_MATERIALIZATION_THRESHOLD = 138
+    PARQUET_DICTIONARY_RUNTIME_FILTER_ENTRY_LIMIT = 139
+    ABORT_JAVA_UDF_ON_EXCEPTION = 140
+    ORC_ASYNC_READ = 141
+    RUNTIME_IN_LIST_FILTER_ENTRY_LIMIT = 142
+    ENABLE_REPLAN = 143
+    TEST_REPLAN = 144
+    LOCK_MAX_WAIT_TIME_S = 145
+    ORC_SCHEMA_RESOLUTION = 146
+    EXPAND_COMPLEX_TYPES = 147
+    FALLBACK_DB_FOR_FUNCTIONS = 148
+    DISABLE_CODEGEN_CACHE = 149
+    CODEGEN_CACHE_MODE = 150
+    STRINGIFY_MAP_KEYS = 151
+    ENABLE_TRIVIAL_QUERY_FOR_ADMISSION = 152
+    COMPUTE_PROCESSING_COST = 153
+    PROCESSING_COST_MIN_THREADS = 154
+    JOIN_SELECTIVITY_CORRELATION_FACTOR = 155
+    MAX_FRAGMENT_INSTANCES_PER_NODE = 156
+    MAX_SORT_RUN_SIZE = 157
+    ALLOW_UNSAFE_CASTS = 158
+    NUM_THREADS_FOR_TABLE_MIGRATION = 159
+    DISABLE_OPTIMIZED_ICEBERG_V2_READ = 160
+    VALUES_STMT_AVOID_LOSSY_CHAR_PADDING = 161
+    LARGE_AGG_MEM_THRESHOLD = 162
+    AGG_MEM_CORRELATION_FACTOR = 163
+    MEM_LIMIT_COORDINATORS = 164
+    ICEBERG_PREDICATE_PUSHDOWN_SUBSETTING = 165
+    HDFS_SCANNER_NON_RESERVED_BYTES = 166
+    CODEGEN_OPT_LEVEL = 167
+    KUDU_TABLE_RESERVE_SECONDS = 168
+    CONVERT_KUDU_UTC_TIMESTAMPS = 169
+    DISABLE_KUDU_LOCAL_TIMESTAMP_BLOOM_FILTER = 170
 
     _VALUES_TO_NAMES = {
         0: "ABORT_ON_ERROR",
@@ -180,6 +273,99 @@ class TImpalaQueryOptions(object):
         75: "NUM_REMOTE_EXECUTOR_CANDIDATES",
         76: "NUM_ROWS_PRODUCED_LIMIT",
         77: "PLANNER_TESTCASE_MODE",
+        78: "DEFAULT_FILE_FORMAT",
+        79: "PARQUET_TIMESTAMP_TYPE",
+        80: "PARQUET_READ_PAGE_INDEX",
+        81: "PARQUET_WRITE_PAGE_INDEX",
+        82: "PARQUET_PAGE_ROW_COUNT_LIMIT",
+        83: "DISABLE_HDFS_NUM_ROWS_ESTIMATE",
+        84: "DEFAULT_HINTS_INSERT_STATEMENT",
+        85: "SPOOL_QUERY_RESULTS",
+        86: "DEFAULT_TRANSACTIONAL_TYPE",
+        87: "STATEMENT_EXPRESSION_LIMIT",
+        88: "MAX_STATEMENT_LENGTH_BYTES",
+        89: "DISABLE_DATA_CACHE",
+        90: "MAX_RESULT_SPOOLING_MEM",
+        91: "MAX_SPILLED_RESULT_SPOOLING_MEM",
+        92: "DISABLE_HBASE_NUM_ROWS_ESTIMATE",
+        93: "FETCH_ROWS_TIMEOUT_MS",
+        94: "NOW_STRING",
+        95: "PARQUET_OBJECT_STORE_SPLIT_SIZE",
+        96: "MEM_LIMIT_EXECUTORS",
+        97: "BROADCAST_BYTES_LIMIT",
+        98: "PREAGG_BYTES_LIMIT",
+        99: "ENABLE_CNF_REWRITES",
+        100: "MAX_CNF_EXPRS",
+        101: "KUDU_SNAPSHOT_READ_TIMESTAMP_MICROS",
+        102: "RETRY_FAILED_QUERIES",
+        103: "ENABLED_RUNTIME_FILTER_TYPES",
+        104: "ASYNC_CODEGEN",
+        105: "ENABLE_DISTINCT_SEMI_JOIN_OPTIMIZATION",
+        106: "SORT_RUN_BYTES_LIMIT",
+        107: "MAX_FS_WRITERS",
+        108: "REFRESH_UPDATED_HMS_PARTITIONS",
+        109: "SPOOL_ALL_RESULTS_FOR_RETRIES",
+        110: "RUNTIME_FILTER_ERROR_RATE",
+        111: "USE_LOCAL_TZ_FOR_UNIX_TIMESTAMP_CONVERSIONS",
+        112: "CONVERT_LEGACY_HIVE_PARQUET_UTC_TIMESTAMPS",
+        113: "ENABLE_OUTER_JOIN_TO_INNER_TRANSFORMATION",
+        114: "TARGETED_KUDU_SCAN_RANGE_LENGTH",
+        115: "REPORT_SKEW_LIMIT",
+        116: "OPTIMIZE_SIMPLE_LIMIT",
+        117: "USE_DOP_FOR_COSTING",
+        118: "BROADCAST_TO_PARTITION_FACTOR",
+        119: "JOIN_ROWS_PRODUCED_LIMIT",
+        120: "UTF8_MODE",
+        121: "ANALYTIC_RANK_PUSHDOWN_THRESHOLD",
+        122: "MINMAX_FILTER_THRESHOLD",
+        123: "MINMAX_FILTERING_LEVEL",
+        124: "COMPUTE_COLUMN_MINMAX_STATS",
+        125: "SHOW_COLUMN_MINMAX_STATS",
+        126: "DEFAULT_NDV_SCALE",
+        127: "KUDU_REPLICA_SELECTION",
+        128: "DELETE_STATS_IN_TRUNCATE",
+        129: "PARQUET_BLOOM_FILTERING",
+        130: "MINMAX_FILTER_SORTED_COLUMNS",
+        131: "MINMAX_FILTER_FAST_CODE_PATH",
+        132: "ENABLE_KUDU_TRANSACTION",
+        133: "MINMAX_FILTER_PARTITION_COLUMNS",
+        134: "PARQUET_BLOOM_FILTER_WRITE",
+        135: "ORC_READ_STATISTICS",
+        136: "ENABLE_ASYNC_DDL_EXECUTION",
+        137: "ENABLE_ASYNC_LOAD_DATA_EXECUTION",
+        138: "PARQUET_LATE_MATERIALIZATION_THRESHOLD",
+        139: "PARQUET_DICTIONARY_RUNTIME_FILTER_ENTRY_LIMIT",
+        140: "ABORT_JAVA_UDF_ON_EXCEPTION",
+        141: "ORC_ASYNC_READ",
+        142: "RUNTIME_IN_LIST_FILTER_ENTRY_LIMIT",
+        143: "ENABLE_REPLAN",
+        144: "TEST_REPLAN",
+        145: "LOCK_MAX_WAIT_TIME_S",
+        146: "ORC_SCHEMA_RESOLUTION",
+        147: "EXPAND_COMPLEX_TYPES",
+        148: "FALLBACK_DB_FOR_FUNCTIONS",
+        149: "DISABLE_CODEGEN_CACHE",
+        150: "CODEGEN_CACHE_MODE",
+        151: "STRINGIFY_MAP_KEYS",
+        152: "ENABLE_TRIVIAL_QUERY_FOR_ADMISSION",
+        153: "COMPUTE_PROCESSING_COST",
+        154: "PROCESSING_COST_MIN_THREADS",
+        155: "JOIN_SELECTIVITY_CORRELATION_FACTOR",
+        156: "MAX_FRAGMENT_INSTANCES_PER_NODE",
+        157: "MAX_SORT_RUN_SIZE",
+        158: "ALLOW_UNSAFE_CASTS",
+        159: "NUM_THREADS_FOR_TABLE_MIGRATION",
+        160: "DISABLE_OPTIMIZED_ICEBERG_V2_READ",
+        161: "VALUES_STMT_AVOID_LOSSY_CHAR_PADDING",
+        162: "LARGE_AGG_MEM_THRESHOLD",
+        163: "AGG_MEM_CORRELATION_FACTOR",
+        164: "MEM_LIMIT_COORDINATORS",
+        165: "ICEBERG_PREDICATE_PUSHDOWN_SUBSETTING",
+        166: "HDFS_SCANNER_NON_RESERVED_BYTES",
+        167: "CODEGEN_OPT_LEVEL",
+        168: "KUDU_TABLE_RESERVE_SECONDS",
+        169: "CONVERT_KUDU_UTC_TIMESTAMPS",
+        170: "DISABLE_KUDU_LOCAL_TIMESTAMP_BLOOM_FILTER",
     }
 
     _NAMES_TO_VALUES = {
@@ -261,20 +447,115 @@ class TImpalaQueryOptions(object):
         "NUM_REMOTE_EXECUTOR_CANDIDATES": 75,
         "NUM_ROWS_PRODUCED_LIMIT": 76,
         "PLANNER_TESTCASE_MODE": 77,
+        "DEFAULT_FILE_FORMAT": 78,
+        "PARQUET_TIMESTAMP_TYPE": 79,
+        "PARQUET_READ_PAGE_INDEX": 80,
+        "PARQUET_WRITE_PAGE_INDEX": 81,
+        "PARQUET_PAGE_ROW_COUNT_LIMIT": 82,
+        "DISABLE_HDFS_NUM_ROWS_ESTIMATE": 83,
+        "DEFAULT_HINTS_INSERT_STATEMENT": 84,
+        "SPOOL_QUERY_RESULTS": 85,
+        "DEFAULT_TRANSACTIONAL_TYPE": 86,
+        "STATEMENT_EXPRESSION_LIMIT": 87,
+        "MAX_STATEMENT_LENGTH_BYTES": 88,
+        "DISABLE_DATA_CACHE": 89,
+        "MAX_RESULT_SPOOLING_MEM": 90,
+        "MAX_SPILLED_RESULT_SPOOLING_MEM": 91,
+        "DISABLE_HBASE_NUM_ROWS_ESTIMATE": 92,
+        "FETCH_ROWS_TIMEOUT_MS": 93,
+        "NOW_STRING": 94,
+        "PARQUET_OBJECT_STORE_SPLIT_SIZE": 95,
+        "MEM_LIMIT_EXECUTORS": 96,
+        "BROADCAST_BYTES_LIMIT": 97,
+        "PREAGG_BYTES_LIMIT": 98,
+        "ENABLE_CNF_REWRITES": 99,
+        "MAX_CNF_EXPRS": 100,
+        "KUDU_SNAPSHOT_READ_TIMESTAMP_MICROS": 101,
+        "RETRY_FAILED_QUERIES": 102,
+        "ENABLED_RUNTIME_FILTER_TYPES": 103,
+        "ASYNC_CODEGEN": 104,
+        "ENABLE_DISTINCT_SEMI_JOIN_OPTIMIZATION": 105,
+        "SORT_RUN_BYTES_LIMIT": 106,
+        "MAX_FS_WRITERS": 107,
+        "REFRESH_UPDATED_HMS_PARTITIONS": 108,
+        "SPOOL_ALL_RESULTS_FOR_RETRIES": 109,
+        "RUNTIME_FILTER_ERROR_RATE": 110,
+        "USE_LOCAL_TZ_FOR_UNIX_TIMESTAMP_CONVERSIONS": 111,
+        "CONVERT_LEGACY_HIVE_PARQUET_UTC_TIMESTAMPS": 112,
+        "ENABLE_OUTER_JOIN_TO_INNER_TRANSFORMATION": 113,
+        "TARGETED_KUDU_SCAN_RANGE_LENGTH": 114,
+        "REPORT_SKEW_LIMIT": 115,
+        "OPTIMIZE_SIMPLE_LIMIT": 116,
+        "USE_DOP_FOR_COSTING": 117,
+        "BROADCAST_TO_PARTITION_FACTOR": 118,
+        "JOIN_ROWS_PRODUCED_LIMIT": 119,
+        "UTF8_MODE": 120,
+        "ANALYTIC_RANK_PUSHDOWN_THRESHOLD": 121,
+        "MINMAX_FILTER_THRESHOLD": 122,
+        "MINMAX_FILTERING_LEVEL": 123,
+        "COMPUTE_COLUMN_MINMAX_STATS": 124,
+        "SHOW_COLUMN_MINMAX_STATS": 125,
+        "DEFAULT_NDV_SCALE": 126,
+        "KUDU_REPLICA_SELECTION": 127,
+        "DELETE_STATS_IN_TRUNCATE": 128,
+        "PARQUET_BLOOM_FILTERING": 129,
+        "MINMAX_FILTER_SORTED_COLUMNS": 130,
+        "MINMAX_FILTER_FAST_CODE_PATH": 131,
+        "ENABLE_KUDU_TRANSACTION": 132,
+        "MINMAX_FILTER_PARTITION_COLUMNS": 133,
+        "PARQUET_BLOOM_FILTER_WRITE": 134,
+        "ORC_READ_STATISTICS": 135,
+        "ENABLE_ASYNC_DDL_EXECUTION": 136,
+        "ENABLE_ASYNC_LOAD_DATA_EXECUTION": 137,
+        "PARQUET_LATE_MATERIALIZATION_THRESHOLD": 138,
+        "PARQUET_DICTIONARY_RUNTIME_FILTER_ENTRY_LIMIT": 139,
+        "ABORT_JAVA_UDF_ON_EXCEPTION": 140,
+        "ORC_ASYNC_READ": 141,
+        "RUNTIME_IN_LIST_FILTER_ENTRY_LIMIT": 142,
+        "ENABLE_REPLAN": 143,
+        "TEST_REPLAN": 144,
+        "LOCK_MAX_WAIT_TIME_S": 145,
+        "ORC_SCHEMA_RESOLUTION": 146,
+        "EXPAND_COMPLEX_TYPES": 147,
+        "FALLBACK_DB_FOR_FUNCTIONS": 148,
+        "DISABLE_CODEGEN_CACHE": 149,
+        "CODEGEN_CACHE_MODE": 150,
+        "STRINGIFY_MAP_KEYS": 151,
+        "ENABLE_TRIVIAL_QUERY_FOR_ADMISSION": 152,
+        "COMPUTE_PROCESSING_COST": 153,
+        "PROCESSING_COST_MIN_THREADS": 154,
+        "JOIN_SELECTIVITY_CORRELATION_FACTOR": 155,
+        "MAX_FRAGMENT_INSTANCES_PER_NODE": 156,
+        "MAX_SORT_RUN_SIZE": 157,
+        "ALLOW_UNSAFE_CASTS": 158,
+        "NUM_THREADS_FOR_TABLE_MIGRATION": 159,
+        "DISABLE_OPTIMIZED_ICEBERG_V2_READ": 160,
+        "VALUES_STMT_AVOID_LOSSY_CHAR_PADDING": 161,
+        "LARGE_AGG_MEM_THRESHOLD": 162,
+        "AGG_MEM_CORRELATION_FACTOR": 163,
+        "MEM_LIMIT_COORDINATORS": 164,
+        "ICEBERG_PREDICATE_PUSHDOWN_SUBSETTING": 165,
+        "HDFS_SCANNER_NON_RESERVED_BYTES": 166,
+        "CODEGEN_OPT_LEVEL": 167,
+        "KUDU_TABLE_RESERVE_SECONDS": 168,
+        "CONVERT_KUDU_UTC_TIMESTAMPS": 169,
+        "DISABLE_KUDU_LOCAL_TIMESTAMP_BLOOM_FILTER": 170,
     }
 
 
-class TInsertResult(object):
+class TDmlResult(object):
     """
     Attributes:
      - rows_modified
+     - rows_deleted
      - num_row_errors
 
     """
 
 
-    def __init__(self, rows_modified=None, num_row_errors=None,):
+    def __init__(self, rows_modified=None, rows_deleted=None, num_row_errors=None,):
         self.rows_modified = rows_modified
+        self.rows_deleted = rows_deleted
         self.num_row_errors = num_row_errors
 
     def read(self, iprot):
@@ -297,6 +578,17 @@ class TInsertResult(object):
                     iprot.readMapEnd()
                 else:
                     iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.MAP:
+                    self.rows_deleted = {}
+                    (_ktype8, _vtype9, _size7) = iprot.readMapBegin()
+                    for _i11 in range(_size7):
+                        _key12 = iprot.readString()
+                        _val13 = iprot.readI64()
+                        self.rows_deleted[_key12] = _val13
+                    iprot.readMapEnd()
+                else:
+                    iprot.skip(ftype)
             elif fid == 2:
                 if ftype == TType.I64:
                     self.num_row_errors = iprot.readI64()
@@ -311,18 +603,26 @@ class TInsertResult(object):
         if oprot._fast_encode is not None and self.thrift_spec is not None:
             oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
             return
-        oprot.writeStructBegin('TInsertResult')
+        oprot.writeStructBegin('TDmlResult')
         if self.rows_modified is not None:
             oprot.writeFieldBegin('rows_modified', TType.MAP, 1)
             oprot.writeMapBegin(TType.STRING, TType.I64, len(self.rows_modified))
-            for kiter7, viter8 in self.rows_modified.items():
-                oprot.writeString(kiter7)
-                oprot.writeI64(viter8)
+            for kiter14, viter15 in self.rows_modified.items():
+                oprot.writeString(kiter14)
+                oprot.writeI64(viter15)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         if self.num_row_errors is not None:
             oprot.writeFieldBegin('num_row_errors', TType.I64, 2)
             oprot.writeI64(self.num_row_errors)
+            oprot.writeFieldEnd()
+        if self.rows_deleted is not None:
+            oprot.writeFieldBegin('rows_deleted', TType.MAP, 3)
+            oprot.writeMapBegin(TType.STRING, TType.I64, len(self.rows_deleted))
+            for kiter16, viter17 in self.rows_deleted.items():
+                oprot.writeString(kiter16)
+                oprot.writeI64(viter17)
+            oprot.writeMapEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -484,18 +784,305 @@ class TResetTableReq(object):
         return not (self == other)
 
 
-class TGetExecSummaryReq(object):
+class TPingImpalaHS2ServiceReq(object):
     """
     Attributes:
-     - operationHandle
      - sessionHandle
 
     """
 
 
-    def __init__(self, operationHandle=None, sessionHandle=None,):
+    def __init__(self, sessionHandle=None,):
+        self.sessionHandle = sessionHandle
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.sessionHandle = impala._thrift_gen.TCLIService.ttypes.TSessionHandle()
+                    self.sessionHandle.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('TPingImpalaHS2ServiceReq')
+        if self.sessionHandle is not None:
+            oprot.writeFieldBegin('sessionHandle', TType.STRUCT, 1)
+            self.sessionHandle.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.sessionHandle is None:
+            raise TProtocolException(message='Required field sessionHandle is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class TPingImpalaHS2ServiceResp(object):
+    """
+    Attributes:
+     - status
+     - version
+     - webserver_address
+     - timestamp
+
+    """
+
+
+    def __init__(self, status=None, version=None, webserver_address=None, timestamp=None,):
+        self.status = status
+        self.version = version
+        self.webserver_address = webserver_address
+        self.timestamp = timestamp
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.status = impala._thrift_gen.TCLIService.ttypes.TStatus()
+                    self.status.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRING:
+                    self.version = iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.STRING:
+                    self.webserver_address = iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.I64:
+                    self.timestamp = iprot.readI64()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('TPingImpalaHS2ServiceResp')
+        if self.status is not None:
+            oprot.writeFieldBegin('status', TType.STRUCT, 1)
+            self.status.write(oprot)
+            oprot.writeFieldEnd()
+        if self.version is not None:
+            oprot.writeFieldBegin('version', TType.STRING, 2)
+            oprot.writeString(self.version)
+            oprot.writeFieldEnd()
+        if self.webserver_address is not None:
+            oprot.writeFieldBegin('webserver_address', TType.STRING, 3)
+            oprot.writeString(self.webserver_address)
+            oprot.writeFieldEnd()
+        if self.timestamp is not None:
+            oprot.writeFieldBegin('timestamp', TType.I64, 4)
+            oprot.writeI64(self.timestamp)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.status is None:
+            raise TProtocolException(message='Required field status is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class TCloseImpalaOperationReq(object):
+    """
+    Attributes:
+     - operationHandle
+
+    """
+
+
+    def __init__(self, operationHandle=None,):
+        self.operationHandle = operationHandle
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.operationHandle = impala._thrift_gen.TCLIService.ttypes.TOperationHandle()
+                    self.operationHandle.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('TCloseImpalaOperationReq')
+        if self.operationHandle is not None:
+            oprot.writeFieldBegin('operationHandle', TType.STRUCT, 1)
+            self.operationHandle.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.operationHandle is None:
+            raise TProtocolException(message='Required field operationHandle is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class TCloseImpalaOperationResp(object):
+    """
+    Attributes:
+     - status
+     - dml_result
+
+    """
+
+
+    def __init__(self, status=None, dml_result=None,):
+        self.status = status
+        self.dml_result = dml_result
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRUCT:
+                    self.status = impala._thrift_gen.TCLIService.ttypes.TStatus()
+                    self.status.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.STRUCT:
+                    self.dml_result = TDmlResult()
+                    self.dml_result.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('TCloseImpalaOperationResp')
+        if self.status is not None:
+            oprot.writeFieldBegin('status', TType.STRUCT, 1)
+            self.status.write(oprot)
+            oprot.writeFieldEnd()
+        if self.dml_result is not None:
+            oprot.writeFieldBegin('dml_result', TType.STRUCT, 2)
+            self.dml_result.write(oprot)
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.status is None:
+            raise TProtocolException(message='Required field status is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class TGetExecSummaryReq(object):
+    """
+    Attributes:
+     - operationHandle
+     - sessionHandle
+     - include_query_attempts
+
+    """
+
+
+    def __init__(self, operationHandle=None, sessionHandle=None, include_query_attempts=False,):
         self.operationHandle = operationHandle
         self.sessionHandle = sessionHandle
+        self.include_query_attempts = include_query_attempts
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -518,6 +1105,11 @@ class TGetExecSummaryReq(object):
                     self.sessionHandle.read(iprot)
                 else:
                     iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.BOOL:
+                    self.include_query_attempts = iprot.readBool()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -535,6 +1127,10 @@ class TGetExecSummaryReq(object):
         if self.sessionHandle is not None:
             oprot.writeFieldBegin('sessionHandle', TType.STRUCT, 2)
             self.sessionHandle.write(oprot)
+            oprot.writeFieldEnd()
+        if self.include_query_attempts is not None:
+            oprot.writeFieldBegin('include_query_attempts', TType.BOOL, 3)
+            oprot.writeBool(self.include_query_attempts)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -559,13 +1155,15 @@ class TGetExecSummaryResp(object):
     Attributes:
      - status
      - summary
+     - failed_summaries
 
     """
 
 
-    def __init__(self, status=None, summary=None,):
+    def __init__(self, status=None, summary=None, failed_summaries=None,):
         self.status = status
         self.summary = summary
+        self.failed_summaries = failed_summaries
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -588,6 +1186,17 @@ class TGetExecSummaryResp(object):
                     self.summary.read(iprot)
                 else:
                     iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.LIST:
+                    self.failed_summaries = []
+                    (_etype21, _size18) = iprot.readListBegin()
+                    for _i22 in range(_size18):
+                        _elem23 = impala._thrift_gen.ExecStats.ttypes.TExecSummary()
+                        _elem23.read(iprot)
+                        self.failed_summaries.append(_elem23)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -605,6 +1214,13 @@ class TGetExecSummaryResp(object):
         if self.summary is not None:
             oprot.writeFieldBegin('summary', TType.STRUCT, 2)
             self.summary.write(oprot)
+            oprot.writeFieldEnd()
+        if self.failed_summaries is not None:
+            oprot.writeFieldBegin('failed_summaries', TType.LIST, 3)
+            oprot.writeListBegin(TType.STRUCT, len(self.failed_summaries))
+            for iter24 in self.failed_summaries:
+                iter24.write(oprot)
+            oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -632,14 +1248,16 @@ class TGetRuntimeProfileReq(object):
      - operationHandle
      - sessionHandle
      - format
+     - include_query_attempts
 
     """
 
 
-    def __init__(self, operationHandle=None, sessionHandle=None, format=0,):
+    def __init__(self, operationHandle=None, sessionHandle=None, format=0, include_query_attempts=False,):
         self.operationHandle = operationHandle
         self.sessionHandle = sessionHandle
         self.format = format
+        self.include_query_attempts = include_query_attempts
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -667,6 +1285,11 @@ class TGetRuntimeProfileReq(object):
                     self.format = iprot.readI32()
                 else:
                     iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.BOOL:
+                    self.include_query_attempts = iprot.readBool()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -688,6 +1311,10 @@ class TGetRuntimeProfileReq(object):
         if self.format is not None:
             oprot.writeFieldBegin('format', TType.I32, 3)
             oprot.writeI32(self.format)
+            oprot.writeFieldEnd()
+        if self.include_query_attempts is not None:
+            oprot.writeFieldBegin('include_query_attempts', TType.BOOL, 4)
+            oprot.writeBool(self.include_query_attempts)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -713,14 +1340,18 @@ class TGetRuntimeProfileResp(object):
      - status
      - profile
      - thrift_profile
+     - failed_profiles
+     - failed_thrift_profiles
 
     """
 
 
-    def __init__(self, status=None, profile=None, thrift_profile=None,):
+    def __init__(self, status=None, profile=None, thrift_profile=None, failed_profiles=None, failed_thrift_profiles=None,):
         self.status = status
         self.profile = profile
         self.thrift_profile = thrift_profile
+        self.failed_profiles = failed_profiles
+        self.failed_thrift_profiles = failed_thrift_profiles
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -748,6 +1379,27 @@ class TGetRuntimeProfileResp(object):
                     self.thrift_profile.read(iprot)
                 else:
                     iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.LIST:
+                    self.failed_profiles = []
+                    (_etype28, _size25) = iprot.readListBegin()
+                    for _i29 in range(_size25):
+                        _elem30 = iprot.readString()
+                        self.failed_profiles.append(_elem30)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 5:
+                if ftype == TType.LIST:
+                    self.failed_thrift_profiles = []
+                    (_etype34, _size31) = iprot.readListBegin()
+                    for _i35 in range(_size31):
+                        _elem36 = impala._thrift_gen.RuntimeProfile.ttypes.TRuntimeProfileTree()
+                        _elem36.read(iprot)
+                        self.failed_thrift_profiles.append(_elem36)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -770,6 +1422,20 @@ class TGetRuntimeProfileResp(object):
             oprot.writeFieldBegin('thrift_profile', TType.STRUCT, 3)
             self.thrift_profile.write(oprot)
             oprot.writeFieldEnd()
+        if self.failed_profiles is not None:
+            oprot.writeFieldBegin('failed_profiles', TType.LIST, 4)
+            oprot.writeListBegin(TType.STRING, len(self.failed_profiles))
+            for iter37 in self.failed_profiles:
+                oprot.writeString(iter37)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.failed_thrift_profiles is not None:
+            oprot.writeFieldBegin('failed_thrift_profiles', TType.LIST, 5)
+            oprot.writeListBegin(TType.STRUCT, len(self.failed_thrift_profiles))
+            for iter38 in self.failed_thrift_profiles:
+                iter38.write(oprot)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -788,11 +1454,12 @@ class TGetRuntimeProfileResp(object):
 
     def __ne__(self, other):
         return not (self == other)
-all_structs.append(TInsertResult)
-TInsertResult.thrift_spec = (
+all_structs.append(TDmlResult)
+TDmlResult.thrift_spec = (
     None,  # 0
     (1, TType.MAP, 'rows_modified', (TType.STRING, None, TType.I64, None, False), None, ),  # 1
     (2, TType.I64, 'num_row_errors', None, None, ),  # 2
+    (3, TType.MAP, 'rows_deleted', (TType.STRING, None, TType.I64, None, False), None, ),  # 3
 )
 all_structs.append(TPingImpalaServiceResp)
 TPingImpalaServiceResp.thrift_spec = (
@@ -806,17 +1473,43 @@ TResetTableReq.thrift_spec = (
     (1, TType.STRING, 'db_name', None, None, ),  # 1
     (2, TType.STRING, 'table_name', None, None, ),  # 2
 )
+all_structs.append(TPingImpalaHS2ServiceReq)
+TPingImpalaHS2ServiceReq.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'sessionHandle', [impala._thrift_gen.TCLIService.ttypes.TSessionHandle, None], None, ),  # 1
+)
+all_structs.append(TPingImpalaHS2ServiceResp)
+TPingImpalaHS2ServiceResp.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'status', [impala._thrift_gen.TCLIService.ttypes.TStatus, None], None, ),  # 1
+    (2, TType.STRING, 'version', None, None, ),  # 2
+    (3, TType.STRING, 'webserver_address', None, None, ),  # 3
+    (4, TType.I64, 'timestamp', None, None, ),  # 4
+)
+all_structs.append(TCloseImpalaOperationReq)
+TCloseImpalaOperationReq.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'operationHandle', [impala._thrift_gen.TCLIService.ttypes.TOperationHandle, None], None, ),  # 1
+)
+all_structs.append(TCloseImpalaOperationResp)
+TCloseImpalaOperationResp.thrift_spec = (
+    None,  # 0
+    (1, TType.STRUCT, 'status', [impala._thrift_gen.TCLIService.ttypes.TStatus, None], None, ),  # 1
+    (2, TType.STRUCT, 'dml_result', [TDmlResult, None], None, ),  # 2
+)
 all_structs.append(TGetExecSummaryReq)
 TGetExecSummaryReq.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'operationHandle', [impala._thrift_gen.TCLIService.ttypes.TOperationHandle, None], None, ),  # 1
     (2, TType.STRUCT, 'sessionHandle', [impala._thrift_gen.TCLIService.ttypes.TSessionHandle, None], None, ),  # 2
+    (3, TType.BOOL, 'include_query_attempts', None, False, ),  # 3
 )
 all_structs.append(TGetExecSummaryResp)
 TGetExecSummaryResp.thrift_spec = (
     None,  # 0
     (1, TType.STRUCT, 'status', [impala._thrift_gen.TCLIService.ttypes.TStatus, None], None, ),  # 1
     (2, TType.STRUCT, 'summary', [impala._thrift_gen.ExecStats.ttypes.TExecSummary, None], None, ),  # 2
+    (3, TType.LIST, 'failed_summaries', (TType.STRUCT, [impala._thrift_gen.ExecStats.ttypes.TExecSummary, None], False), None, ),  # 3
 )
 all_structs.append(TGetRuntimeProfileReq)
 TGetRuntimeProfileReq.thrift_spec = (
@@ -824,6 +1517,7 @@ TGetRuntimeProfileReq.thrift_spec = (
     (1, TType.STRUCT, 'operationHandle', [impala._thrift_gen.TCLIService.ttypes.TOperationHandle, None], None, ),  # 1
     (2, TType.STRUCT, 'sessionHandle', [impala._thrift_gen.TCLIService.ttypes.TSessionHandle, None], None, ),  # 2
     (3, TType.I32, 'format', None, 0, ),  # 3
+    (4, TType.BOOL, 'include_query_attempts', None, False, ),  # 4
 )
 all_structs.append(TGetRuntimeProfileResp)
 TGetRuntimeProfileResp.thrift_spec = (
@@ -831,6 +1525,8 @@ TGetRuntimeProfileResp.thrift_spec = (
     (1, TType.STRUCT, 'status', [impala._thrift_gen.TCLIService.ttypes.TStatus, None], None, ),  # 1
     (2, TType.STRING, 'profile', None, None, ),  # 2
     (3, TType.STRUCT, 'thrift_profile', [impala._thrift_gen.RuntimeProfile.ttypes.TRuntimeProfileTree, None], None, ),  # 3
+    (4, TType.LIST, 'failed_profiles', (TType.STRING, None, False), None, ),  # 4
+    (5, TType.LIST, 'failed_thrift_profiles', (TType.STRUCT, [impala._thrift_gen.RuntimeProfile.ttypes.TRuntimeProfileTree, None], False), None, ),  # 5
 )
 fix_spec(all_structs)
 del all_structs

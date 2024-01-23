@@ -1101,7 +1101,7 @@ class CloseInsert_result(object):
                 break
             if fid == 0:
                 if ftype == TType.STRUCT:
-                    self.success = TInsertResult()
+                    self.success = TDmlResult()
                     self.success.read(iprot)
                 else:
                     iprot.skip(ftype)
@@ -1155,7 +1155,7 @@ class CloseInsert_result(object):
         return not (self == other)
 all_structs.append(CloseInsert_result)
 CloseInsert_result.thrift_spec = (
-    (0, TType.STRUCT, 'success', [TInsertResult, None], None, ),  # 0
+    (0, TType.STRUCT, 'success', [TDmlResult, None], None, ),  # 0
     (1, TType.STRUCT, 'error', [impala._thrift_gen.beeswax.ttypes.QueryNotFoundException, None], None, ),  # 1
     (2, TType.STRUCT, 'error2', [impala._thrift_gen.beeswax.ttypes.BeeswaxException, None], None, ),  # 2
 )
