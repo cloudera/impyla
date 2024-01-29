@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import sys
-import time
 
 import pytest
 from impala.compat import _xrange as xrange
@@ -81,7 +80,9 @@ def test_row_count_in_empty_result(cur, empty_table):
     assert cur.rowcount == 0
 
 def test_get_log(cur, empty_table):
-    """Test that impyla correctly sets rowcount for insert statements."""
+    """Test that impyla can return the result of get_log after the query
+       is closed.
+    """
     query = """SELECT * FROM {0}""".format(empty_table)
     cur.execute(query)
     cur.fetchall()

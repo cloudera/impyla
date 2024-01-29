@@ -114,11 +114,14 @@ class HiveServer2Connection(Connection):
             The Default option is `True`.
         close_finished_queries : bool, optional
             If True, queries are closed after:
-                queries with results set: all rows are returned with fetch
-                DDL/DML: execution is finished
-            If False, then the query will be only closed when the cursor is closed
-            or when its destructor is called. Property rowcount will not be available
-            in this case for DML statements.
+                - queries with results set: all rows are returned with fetch
+                - DDL/DML: execution is finished
+            If False, then the query will be only closed when:
+                - execute() is called again on the cursor with a new query
+                - close() is called on the cursor
+                - the cursor's destructor is called
+            Property 'rowcount' will not be available in the 'False' case for DML
+            statements.
             Before closing the query GetLog() is called as this will be no longer
             possible after closing.
             The Default option is `True`.
@@ -380,7 +383,6 @@ class HiveServer2Cursor(Cursor):
         log.debug('Waiting for query to finish')
         self._wait_to_finish()  # make execute synchronous
         log.debug('Query finished')
-        #if not self.has_result_set and self._last_operation:
         if not self.has_result_set and self.close_finished_queries:
             # Close query if no results need to be fetched.
             self._close_finished_operation()
