@@ -37,7 +37,7 @@ from impala._thrift_gen.TCLIService.ttypes import (
     TGetOperationStatusReq, TOperationState, TCancelOperationReq,
     TCloseOperationReq, TGetLogReq, TProtocolVersion)
 from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
-    TGetRuntimeProfileReq, TGetExecSummaryReq)
+    TGetRuntimeProfileReq, TGetExecSummaryReq, TCloseImpalaOperationReq)
 from impala._thrift_api import (
     get_socket, get_http_transport, get_transport, ThriftClient)
 from impala._thrift_gen.RuntimeProfile.ttypes import TRuntimeProfileFormat
@@ -84,7 +84,7 @@ class HiveServer2Connection(Connection):
         raise NotSupportedError
 
     def cursor(self, user=None, configuration=None, convert_types=True,
-               dictify=False, fetch_error=True):
+               dictify=False, fetch_error=True, close_finished_queries=True):
         """Get a cursor from the HiveServer2 (HS2) connection.
 
         Parameters
@@ -112,6 +112,20 @@ class HiveServer2Connection(Connection):
             handle remains valid and impyla will raise an exception with a
             message of "Operation is in ERROR_STATE".
             The Default option is `True`.
+        close_finished_queries : bool, optional
+            If True, queries are closed after:
+                - queries with results set: all rows are returned with fetch
+                - DDL/DML: execution is finished
+            If False, then the query will be only closed when:
+                - execute() is called again on the cursor with a new query
+                - close() is called on the cursor
+                - the cursor's destructor is called
+            Property 'rowcount' will not be available in the 'False' case for DML
+            statements.
+            Before closing the query GetLog() is called as this will be no longer
+            possible after closing.
+            The Default option is `True`.
+
 
         Returns
         -------
@@ -136,7 +150,8 @@ class HiveServer2Connection(Connection):
         cursor_class = HiveServer2DictCursor if dictify else HiveServer2Cursor
 
         cursor = cursor_class(session, convert_types=convert_types,
-                              fetch_error=fetch_error)
+                              fetch_error=fetch_error,
+                              close_finished_queries=close_finished_queries)
 
         if self.default_db is not None:
             log.info('Using database %s as default', self.default_db)
@@ -153,16 +168,18 @@ class HiveServer2Cursor(Cursor):
     # HiveServer2Cursor objects are associated with a Session
     # they are instantiated with alive session_handles
 
-    def __init__(self, session, convert_types=True, fetch_error=True):
+    def __init__(self, session, convert_types=True, fetch_error=True, close_finished_queries=True):
         self.session = session
         self.convert_types = convert_types
         self.fetch_error = fetch_error
+        self.close_finished_queries = close_finished_queries
 
         self._last_operation = None
 
         self._last_operation_string = None
         self._last_operation_active = False
         self._last_operation_finished = False
+        self._last_operation_log = None
         self._buffersize = None
         self._buffer = Batch()  # zero-length
 
@@ -203,9 +220,12 @@ class HiveServer2Cursor(Cursor):
 
     @property
     def rowcounts(self):
-        # Work around to get the number of rows modified for Inserts/Update/Delte statements
+        # Work around to get the number of rows modified for Inserts/Update/Delete statements
+        # Todo: For the non-Kudu case, this function could use self._rowcount without fetching
+        #       and parsing the profile. This wouldn't be enough for Kudu as NumRowErrors is not
+        #       included in DmlResult.
         modifiedRows, errorRows = -1, -1
-        if self._last_operation_active:
+        if self._last_operation is not None:
             logList = self.get_profile().split('\n')
             resultDict = {}
             subs = ['NumModifiedRows', 'NumRowErrors']
@@ -299,8 +319,8 @@ class HiveServer2Cursor(Cursor):
                 self._reset_state()
 
     def close_operation(self):
-        if self._last_operation_active:
-            log.info('Closing active operation')
+        if self._last_operation is not None:
+            log.info('Closing operation')
             self._reset_state()
 
     def _reset_state(self):
@@ -314,11 +334,32 @@ class HiveServer2Cursor(Cursor):
         self._last_operation_finished = False
         self._last_operation_string = None
         self._last_operation = None
+        self._last_operation_log = None
+        self._rowcount = -1
+
+    def _set_rowcount_from_close_result(self, close_result):
+        if not hasattr(close_result, 'dml_result') or not close_result.dml_result:
+            return
+        rows_modified_per_partition = close_result.dml_result.rows_modified
+        self._rowcount = 0
+        for _, val in rows_modified_per_partition.items():
+            self._rowcount += val
+
+    def _close_finished_operation(self):
+        # Save the log as it can't be accessed after closing the query.
+        self._last_operation_log = self.get_log()
+        self._last_operation_active = False
+        close_result = self._last_operation.close()
+        log.debug('Query closed')
+        # Set rowcount for DMLs.
+        self._set_rowcount_from_close_result(close_result)
 
     def execute(self, operation, parameters=None, configuration=None):
         """Synchronously execute a SQL query.
 
         Blocks until results are available.
+        For DMLs/DDLs if close_finished_queries is true then the query is
+        closed once finished.
 
         Parameters
         ----------
@@ -342,6 +383,10 @@ class HiveServer2Cursor(Cursor):
         log.debug('Waiting for query to finish')
         self._wait_to_finish()  # make execute synchronous
         log.debug('Query finished')
+        if not self.has_result_set and self.close_finished_queries:
+            # Close query if no results need to be fetched.
+            self._close_finished_operation()
+
 
     def execute_async(self, operation, parameters=None, configuration=None):
         """Asynchronously execute a SQL query.
@@ -388,7 +433,7 @@ class HiveServer2Cursor(Cursor):
         self._execute_async(op)
 
     def _debug_log_state(self):
-        if self._last_operation_active:
+        if self._last_operation is not None:
             handle = self._last_operation.handle
         else:
             handle = None
@@ -478,11 +523,18 @@ class HiveServer2Cursor(Cursor):
     def executemany(self, operation, seq_of_parameters, configuration=None):
         # PEP 249
         log.debug('Attempting to execute %s queries', len(seq_of_parameters))
+        rowcount = -1
         for parameters in seq_of_parameters:
             self.execute(operation, parameters, configuration)
             if self.has_result_set:
                 raise ProgrammingError("Operations that have result sets are "
                                        "not allowed with executemany.")
+            if self._rowcount != -1:
+                if rowcount == -1:
+                    rowcount = self._rowcount
+                else:
+                    rowcount += self._rowcount
+        self._rowcount = rowcount
 
     def fetchone(self):
         # PEP 249
@@ -591,9 +643,12 @@ class HiveServer2Cursor(Cursor):
     def __next__(self):
         self._ensure_buffer_is_filled()
         log.debug('__next__: popping row out of buffer')
+        self._rowcount += 1
         return self._buffer.pop()
 
     def _ensure_buffer_is_filled(self):
+        if self._rowcount == -1:
+            self._rowcount = 0
         while True:
             if not self.has_result_set:
                 raise ProgrammingError(
@@ -610,6 +665,12 @@ class HiveServer2Cursor(Cursor):
                     return
                 if not self._buffer.expect_more_rows:
                     log.debug('_ensure_buffer_is_filled: no more data to fetch')
+                    if self.close_finished_queries:
+                        # Close query as it no longer has rows.
+                        # TODO: this could be done earlier after calling fetch - not sure
+                        #       if this would bring enough benefits to worth complicating
+                        #       the state machine
+                        self._close_finished_operation()
                     raise StopIteration
                 # If we didn't get rows, but more are expected, need to iterate again.
             else:
@@ -619,7 +680,9 @@ class HiveServer2Cursor(Cursor):
     def _pop_from_buffer(self, size):
         self._ensure_buffer_is_filled()
         log.debug('pop_from_buffer: popping row out of buffer')
-        return self._buffer.pop_many(size)
+        elements = self._buffer.pop_many(size)
+        self._rowcount += len(elements)
+        return elements
 
     def ping(self):
         """Checks connection to server by requesting some info."""
@@ -629,6 +692,9 @@ class HiveServer2Cursor(Cursor):
     def get_log(self):
         if self._last_operation is None:
             raise ProgrammingError("Operation state is not available")
+        if self._last_operation_log is not None:
+            # Return the log saved before closing the query.
+            return self._last_operation_log
         return self._last_operation.get_log()
 
     def get_profile(self, profile_format=TRuntimeProfileFormat.STRING):
@@ -1356,10 +1422,21 @@ class Operation(ThriftRPC):
         return self._rpc('CancelOperation', req, True)
 
     def close(self):
-        req = TCloseOperationReq(operationHandle=self.handle)
-        # CloseOperation rpc is not idempotent for dml and we're not sure
+        # Try Impala specific CloseImpalaOperation() as it also returns the number of
+        # modified rows for DML statements.
+        # If it doesn't exist (Hive, old Impala) fallback to regular HS2 CloseOperation()
+        # The RPCs are not retried as CloseOperation rpc is not idempotent for dml and we're not sure
         # here if this is dml or not.
-        return self._rpc('CloseOperation', req, False)
+        # TODO: we know in many cases that the query can't be a DML. Not sure if it worth putting
+        #       effort into retrying close()
+        try:
+            req = TCloseImpalaOperationReq(operationHandle=self.handle)
+            return self._rpc('CloseImpalaOperation', req, False)
+        except TApplicationException as e:
+            if not e.type == TApplicationException.UNKNOWN_METHOD:
+                raise
+            req = TCloseOperationReq(operationHandle=self.handle)
+            return self._rpc('CloseOperation', req, False)
 
     def get_profile(self, profile_format=TRuntimeProfileFormat.STRING):
         req = TGetRuntimeProfileReq(operationHandle=self.handle,
