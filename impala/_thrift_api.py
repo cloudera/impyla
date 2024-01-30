@@ -171,9 +171,15 @@ class ImpalaHttpClient(TTransportBase):
       self.__http = http_client.HTTPConnection(self.host, self.port,
                                                timeout=self.__timeout)
     elif self.scheme == 'https':
+      # (#529) From python 3.12 http_client.HTTPSConnection no longer
+      # expects certfile and key_file. Certfile is included in context
+      # while key_file can be used in SSLContext.load_verify_locations.
+      # As Impyla doesn't support server authentication (#362) both
+      # certfile and key_file are expected to be None here.
+      if self.certfile or self.keyfile:
+        raise NotSupportedError("Server authentication is not supported " +
+                                "with HTTP endpoints")
       self.__http = http_client.HTTPSConnection(self.host, self.port,
-                                                key_file=self.keyfile,
-                                                cert_file=self.certfile,
                                                 timeout=self.__timeout,
                                                 context=self.context)
     if self.using_proxy():
