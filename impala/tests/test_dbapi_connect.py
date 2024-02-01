@@ -246,6 +246,12 @@ class ImpalaConnectionTests(unittest.TestCase):
             ENV.host, ENV.port, use_ssl=True, timeout=5, ca_cert=ENV.ssl_cert)
         self._execute_queries(self.connection)
 
+    @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    def test_https_connection(self):
+        self.connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
+                                  http_path="cliservice", use_ssl=True, timeout=5)
+        self._execute_queries(self.connection)
+
 class ImpalaSocketTests(unittest.TestCase):
 
     def run_a_query(self):
