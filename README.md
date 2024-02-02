@@ -103,6 +103,17 @@ py.test --connect impala
 
 Leave out the `--connect` option to skip tests for DB API compliance.
 
+To test impyla with different Python versions [tox] can be used.
+The commands below will run all impyla tests with all supported and
+installed Python versions:
+```bash
+cd path/to/impyla
+tox
+```
+To filter environments / tests use `-e` and [pytest] arguments after `--`:
+```bash
+tox -e py310 -- -ktest_utf8_strings
+```
 
 ### Usage
 
@@ -160,6 +171,7 @@ df = as_pandas(cur)
 [pytest]: http://pytest.org/latest/
 [sqlalchemy]: http://www.sqlalchemy.org/
 [ibis]: http://www.ibis-project.org/
+[tox]: http://tox.wiki/
 
 # How do I contribute code?
 You need to first sign and return an
