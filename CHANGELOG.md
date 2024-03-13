@@ -1,6 +1,24 @@
 Changelog
 =========
 
+0.20a1
+------
+* **Improvements**
+  - Add Knox cookies in default cookies list (#525)
+  - Support CHAR type in SQLAlchemy (#516)
+  - Support Cursor.rowcount and close finished queries (#528)
+    Note that this is a potentially breaking change. See the PR
+    for details about the side-effects.
+    The old behavior can be restored by setting close_finished_queries=False
+    when creating a Cursor.
+    Also note that Cursor.rowcount only works with Impala server - with
+    Hive it will always return -1.
+
+* **Bug Fixes**
+  - Fix https connection with Python 3.12 (#531)
+    Note that Python 3.12 support is not complete yet.
+    A known issue is that installing with setuptools fails with Python 3.12.
+
 0.19.0
 ------
 * **Improvements**
