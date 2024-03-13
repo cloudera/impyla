@@ -270,7 +270,7 @@ def _bind_parameters_dict(operation, parameters):
             string_parameters[name] = str(value)
 
     # replace named parameters by their pyformat equivalents
-    operation = re.sub(":([^\d\W]\w*)", "%(\g<1>)s", operation)
+    operation = re.sub(r":([^\d\W]\w*)", r"%(\g<1>)s", operation)
 
     # replace pyformat parameters
     return operation % string_parameters
