@@ -24,11 +24,9 @@ from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.sql.compiler import (DDLCompiler, GenericTypeCompiler,
                                      IdentifierPreparer)
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
-                              DECIMAL, Integer, Float, String, CHAR, VARCHAR, Text,
+                              DECIMAL, Integer, Float, String, CHAR, VARCHAR,
                               DATE)
-
 from sqlalchemy import text
-
 
 
 registry.register('impala', 'impala.sqlalchemy', 'ImpalaDialect')
@@ -248,7 +246,7 @@ class ImpalaDialect(DefaultDialect):
             for tup in connection.execute(text(query)).fetchall()
         ]
         return tables
-    
+
     def get_view_names(self, connection, schema=None, **kw):
         # Impala doesn't distinguish between tables and view when calling
         # SHOW TABLES. So return a blank list.
@@ -270,9 +268,10 @@ class ImpalaDialect(DefaultDialect):
         # flight
         cursor.fetchall()
         column_info = []
+        # `select * from table` results in 'tablename.columnname', so strip off 'tablename.'
         for col in schema:
             column_info.append({
-                'name': col[0],
+                'name': col[0].split('.')[-1].strip() if '.' in col[0] else col[0],
                 'type': _impala_type_to_sqlalchemy_type[col[1]],
                 'nullable': True,
                 'autoincrement': False})
