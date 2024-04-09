@@ -24,8 +24,11 @@ from sqlalchemy.engine.default import DefaultDialect, DefaultExecutionContext
 from sqlalchemy.sql.compiler import (DDLCompiler, GenericTypeCompiler,
                                      IdentifierPreparer)
 from sqlalchemy.types import (BOOLEAN, SMALLINT, BIGINT, TIMESTAMP, FLOAT,
-                              DECIMAL, Integer, Float, String, CHAR, VARCHAR,
+                              DECIMAL, Integer, Float, String, CHAR, VARCHAR, Text,
                               DATE)
+
+from sqlalchemy import text
+
 
 
 registry.register('impala', 'impala.sqlalchemy', 'ImpalaDialect')
@@ -223,9 +226,9 @@ class ImpalaDialect(DefaultDialect):
         self.default_schema_name = connection.connection.default_db
 
     def _get_server_version_info(self, connection):
-        raw = connection.execute('select version()').scalar()
+        raw = connection.execute(text('select version()')).scalar()
         v = raw.split()[2]
-        m = re.match(r'.*?(\d{1,3})\.(\d{1,3})\.(\d{1,3}).*', v)
+        m = re.match('.*?(\d{1,3})\.(\d{1,3})\.(\d{1,3}).*', v)
         return tuple([int(x) for x in m.group(1, 2, 3) if x is not None])
 
     def has_table(self, connection, table_name, schema=None):
@@ -242,7 +245,7 @@ class ImpalaDialect(DefaultDialect):
             query += ' IN %s' % escaped_schema
         tables = [
             tup[1] if len(tup) > 1 else tup[0]
-            for tup in connection.execute(query).fetchall()
+            for tup in connection.execute(text(query)).fetchall()
         ]
         return tables
     
@@ -252,7 +255,7 @@ class ImpalaDialect(DefaultDialect):
         return []
 
     def get_schema_names(self, connection, **kw):
-        rp = connection.execute("SHOW SCHEMAS")
+        rp = connection.execute(text("SHOW SCHEMAS"))
         return [r[0] for r in rp]
 
     def get_columns(self, connection, table_name, schema=None, **kwargs):
@@ -261,7 +264,7 @@ class ImpalaDialect(DefaultDialect):
         if schema is not None:
             name = '%s.%s' % (schema, name)
         query = 'SELECT * FROM %s LIMIT 0' % name
-        cursor = connection.execute(query)
+        cursor = connection.execute(text(query))
         schema = cursor.cursor.description
         # We need to fetch the empty results otherwise these queries remain in
         # flight
