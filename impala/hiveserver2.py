@@ -320,7 +320,7 @@ class HiveServer2Cursor(Cursor):
 
     def close_operation(self):
         if self._last_operation is not None:
-            log.info('Closing operation')
+            log.debug('Closing operation')
             self._reset_state()
 
     def _reset_state(self):
