@@ -38,6 +38,7 @@ Optional:
 
 * `kerberos>=1.3.0` for Kerberos over HTTP support. This also requires Kerberos libraries
    to be installed on your system - see [System Kerberos](#system-kerberos)
+  * On Windows operating systems an alternative is 'winkerberos' which can be installed with pip
 
 * `pandas` for conversion to `DataFrame` objects; but see the [Ibis project][ibis] instead
 
