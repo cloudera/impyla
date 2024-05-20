@@ -287,9 +287,27 @@ class ImpalaDialect(DefaultDialect):
         return []
 
     def get_indexes(self, connection, table_name, schema=None, **kw):
-        # no indexes in impala
-        # TODO(laserson): handle partitions, like in PyHive
-        return []
+        name = table_name
+        if schema is not None:
+            name = '%s.%s' % (schema, name)
+        query = 'DESCRIBE FORMATTED %s' % name
+        cursor = connection.execute(query)
+        rows = cursor.fetchall()
+        # Strip whitespace
+        rows = [[col.strip() if col else None for col in row] for row in rows]
+        # Filter out empty rows and comment
+        rows = [row for row in rows if row[0]]
+        for i, (col_name, _col_type, _comment) in enumerate(rows):
+            if col_name == '# Partition Information':
+                break
+        # Handle partition columns
+        col_names = []
+        for col_name, _col_type, _comment in rows[i + 1:]:
+            col_names.append(col_name)
+        if col_names:
+            return [{'name': 'partition', 'column_names': col_names, 'unique': False}]
+        else:
+            return []
 
     def do_rollback(self, dbapi_connection):
         # no transactions in impala
