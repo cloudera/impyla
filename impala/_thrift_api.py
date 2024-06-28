@@ -38,7 +38,7 @@ import sys
 
 from impala.error import HttpError
 from impala.util import get_logger_and_init_null
-from impala.util import get_all_matching_cookies, get_cookie_expiry
+from impala.util import get_all_matching_cookies, get_all_cookies, get_cookie_expiry
 
 # Declare namedtuple for Cookie with named fields - cookie and expiry_time
 Cookie = namedtuple('Cookie', ['cookie', 'expiry_time'])
@@ -83,7 +83,8 @@ class ImpalaHttpClient(TTransportBase):
     cookie-based authentication or session management. If there's only one name in the
     cookie name list, a str value can be specified instead of the list. If a cookie with
     one of these names is returned in an http response by the server or an intermediate
-    proxy then it will be included in each subsequent request for the same connection.
+    proxy then it will be included in each subsequent request for the same connection. If
+    it is set as wildcards, all cookies in an http response will be preserved.
     """
     if port is not None:
       warnings.warn(
@@ -129,8 +130,13 @@ class ImpalaHttpClient(TTransportBase):
       self.realhost = self.realport = self.proxy_auth = None
     if not http_cookie_names:
       # 'http_cookie_names' was explicitly set as an empty value ([], or '') in connect().
+      self.__preserve_all_cookies = False
       self.__http_cookie_dict = None
       self.__auth_cookie_names = None
+    elif str(http_cookie_names).strip() == "*":
+      self.__preserve_all_cookies = True
+      self.__http_cookie_dict = dict()
+      self.__auth_cookie_names = set()
     else:
       if isinstance(http_cookie_names, six.string_types):
         http_cookie_names = [http_cookie_names]
@@ -140,7 +146,7 @@ class ImpalaHttpClient(TTransportBase):
       # Store the auth cookie names in __auth_cookie_names.
       # Assume auth cookie names end with ".auth".
       self.__auth_cookie_names = \
-          [ cn for cn in http_cookie_names if cn.endswith(".auth") ]
+          { cn for cn in http_cookie_names if cn.endswith(".auth") }
     # Set __are_matching_cookies_found as True if matching cookies are found in response.
     self.__are_matching_cookies_found = False
     self.__wbuf = BytesIO()
@@ -248,13 +254,20 @@ class ImpalaHttpClient(TTransportBase):
   # Extract cookies from response and save those cookies for which the cookie names
   # are in the cookie name list specified in the connect() API.
   def extractHttpCookiesFromResponse(self):
-    if self.__http_cookie_dict is not None:
+    if self.__preserve_all_cookies:
+       matching_cookies = get_all_cookies(self.path, self.headers)
+    elif self.__http_cookie_dict is not None:
       matching_cookies = get_all_matching_cookies(
           self.__http_cookie_dict.keys(), self.path, self.headers)
-      if matching_cookies:
-        self.__are_matching_cookies_found = True
-        for c in matching_cookies:
-          self.__http_cookie_dict[c.key] = Cookie(c, get_cookie_expiry(c))
+    else:
+      matching_cookies = None
+
+    if matching_cookies:
+      self.__are_matching_cookies_found = True
+      for c in matching_cookies:
+        self.__http_cookie_dict[c.key] = Cookie(c, get_cookie_expiry(c))
+        if c.key.endswith(".auth"):
+          self.__auth_cookie_names.add(c.key)
 
   # Return True if there are any saved cookies which are sent in previous request.
   def areHttpCookiesSaved(self):
