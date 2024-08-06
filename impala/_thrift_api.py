@@ -416,7 +416,9 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
             else:
                 # PLAIN always requires a password for HS2.
                 password = 'password'
-        log.debug('get_http_transport: password=%s', password)
+            log.debug('get_http_transport: password=%s', password)
+        else:
+            log.debug('get_http_transport: password=fuggetaboutit')
         auth_mechanism = 'PLAIN'  # sasl doesn't know mechanism LDAP
         # Set the BASIC auth header
         user_password = '%s:%s'.encode() % (user.encode(), password.encode())
