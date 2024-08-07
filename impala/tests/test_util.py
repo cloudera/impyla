@@ -24,7 +24,8 @@ else:
     import unittest
 
 import pytest
-from impala.util import cookie_matches_path, get_cookie_expiry, get_all_matching_cookies
+from impala.util import (cookie_matches_path, get_cookie_expiry, get_all_cookies,
+                         get_all_matching_cookies)
 
 
 class ImpalaUtilTests(unittest.TestCase):
@@ -77,6 +78,69 @@ class ImpalaUtilTests(unittest.TestCase):
         assert now - days2k <= get_cookie_expiry({'max-age': '-172800000'}) <= now - days2k + sec
         now = datetime.now()
         assert now + days2k <= get_cookie_expiry({'max-age': '172800000'}) <= now + days2k + sec
+
+    def test_get_matching_cookies(self):
+        cookies = get_all_cookies('/path', {})
+        assert not cookies
+
+        headers = make_cookie_headers([
+            ('c_cookie', 'c_value'),
+            ('b_cookie', 'b_value'),
+            ('a_cookie', 'a_value')
+        ])
+        cookies = csort(get_all_cookies('/path', headers))
+        assert len(cookies) == 3
+        assert cookies[0].key == 'a_cookie' and cookies[0].value == 'a_value'
+        assert cookies[1].key == 'b_cookie' and cookies[1].value == 'b_value'
+        assert cookies[2].key == 'c_cookie' and cookies[2].value == 'c_value'
+
+        headers = make_cookie_headers([
+            ('c_cookie', 'c_value;Path=/'),
+            ('b_cookie', 'b_value;Path=/path'),
+            ('a_cookie', 'a_value;Path=/')
+        ])
+        cookies = csort(get_all_cookies('/path', headers))
+        assert len(cookies) == 3
+        assert cookies[0].key == 'a_cookie' and cookies[0].value == 'a_value'
+        assert cookies[1].key == 'b_cookie' and cookies[1].value == 'b_value'
+        assert cookies[2].key == 'c_cookie' and cookies[2].value == 'c_value'
+
+        headers = make_cookie_headers([
+            ('c_cookie', 'c_value;Path=/'),
+            ('B_cookie', 'B_value;Path=/path'),
+            ('a_cookie', 'a_value;Path=/path/path2')
+        ])
+        cookies = csort(get_all_cookies('/path', headers))
+        assert len(cookies) == 2
+        assert cookies[0].key == 'B_cookie' and cookies[0].value == 'B_value'
+        assert cookies[1].key == 'c_cookie' and cookies[1].value == 'c_value'
+
+        headers = make_cookie_headers([
+            ('c_cookie', 'c_value;Path=/'),
+            ('b_cookie', 'b_value;Path=/path'),
+            ('a_cookie', 'a_value;Path=/path')
+        ])
+        cookies = csort(get_all_cookies('/path/path1', headers))
+        assert len(cookies) == 3
+        assert cookies[0].key == 'a_cookie' and cookies[0].value == 'a_value'
+        assert cookies[1].key == 'b_cookie' and cookies[1].value == 'b_value'
+        assert cookies[2].key == 'c_cookie' and cookies[2].value == 'c_value'
+
+        headers = make_cookie_headers([
+            ('b_cookie', 'b_value;Path=/path1'),
+            ('a_cookie', 'a_value;Path=/path2')
+        ])
+        cookies = get_all_cookies('/path', headers)
+        assert not cookies
+
+        headers = make_cookie_headers([
+            ('c_cookie', 'c_value;Path=/'),
+            ('b_cookie', 'b_value;Path=/path1'),
+            ('a_cookie', 'a_value;Path=/path2')
+        ])
+        cookies = get_all_cookies('/path', headers)
+        assert len(cookies) == 1
+        assert cookies[0].key == 'c_cookie' and cookies[0].value == 'c_value'
 
     def test_get_all_matching_cookies(self):
         cookies = get_all_matching_cookies(['a', 'b'], '/path', {})
@@ -173,3 +237,8 @@ def make_cookie_headers(cookie_vals):
             value = pair[1]
             headers.add_header('Set-Cookie', name + "=" + value)
         return headers
+
+def csort(cookies):
+    """Sort list of Morsels as header order is not guaranteed."""
+    cookies.sort(key=lambda c: c.key)
+    return cookies
