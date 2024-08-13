@@ -84,8 +84,8 @@ class HiveServer2Connection(Connection):
         raise NotSupportedError
 
     def cursor(self, user=None, configuration=None, convert_types=True,
-               convert_strings_to_unicode=False, dictify=False, 
-               fetch_error=True, close_finished_queries=True):
+               dictify=False, fetch_error=True, close_finished_queries=True,
+               convert_strings_to_unicode=True):
         """Get a cursor from the HiveServer2 (HS2) connection.
 
         Parameters
@@ -154,9 +154,9 @@ class HiveServer2Connection(Connection):
         cursor_class = HiveServer2DictCursor if dictify else HiveServer2Cursor
 
         cursor = cursor_class(session, convert_types=convert_types,
-                              convert_strings_to_unicode=convert_strings_to_unicode,
                               fetch_error=fetch_error,
-                              close_finished_queries=close_finished_queries)
+                              close_finished_queries=close_finished_queries,
+                              convert_strings_to_unicode=convert_strings_to_unicode)
 
         if self.default_db is not None:
             log.info('Using database %s as default', self.default_db)
@@ -173,7 +173,8 @@ class HiveServer2Cursor(Cursor):
     # HiveServer2Cursor objects are associated with a Session
     # they are instantiated with alive session_handles
 
-    def __init__(self, session, convert_types=True, convert_strings_to_unicode=False, fetch_error=True, close_finished_queries=True):
+    def __init__(self, session, convert_types=True, fetch_error=True, close_finished_queries=True,
+                 convert_strings_to_unicode=True):
         self.session = session
         self.convert_types = convert_types
         self.convert_strings_to_unicode = convert_strings_to_unicode
@@ -667,9 +668,9 @@ class HiveServer2Cursor(Cursor):
                 log.debug('_ensure_buffer_is_filled: buffer empty and op is active '
                           '=> fetching more data')
                 self._buffer = self._last_operation.fetch(self.description,
-                                                          self.buffersize,
-                                                          convert_types=self.convert_types,
-                                                          convert_strings_to_unicode=self.convert_strings_to_unicode)
+                    self.buffersize,
+                    convert_types=self.convert_types,
+                    convert_strings_to_unicode=self.convert_strings_to_unicode)
                 if len(self._buffer) > 0:
                     return
                 if not self._buffer.expect_more_rows:
@@ -1021,7 +1022,8 @@ class Column(object):
 
 class CBatch(Batch):
 
-    def __init__(self, trowset, expect_more_rows, schema, convert_types=True, convert_strings_to_unicode=False):
+    def __init__(self, trowset, expect_more_rows, schema, convert_types=True,
+                 convert_strings_to_unicode=True):
         self.expect_more_rows = expect_more_rows
         self.schema = schema
         tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
@@ -1057,20 +1059,6 @@ class CBatch(Batch):
 
             self.columns.append(Column(type_, values, is_null))
 
-    def _convert_values(self, type_, is_null, values):
-        # pylint: disable=consider-using-enumerate
-        if type_ == 'TIMESTAMP':
-            for i in range(len(values)):
-                values[i] = (None if is_null[i] else
-                             _parse_timestamp(values[i]))
-        elif type_ == 'DECIMAL':
-            for i in range(len(values)):
-                values[i] = (None if is_null[i] else Decimal(values[i]))
-        elif type_ == 'DATE':
-            for i in range(len(values)):
-                values[i] = (None if is_null[i] else _parse_date(values[i]))
-        return values
-
     def _convert_strings_to_unicode(self, type_, is_null, values):
         if type_ in ["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "DECIMAL", "DATE", "TIMESTAMP", "NULL", "VARCHAR", "CHAR"]:
             for i in range(len(values)):
@@ -1084,6 +1072,20 @@ class CBatch(Batch):
                     values[i] = values[i].decode("UTF-8")
                 except UnicodeDecodeError:
                     pass
+
+    def _convert_values(self, type_, is_null, values):
+        # pylint: disable=consider-using-enumerate
+        if type_ == 'TIMESTAMP':
+            for i in range(len(values)):
+                values[i] = (None if is_null[i] else
+                             _parse_timestamp(values[i]))
+        elif type_ == 'DECIMAL':
+            for i in range(len(values)):
+                values[i] = (None if is_null[i] else Decimal(values[i]))
+        elif type_ == 'DATE':
+            for i in range(len(values)):
+                values[i] = (None if is_null[i] else _parse_date(values[i]))
+        return values
 
     def __len__(self):
         return self.remaining_rows
@@ -1421,7 +1423,7 @@ class Operation(ThriftRPC):
             resp = self._rpc('FetchResults', req, False)
             schema = [('Log', 'STRING', None, None, None, None, None)]
             log = self._wrap_results(resp.results, resp.hasMoreRows, schema,
-                                     convert_types=True, convert_strings_to_unicode=False)
+                convert_types=True, convert_strings_to_unicode=True)
             log = '\n'.join(l[0] for l in log)
         return log
 
@@ -1466,7 +1468,7 @@ class Operation(ThriftRPC):
 
     def fetch(self, schema=None, max_rows=1024,
               orientation=TFetchOrientation.FETCH_NEXT,
-              convert_types=True, convert_strings_to_unicode=False):
+              convert_types=True, convert_strings_to_unicode=True):
         if not self.has_result_set:
             log.debug('fetch_results: has_result_set=False')
             return None
@@ -1486,7 +1488,7 @@ class Operation(ThriftRPC):
                                   convert_strings_to_unicode=convert_strings_to_unicode)
 
     def _wrap_results(self, results, expect_more_rows, schema, convert_types=True, 
-                      convert_strings_to_unicode=False):
+                      convert_strings_to_unicode=True):
         if self.is_columnar:
             log.debug('fetch_results: constructing CBatch')
             return CBatch(results, expect_more_rows, schema, convert_types=convert_types, 
