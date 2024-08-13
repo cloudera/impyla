@@ -252,6 +252,44 @@ class ImpalaConnectionTests(unittest.TestCase):
                                   http_path="cliservice", use_ssl=True, timeout=5)
         self._execute_queries(self.connection)
 
+    def test_retry_dml(self):
+        """Regression test for #549."""
+        # Connection with higher timeout to avoid errors.
+        self.connection = connect(ENV.host, ENV.port, timeout=10)
+        # Connect with low timeout to trigger failed RPCs.
+        # TODO: This reproduces the issue in the default Impala dev env (no local catalog),
+        #       but may fail to reproduce it in the future if Impala will get faster.
+        #       Ideally the error would be injected in a more stable way.
+        low_timeout_connection = connect(ENV.host, ENV.port, timeout=3)
+        create = "CREATE TABLE {0} (f1 INT)".format(self.tablename)
+        insert = "INSERT INTO TABLE {0} SELECT 1".format(self.tablename)
+        invalidate = "INVALIDATE METADATA {0}".format(self.tablename)
+        select = "SELECT * FROM {0}".format(self.tablename)
+        drop = "DROP TABLE {0}".format(self.tablename)
+        cur = low_timeout_connection.cursor()
+        cur.execute(create)
+        successful_inserts = 0
+        NUM_INSERTS = 5
+        for i in range(NUM_INSERTS):
+            try:
+                cur.execute(invalidate)
+                cur.execute(insert)
+                successful_inserts += 1
+            except:
+                con = connect(ENV.host, ENV.port, timeout=3)
+                cur = con.cursor()
+                pass
+        # Use the reliable connection for result checking and cleanup.
+        cur = self.connection.cursor()
+        cur.execute(select)
+        result = cur.fetchall()
+        # It is unknown whether unsuccesful INSERTs actually inserted rows.
+        assert len(result) <= NUM_INSERTS
+        assert len(result) >= successful_inserts
+        cur.execute(drop)
+        # If all inserts are successful then probably the Impala cluster is too fast.
+        assert successful_inserts < NUM_INSERTS
+
 class ImpalaSocketTests(unittest.TestCase):
 
     def run_a_query(self):
