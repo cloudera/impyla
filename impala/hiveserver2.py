@@ -1059,7 +1059,7 @@ class CBatch(Batch):
                 if convert_strings_to_unicode:
                     self._convert_strings_to_unicode(type_, is_null, values, 
                         types=["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "NULL", "VARCHAR", "CHAR", "TIMESTAMP", "DECIMAL", "DATE"])
-                elif convert_types
+                elif convert_types:
                     self._convert_strings_to_unicode(type_, is_null, values, types=["TIMESTAMP", "DECIMAL", "DATE"])
 
             if convert_types:
