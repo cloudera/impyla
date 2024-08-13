@@ -1055,11 +1055,12 @@ class CBatch(Batch):
             # STRING columns are read as binary and decoded here to be able to handle
             # non-valid utf-8 strings in Python 3.
 
-            if convert_strings_to_unicode:
-                self._convert_strings_to_unicode(type_, is_null, values, 
-                    types=["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "NULL", "VARCHAR", "CHAR", "TIMESTAMP", "DECIMAL", "DATE"])
-            elif convert_types and six.PY3:
-                self._convert_strings_to_unicode(type_, is_null, values, types=["TIMESTAMP", "DECIMAL", "DATE"])
+            if six.PY3:
+                if convert_strings_to_unicode:
+                    self._convert_strings_to_unicode(type_, is_null, values, 
+                        types=["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "NULL", "VARCHAR", "CHAR", "TIMESTAMP", "DECIMAL", "DATE"])
+                elif convert_types
+                    self._convert_strings_to_unicode(type_, is_null, values, types=["TIMESTAMP", "DECIMAL", "DATE"])
 
             if convert_types:
                 values = self._convert_values(type_, is_null, values)
