@@ -49,9 +49,9 @@ def test_cursor_description_precision_scale(cur, decimal_table):
     for (exp, obs) in zip(expected, observed):
         assert exp == obs
 
-@fixture(scope='module')
-def date_table(cur):
-    table_name = 'tmp_date_table'
+def setup_date_table(cur, table_name):
+    table_name = table_name
+
     ddl = """CREATE TABLE {0} (d date)""".format(table_name)
     cur.execute(ddl)
     try:
@@ -59,9 +59,15 @@ def date_table(cur):
     finally:
         cur.execute("DROP TABLE {0}".format(table_name))
 
+@fixture(scope='module')
+def date_table(cur):
+    yield from setup_date_table(cur, 'tmp_date_table')
 
-@pytest.mark.connect
-def test_date_basic(cur, date_table):
+@fixture(scope='module')
+def date_table_noconv(cur_noconv):
+    yield from setup_date_table(cur_noconv, 'tmp_date_table_noconv')
+
+def setup_test_date_basic(cur, date_table):
     """Insert and read back a couple of data values in a wide range."""
     cur.execute('''insert into {0}
                    values (date "0001-01-01"), (date "1999-9-9")'''.format(date_table))
@@ -69,6 +75,13 @@ def test_date_basic(cur, date_table):
     results = cur.fetchall()
     assert results == [(datetime.date(1, 1, 1),), (datetime.date(1999, 9, 9),)]
 
+@pytest.mark.connect
+def test_date_basic(cur, date_table):
+    setup_test_date_basic(cur, date_table)
+
+@pytest.mark.connect
+def test_date_basic_noconv(cur_noconv, date_table_noconv):
+    setup_test_date_basic(cur_noconv, date_table_noconv)
 
 @fixture(scope='module')
 def timestamp_table(cur):
