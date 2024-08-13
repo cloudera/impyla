@@ -98,8 +98,11 @@ class HiveServer2Connection(Connection):
             to Python `datetime` and `Decimal` values. (These conversions are
             expensive.) Only applies when using HS2 protocol versions > 6.
         convert_strings_to_unicode : bool, optional
-            When `False`, string values will not be converted to unicode. 
-            Conversion may take significant time on large datasets.
+            When `True`, the following types will be converted to unicode:
+            STRING, LIST, MAP, STRUCT, UNIONTYPE, NULL, VARCHAR, CHAR, TIMESTAMP, 
+            DECIMAL, DATE.
+            When `False`, conversion will occur only for types expected by 
+            convert_types in python3: TIMESTAMP, DECIMAL, DATE.
         dictify : bool, optional
             When `True` cursor will return key value pairs instead of rows.
         fetch_error : bool, optional
@@ -1051,16 +1054,20 @@ class CBatch(Batch):
 
             # STRING columns are read as binary and decoded here to be able to handle
             # non-valid utf-8 strings in Python 3.
-            if six.PY3 and convert_strings_to_unicode:
-                self._convert_strings_to_unicode(type_, is_null, values)
+
+            if convert_strings_to_unicode:
+                self._convert_strings_to_unicode(type_, is_null, values, 
+                    types=["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "NULL", "VARCHAR", "CHAR", "TIMESTAMP", "DECIMAL", "DATE"])
+            elif convert_types and six.PY3:
+                self._convert_strings_to_unicode(type_, is_null, values, types=["TIMESTAMP", "DECIMAL", "DATE"])
 
             if convert_types:
                 values = self._convert_values(type_, is_null, values)
 
             self.columns.append(Column(type_, values, is_null))
 
-    def _convert_strings_to_unicode(self, type_, is_null, values):
-        if type_ in ["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "DECIMAL", "DATE", "TIMESTAMP", "NULL", "VARCHAR", "CHAR"]:
+    def _convert_strings_to_unicode(self, type_, is_null, values, types):
+        if type_ in types:
             for i in range(len(values)):
                 if is_null[i]:
                     values[i] = None
