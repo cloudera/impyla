@@ -1167,12 +1167,7 @@ class ThriftRPC(object):
                 log.debug('Transport opened')
                 func = getattr(self.client, func_name)
                 return func(request)
-            except socket.error as e:
-                if open_finished and not safe_to_retry: raise e
-                msg = "RPC failed" if open_finished else "Failed to open transport"
-                log.exception('%s (tries_left=%s)', msg, tries_left)
-                last_exception = e
-            except TTransportException as e:
+            except (socket.error, TTransportException) as e:
                 if open_finished and not safe_to_retry: raise e
                 msg = "RPC failed" if open_finished else "Failed to open transport"
                 log.exception('%s (tries_left=%s)', msg, tries_left)
@@ -1210,7 +1205,7 @@ class ThriftRPC(object):
             open_finished = False
             tries_left -= 1
 
-        if last_exception is not None:
+        if last_exception:
             raise last_exception
         raise HiveServer2Error('Failed after retrying {0} times'
                                .format(self.retries))
