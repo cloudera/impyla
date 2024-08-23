@@ -280,7 +280,7 @@ class ImpalaConnectionTests(unittest.TestCase):
                 cur.execute(insert)
                 successful_inserts += 1
             except:
-                con = connect(ENV.host, ENV.port, timeout=3)
+                con = connect(ENV.host, ENV.port, timeout=LOW_TIMEOUT_S)
                 cur = con.cursor()
                 pass
         # Use the reliable connection for result checking and cleanup.
