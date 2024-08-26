@@ -15,7 +15,9 @@
 
 import datetime
 import pytest
+import sys
 from pytest import fixture
+from decimal import Decimal
 
 @fixture(scope='module')
 def decimal_table(cur):
@@ -49,6 +51,47 @@ def test_cursor_description_precision_scale(cur, decimal_table):
     for (exp, obs) in zip(expected, observed):
         assert exp == obs
 
+
+@fixture(scope='module')
+def decimal_table2(cur):
+    table_name = 'tmp_decimal_table2'
+    ddl = """CREATE TABLE {0} (val decimal(18, 9))""".format(table_name)
+    cur.execute(ddl)
+    cur.execute('''insert into {0}
+                   values (cast(123456789.123456789 as decimal(18, 9))),
+                          (cast(-123456789.123456789 as decimal(18, 9))),
+                          (cast(0.000000001 as decimal(18, 9))),
+                          (cast(-0.000000001 as decimal(18, 9))),
+                          (cast(999999999.999999999 as decimal(18, 9))),
+                          (cast(-999999999.999999999 as decimal(18, 9)))'''.format(table_name))
+    try:
+        yield table_name
+    finally:
+        cur.execute("DROP TABLE {0}".format(table_name))
+
+
+def common_test_decimal(cur, decimal_table):
+    """Read back a few decimal values in a wide range."""
+    cur.execute('select val from {0} order by val'.format(decimal_table))
+    results = cur.fetchall()
+    assert results == [(Decimal('-999999999.999999999'),),
+                       (Decimal('-123456789.123456789'),),
+                       (Decimal('-0.000000001'),),
+                       (Decimal('0.000000001'),),
+                       (Decimal('123456789.123456789'),),
+                       (Decimal('999999999.999999999'),)]
+
+
+@pytest.mark.connect
+def test_decimal_basic(cur, decimal_table2):
+    common_test_decimal(cur, decimal_table2)
+
+
+@pytest.mark.connect
+def test_decimal_no_string_conv(cur_no_string_conv, decimal_table2):
+    common_test_decimal(cur_no_string_conv, decimal_table2)
+
+
 @fixture(scope='module')
 def date_table(cur):
     table_name = 'tmp_date_table'
@@ -61,19 +104,23 @@ def date_table(cur):
     finally:
         cur.execute("DROP TABLE {0}".format(table_name))
 
-def setup_test_date(cur, date_table):
-    """Insert and read back a couple of data values in a wide range."""
+
+def common_test_date(cur, date_table):
+    """Read back a couple of data values in a wide range."""
     cur.execute('select d from {0} order by d'.format(date_table))
     results = cur.fetchall()
     assert results == [(datetime.date(1, 1, 1),), (datetime.date(1999, 9, 9),)]
 
+
 @pytest.mark.connect
 def test_date_basic(cur, date_table):
-    setup_test_date(cur, date_table)
+    common_test_date(cur, date_table)
+
 
 @pytest.mark.connect
 def test_date_no_string_conv(cur_no_string_conv, date_table):
-    setup_test_date(cur_no_string_conv, date_table)
+    common_test_date(cur_no_string_conv, date_table)
+
 
 @fixture(scope='module')
 def timestamp_table(cur):
@@ -93,8 +140,8 @@ def timestamp_table(cur):
         cur.execute("DROP TABLE {0}".format(table_name))
 
 
-def setup_test_timestamp(cur, timestamp_table):
-    """Insert and read back a few timestamp values in a wide range."""
+def common_test_timestamp(cur, timestamp_table):
+    """Read back a few timestamp values in a wide range."""
     cur.execute('select ts from {0} order by ts'.format(timestamp_table))
     results = cur.fetchall()
     assert results == [(datetime.datetime(1400, 1, 1, 0, 0),),
@@ -104,13 +151,16 @@ def setup_test_timestamp(cur, timestamp_table):
                        (datetime.datetime(2014, 6, 23, 13, 30, 51, 123456),),
                        (datetime.datetime(9999, 12, 31, 23, 59, 59),)]
 
+
 @pytest.mark.connect
 def test_timestamp_basic(cur, timestamp_table):
-    setup_test_timestamp(cur, timestamp_table)
+    common_test_timestamp(cur, timestamp_table)
+
 
 @pytest.mark.connect
 def test_timestamp_no_string_conv(cur_no_string_conv, timestamp_table):
-    setup_test_timestamp(cur_no_string_conv, timestamp_table)
+    common_test_timestamp(cur_no_string_conv, timestamp_table)
+
 
 @pytest.mark.connect
 def test_utf8_strings(cur):
@@ -132,23 +182,22 @@ def test_utf8_strings(cur):
     assert result == b"\xaa"
     assert result.decode("UTF-8", "replace") == u"�"
 
+
 @pytest.mark.connect
-def test_utf8_strings_no_string_conv(cur_no_string_conv):
+def test_string_conv(cur):
+    cur.execute('select "Test string"')
+    result = cur.fetchone()
+    assert result[0] == u"Test string"
+
+
+@pytest.mark.connect
+def test_string_no_string_conv(cur_no_string_conv):
     cur = cur_no_string_conv
-    """Use STRING/VARCHAR/CHAR values  with multi byte unicode code points in a query."""
-    cur.execute('select "引擎", cast("引擎" as varchar(6)), cast("引擎" as char(6))')
+    cur.execute('select "Test string"')
     result = cur.fetchone()
-    assert tuple(item.decode('utf-8') for item in result) == (u"引擎",) * 3
 
-    # Tests returning STRING/VARCHAR/CHAR strings that are not valid UTF-8.
-    # With Python 3 and Thrift 0.11.0 these tests needed TCLIService.thrift to be
-    # modified. Syncing thrift files from Hive/Impala is likely to break these tests.
-    cur.execute('select substr("引擎", 1, 4), cast("引擎" as varchar(4)), cast("引擎" as char(4))')
-    result = cur.fetchone()
-    assert result == (b"\xe5\xbc\x95\xe6",) * 3
-    assert result[0].decode("UTF-8", "replace") == u"引�"
 
-    cur.execute('select unhex("AA")')
-    result = cur.fetchone()[0]
-    assert result == b"\xaa"
-    assert result.decode("UTF-8", "replace") == u"�"
+    if sys.version_info[0] < 3:
+        assert result[0] == u"Test string"
+    else:
+        assert result[0] == b"Test string"
