@@ -98,9 +98,9 @@ class HiveServer2Connection(Connection):
             to Python `datetime` and `Decimal` values. (These conversions are
             expensive.) Only applies when using HS2 protocol versions > 6.
         convert_strings_to_unicode : bool, optional
-            When `True`, the following types will be converted to unicode:
-            STRING, LIST, MAP, STRUCT, UNIONTYPE, NULL, VARCHAR, CHAR, TIMESTAMP, 
-            DECIMAL, DATE.
+            When `True`, the following types, which are transmitted as strings
+            in HS2 protocol, will be converted to unicode: STRING, LIST, MAP, 
+            STRUCT, UNIONTYPE, NULL, VARCHAR, CHAR, TIMESTAMP, DECIMAL, DATE.
             When `False`, conversion will occur only for types expected by 
             convert_types in python3: TIMESTAMP, DECIMAL, DATE.
         dictify : bool, optional
@@ -1037,6 +1037,9 @@ class CBatch(Batch):
 
         log.debug('CBatch: input TRowSet num_cols=%s num_rows=%s tcols=%s',
                   num_cols, num_rows, tcols)
+        
+        HS2_STRING_TYPES = ["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "NULL", "VARCHAR", "CHAR", "TIMESTAMP", "DECIMAL", "DATE"]
+        CONVERTED_TYPES=["TIMESTAMP", "DECIMAL", "DATE"]
 
         self.columns = []
         for j in range(num_cols):
@@ -1057,10 +1060,9 @@ class CBatch(Batch):
 
             if six.PY3:
                 if convert_strings_to_unicode:
-                    self._convert_strings_to_unicode(type_, is_null, values, 
-                        types=["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "NULL", "VARCHAR", "CHAR", "TIMESTAMP", "DECIMAL", "DATE"])
+                    self._convert_strings_to_unicode(type_, is_null, values, types=HS2_STRING_TYPES)
                 elif convert_types:
-                    self._convert_strings_to_unicode(type_, is_null, values, types=["TIMESTAMP", "DECIMAL", "DATE"])
+                    self._convert_strings_to_unicode(type_, is_null, values, types=CONVERTED_TYPES)
 
             if convert_types:
                 values = self._convert_values(type_, is_null, values)

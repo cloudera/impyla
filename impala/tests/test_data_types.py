@@ -72,8 +72,8 @@ def test_date_basic(cur, date_table):
     setup_test_date_basic(cur, date_table)
 
 @pytest.mark.connect
-def test_date_basic_noconv(cur_noconv, date_table):
-    setup_test_date_basic(cur_noconv, date_table)
+def test_date_basic_noconv(cur_no_string_conv, date_table):
+    setup_test_date_basic(cur_no_string_conv, date_table)
 
 @fixture(scope='module')
 def timestamp_table(cur):

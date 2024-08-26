@@ -115,7 +115,7 @@ def cur(con):
     cur.close()
 
 @fixture(scope='session')
-def cur_noconv(con):
+def cur_no_string_conv(con):
     cur = con.cursor(convert_types=True, convert_strings_to_unicode=False)
     yield cur
     cur.close()
