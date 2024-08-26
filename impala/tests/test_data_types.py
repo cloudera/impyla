@@ -61,7 +61,7 @@ def date_table(cur):
     finally:
         cur.execute("DROP TABLE {0}".format(table_name))
 
-def setup_test_date_basic(cur, date_table):
+def setup_test_date(cur, date_table):
     """Insert and read back a couple of data values in a wide range."""
     cur.execute('select d from {0} order by d'.format(date_table))
     results = cur.fetchall()
@@ -69,11 +69,11 @@ def setup_test_date_basic(cur, date_table):
 
 @pytest.mark.connect
 def test_date_basic(cur, date_table):
-    setup_test_date_basic(cur, date_table)
+    setup_test_date(cur, date_table)
 
 @pytest.mark.connect
-def test_date_basic_noconv(cur_no_string_conv, date_table):
-    setup_test_date_basic(cur_no_string_conv, date_table)
+def test_date_no_string_conv(cur_no_string_conv, date_table):
+    setup_test_date(cur_no_string_conv, date_table)
 
 @fixture(scope='module')
 def timestamp_table(cur):
@@ -112,6 +112,27 @@ def test_utf8_strings(cur):
     cur.execute('select "引擎", cast("引擎" as varchar(6)), cast("引擎" as char(6))')
     result = cur.fetchone()
     assert result == ("引擎",) * 3
+
+    # Tests returning STRING/VARCHAR/CHAR strings that are not valid UTF-8.
+    # With Python 3 and Thrift 0.11.0 these tests needed TCLIService.thrift to be
+    # modified. Syncing thrift files from Hive/Impala is likely to break these tests.
+    cur.execute('select substr("引擎", 1, 4), cast("引擎" as varchar(4)), cast("引擎" as char(4))')
+    result = cur.fetchone()
+    assert result == (b"\xe5\xbc\x95\xe6",) * 3
+    assert result[0].decode("UTF-8", "replace") == u"引�"
+
+    cur.execute('select unhex("AA")')
+    result = cur.fetchone()[0]
+    assert result == b"\xaa"
+    assert result.decode("UTF-8", "replace") == u"�"
+
+@pytest.mark.connect
+def test_utf8_strings_no_string_conv(cur_no_string_conv):
+    cur = cur_no_string_conv
+    """Use STRING/VARCHAR/CHAR values  with multi byte unicode code points in a query."""
+    cur.execute('select "引擎", cast("引擎" as varchar(6)), cast("引擎" as char(6))')
+    result = cur.fetchone()
+    assert tuple(item.decode('utf-8') for item in result) == (u"引擎",) * 3
 
     # Tests returning STRING/VARCHAR/CHAR strings that are not valid UTF-8.
     # With Python 3 and Thrift 0.11.0 these tests needed TCLIService.thrift to be
