@@ -80,22 +80,21 @@ def timestamp_table(cur):
     table_name = 'tmp_timestamp_table'
     ddl = """CREATE TABLE {0} (ts timestamp)""".format(table_name)
     cur.execute(ddl)
-    try:
-        yield table_name
-    finally:
-        cur.execute("DROP TABLE {0}".format(table_name))
-
-
-@pytest.mark.connect
-def test_timestamp_basic(cur, timestamp_table):
-    """Insert and read back a few timestamp values in a wide range."""
     cur.execute('''insert into {0}
                    values (cast("1400-01-01 00:00:00" as timestamp)),
                           (cast("2014-06-23 13:30:51" as timestamp)),
                           (cast("2014-06-23 13:30:51.123" as timestamp)),
                           (cast("2014-06-23 13:30:51.123456" as timestamp)),
                           (cast("2014-06-23 13:30:51.123456789" as timestamp)),
-                          (cast("9999-12-31 23:59:59" as timestamp))'''.format(timestamp_table))
+                          (cast("9999-12-31 23:59:59" as timestamp))'''.format(table_name))
+    try:
+        yield table_name
+    finally:
+        cur.execute("DROP TABLE {0}".format(table_name))
+
+
+def setup_test_timestamp(cur, timestamp_table):
+    """Insert and read back a few timestamp values in a wide range."""
     cur.execute('select ts from {0} order by ts'.format(timestamp_table))
     results = cur.fetchall()
     assert results == [(datetime.datetime(1400, 1, 1, 0, 0),),
@@ -105,6 +104,13 @@ def test_timestamp_basic(cur, timestamp_table):
                        (datetime.datetime(2014, 6, 23, 13, 30, 51, 123456),),
                        (datetime.datetime(9999, 12, 31, 23, 59, 59),)]
 
+@pytest.mark.connect
+def test_timestamp_basic(cur, timestamp_table):
+    setup_test_timestamp(cur, timestamp_table)
+
+@pytest.mark.connect
+def test_timestamp_no_string_conv(cur_no_string_conv, timestamp_table):
+    setup_test_timestamp(cur_no_string_conv, timestamp_table)
 
 @pytest.mark.connect
 def test_utf8_strings(cur):
