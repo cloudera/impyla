@@ -84,7 +84,8 @@ class HiveServer2Connection(Connection):
         raise NotSupportedError
 
     def cursor(self, user=None, configuration=None, convert_types=True,
-               dictify=False, fetch_error=True, close_finished_queries=True):
+               dictify=False, fetch_error=True, close_finished_queries=True,
+               convert_strings_to_unicode=True):
         """Get a cursor from the HiveServer2 (HS2) connection.
 
         Parameters
@@ -96,6 +97,12 @@ class HiveServer2Connection(Connection):
             When `False`, timestamps and decimal values will not be converted
             to Python `datetime` and `Decimal` values. (These conversions are
             expensive.) Only applies when using HS2 protocol versions > 6.
+        convert_strings_to_unicode : bool, optional
+            When `True`, the following types, which are transmitted as strings
+            in HS2 protocol, will be converted to unicode: STRING, LIST, MAP, 
+            STRUCT, UNIONTYPE, NULL, VARCHAR, CHAR, TIMESTAMP, DECIMAL, DATE.
+            When `False`, conversion will occur only for types expected by 
+            convert_types in python3: TIMESTAMP, DECIMAL, DATE.
         dictify : bool, optional
             When `True` cursor will return key value pairs instead of rows.
         fetch_error : bool, optional
@@ -151,7 +158,8 @@ class HiveServer2Connection(Connection):
 
         cursor = cursor_class(session, convert_types=convert_types,
                               fetch_error=fetch_error,
-                              close_finished_queries=close_finished_queries)
+                              close_finished_queries=close_finished_queries,
+                              convert_strings_to_unicode=convert_strings_to_unicode)
 
         if self.default_db is not None:
             log.info('Using database %s as default', self.default_db)
@@ -168,9 +176,11 @@ class HiveServer2Cursor(Cursor):
     # HiveServer2Cursor objects are associated with a Session
     # they are instantiated with alive session_handles
 
-    def __init__(self, session, convert_types=True, fetch_error=True, close_finished_queries=True):
+    def __init__(self, session, convert_types=True, fetch_error=True, close_finished_queries=True,
+                 convert_strings_to_unicode=True):
         self.session = session
         self.convert_types = convert_types
+        self.convert_strings_to_unicode = convert_strings_to_unicode
         self.fetch_error = fetch_error
         self.close_finished_queries = close_finished_queries
 
@@ -570,7 +580,8 @@ class HiveServer2Cursor(Cursor):
             batch = (self._last_operation.fetch(
                          self.description,
                          self.buffersize,
-                         convert_types=self.convert_types))
+                         convert_types=self.convert_types,
+                         convert_strings_to_unicode=self.convert_strings_to_unicode))
             if len(batch) == 0:
                return None
             return batch
@@ -620,7 +631,8 @@ class HiveServer2Cursor(Cursor):
             batch = (self._last_operation.fetch(
                          self.description,
                          self.buffersize,
-                         convert_types=self.convert_types))
+                         convert_types=self.convert_types,
+                         convert_strings_to_unicode=self.convert_strings_to_unicode))
             if len(batch) == 0:
                 break
             batches.append(batch)
@@ -659,8 +671,9 @@ class HiveServer2Cursor(Cursor):
                 log.debug('_ensure_buffer_is_filled: buffer empty and op is active '
                           '=> fetching more data')
                 self._buffer = self._last_operation.fetch(self.description,
-                                                          self.buffersize,
-                                                          convert_types=self.convert_types)
+                    self.buffersize,
+                    convert_types=self.convert_types,
+                    convert_strings_to_unicode=self.convert_strings_to_unicode)
                 if len(self._buffer) > 0:
                     return
                 if not self._buffer.expect_more_rows:
@@ -1012,7 +1025,8 @@ class Column(object):
 
 class CBatch(Batch):
 
-    def __init__(self, trowset, expect_more_rows, schema, convert_types=True):
+    def __init__(self, trowset, expect_more_rows, schema, convert_types=True,
+                 convert_strings_to_unicode=True):
         self.expect_more_rows = expect_more_rows
         self.schema = schema
         tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
@@ -1023,6 +1037,9 @@ class CBatch(Batch):
 
         log.debug('CBatch: input TRowSet num_cols=%s num_rows=%s tcols=%s',
                   num_cols, num_rows, tcols)
+        
+        HS2_STRING_TYPES = ["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "NULL", "VARCHAR", "CHAR", "TIMESTAMP", "DECIMAL", "DATE"]
+        CONVERTED_TYPES=["TIMESTAMP", "DECIMAL", "DATE"]
 
         self.columns = []
         for j in range(num_cols):
@@ -1040,13 +1057,31 @@ class CBatch(Batch):
 
             # STRING columns are read as binary and decoded here to be able to handle
             # non-valid utf-8 strings in Python 3.
+
             if six.PY3:
-                self._convert_strings_to_unicode(type_, is_null, values)
+                if convert_strings_to_unicode:
+                    self._convert_strings_to_unicode(type_, is_null, values, types=HS2_STRING_TYPES)
+                elif convert_types:
+                    self._convert_strings_to_unicode(type_, is_null, values, types=CONVERTED_TYPES)
 
             if convert_types:
                 values = self._convert_values(type_, is_null, values)
 
             self.columns.append(Column(type_, values, is_null))
+
+    def _convert_strings_to_unicode(self, type_, is_null, values, types):
+        if type_ in types:
+            for i in range(len(values)):
+                if is_null[i]:
+                    values[i] = None
+                    continue
+                try:
+                    # Do similar handling of non-valid UTF-8 strings as Thriftpy2:
+                    # https://github.com/Thriftpy/thriftpy2/blob/8e218b3fd89c597c2e83d129efecfe4d280bdd89/thriftpy2/protocol/binary.py#L241
+                    # If decoding fails then keep the original bytearray.
+                    values[i] = values[i].decode("UTF-8")
+                except UnicodeDecodeError:
+                    pass
 
     def _convert_values(self, type_, is_null, values):
         # pylint: disable=consider-using-enumerate
@@ -1061,20 +1096,6 @@ class CBatch(Batch):
             for i in range(len(values)):
                 values[i] = (None if is_null[i] else _parse_date(values[i]))
         return values
-
-    def _convert_strings_to_unicode(self, type_, is_null, values):
-        if type_ in ["STRING", "LIST", "MAP", "STRUCT", "UNIONTYPE", "DECIMAL", "DATE", "TIMESTAMP", "NULL", "VARCHAR", "CHAR"]:
-            for i in range(len(values)):
-                if is_null[i]:
-                    values[i] = None
-                    continue
-                try:
-                    # Do similar handling of non-valid UTF-8 strings as Thriftpy2:
-                    # https://github.com/Thriftpy/thriftpy2/blob/8e218b3fd89c597c2e83d129efecfe4d280bdd89/thriftpy2/protocol/binary.py#L241
-                    # If decoding fails then keep the original bytearray.
-                    values[i] = values[i].decode("UTF-8")
-                except UnicodeDecodeError:
-                    pass
 
     def __len__(self):
         return self.remaining_rows
@@ -1412,7 +1433,7 @@ class Operation(ThriftRPC):
             resp = self._rpc('FetchResults', req, False)
             schema = [('Log', 'STRING', None, None, None, None, None)]
             log = self._wrap_results(resp.results, resp.hasMoreRows, schema,
-                                     convert_types=True)
+                convert_types=True, convert_strings_to_unicode=True)
             log = '\n'.join(l[0] for l in log)
         return log
 
@@ -1457,7 +1478,7 @@ class Operation(ThriftRPC):
 
     def fetch(self, schema=None, max_rows=1024,
               orientation=TFetchOrientation.FETCH_NEXT,
-              convert_types=True):
+              convert_types=True, convert_strings_to_unicode=True):
         if not self.has_result_set:
             log.debug('fetch_results: has_result_set=False')
             return None
@@ -1473,15 +1494,18 @@ class Operation(ThriftRPC):
         # results are kept around for retry to be successful.
         resp = self._rpc('FetchResults', req, False)
         return self._wrap_results(resp.results, resp.hasMoreRows, schema,
-                                  convert_types=convert_types)
+                                  convert_types=convert_types, 
+                                  convert_strings_to_unicode=convert_strings_to_unicode)
 
-    def _wrap_results(self, results, expect_more_rows, schema, convert_types=True):
+    def _wrap_results(self, results, expect_more_rows, schema, convert_types=True, 
+                      convert_strings_to_unicode=True):
         if self.is_columnar:
             log.debug('fetch_results: constructing CBatch')
-            return CBatch(results, expect_more_rows, schema, convert_types=convert_types)
+            return CBatch(results, expect_more_rows, schema, convert_types=convert_types, 
+                          convert_strings_to_unicode=convert_strings_to_unicode)
         else:
             log.debug('fetch_results: constructing RBatch')
-            # TODO: RBatch ignores 'convert_types'
+            # TODO: RBatch ignores 'convert_types' and 'convert_strings_to_unicode'
             return RBatch(results, expect_more_rows, schema)
 
     @property

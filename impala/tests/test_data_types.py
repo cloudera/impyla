@@ -15,7 +15,9 @@
 
 import datetime
 import pytest
+import sys
 from pytest import fixture
+from decimal import Decimal
 
 @fixture(scope='module')
 def decimal_table(cur):
@@ -49,25 +51,77 @@ def test_cursor_description_precision_scale(cur, decimal_table):
     for (exp, obs) in zip(expected, observed):
         assert exp == obs
 
+
 @fixture(scope='module')
-def date_table(cur):
-    table_name = 'tmp_date_table'
-    ddl = """CREATE TABLE {0} (d date)""".format(table_name)
+def decimal_table2(cur):
+    table_name = 'tmp_decimal_table2'
+    ddl = """CREATE TABLE {0} (val decimal(18, 9))""".format(table_name)
     cur.execute(ddl)
+    cur.execute('''insert into {0}
+                   values (cast(123456789.123456789 as decimal(18, 9))),
+                          (cast(-123456789.123456789 as decimal(18, 9))),
+                          (cast(0.000000001 as decimal(18, 9))),
+                          (cast(-0.000000001 as decimal(18, 9))),
+                          (cast(999999999.999999999 as decimal(18, 9))),
+                          (cast(-999999999.999999999 as decimal(18, 9))),
+                          (NULL)'''.format(table_name))
     try:
         yield table_name
     finally:
         cur.execute("DROP TABLE {0}".format(table_name))
 
 
+def common_test_decimal(cur, decimal_table):
+    """Read back a few decimal values in a wide range."""
+    cur.execute('select val from {0} order by val'.format(decimal_table))
+    results = cur.fetchall()
+    assert results == [(Decimal('-999999999.999999999'),),
+                       (Decimal('-123456789.123456789'),),
+                       (Decimal('-0.000000001'),),
+                       (Decimal('0.000000001'),),
+                       (Decimal('123456789.123456789'),),
+                       (Decimal('999999999.999999999'),),
+                       (None,)]
+
+
 @pytest.mark.connect
-def test_date_basic(cur, date_table):
-    """Insert and read back a couple of data values in a wide range."""
+def test_decimal_basic(cur, decimal_table2):
+    common_test_decimal(cur, decimal_table2)
+
+
+@pytest.mark.connect
+def test_decimal_no_string_conv(cur_no_string_conv, decimal_table2):
+    common_test_decimal(cur_no_string_conv, decimal_table2)
+
+
+@fixture(scope='module')
+def date_table(cur):
+    table_name = 'tmp_date_table'
+    ddl = """CREATE TABLE {0} (d date)""".format(table_name)
+    cur.execute(ddl)
     cur.execute('''insert into {0}
-                   values (date "0001-01-01"), (date "1999-9-9")'''.format(date_table))
+                   values (date "0001-01-01"), (date "1999-9-9")'''.format(table_name))
+    try:
+        yield table_name
+    finally:
+        cur.execute("DROP TABLE {0}".format(table_name))
+
+
+def common_test_date(cur, date_table):
+    """Read back a couple of data values in a wide range."""
     cur.execute('select d from {0} order by d'.format(date_table))
     results = cur.fetchall()
     assert results == [(datetime.date(1, 1, 1),), (datetime.date(1999, 9, 9),)]
+
+
+@pytest.mark.connect
+def test_date_basic(cur, date_table):
+    common_test_date(cur, date_table)
+
+
+@pytest.mark.connect
+def test_date_no_string_conv(cur_no_string_conv, date_table):
+    common_test_date(cur_no_string_conv, date_table)
 
 
 @fixture(scope='module')
@@ -75,22 +129,21 @@ def timestamp_table(cur):
     table_name = 'tmp_timestamp_table'
     ddl = """CREATE TABLE {0} (ts timestamp)""".format(table_name)
     cur.execute(ddl)
-    try:
-        yield table_name
-    finally:
-        cur.execute("DROP TABLE {0}".format(table_name))
-
-
-@pytest.mark.connect
-def test_timestamp_basic(cur, timestamp_table):
-    """Insert and read back a few timestamp values in a wide range."""
     cur.execute('''insert into {0}
                    values (cast("1400-01-01 00:00:00" as timestamp)),
                           (cast("2014-06-23 13:30:51" as timestamp)),
                           (cast("2014-06-23 13:30:51.123" as timestamp)),
                           (cast("2014-06-23 13:30:51.123456" as timestamp)),
                           (cast("2014-06-23 13:30:51.123456789" as timestamp)),
-                          (cast("9999-12-31 23:59:59" as timestamp))'''.format(timestamp_table))
+                          (cast("9999-12-31 23:59:59" as timestamp))'''.format(table_name))
+    try:
+        yield table_name
+    finally:
+        cur.execute("DROP TABLE {0}".format(table_name))
+
+
+def common_test_timestamp(cur, timestamp_table):
+    """Read back a few timestamp values in a wide range."""
     cur.execute('select ts from {0} order by ts'.format(timestamp_table))
     results = cur.fetchall()
     assert results == [(datetime.datetime(1400, 1, 1, 0, 0),),
@@ -99,6 +152,16 @@ def test_timestamp_basic(cur, timestamp_table):
                        (datetime.datetime(2014, 6, 23, 13, 30, 51, 123456),),
                        (datetime.datetime(2014, 6, 23, 13, 30, 51, 123456),),
                        (datetime.datetime(9999, 12, 31, 23, 59, 59),)]
+
+
+@pytest.mark.connect
+def test_timestamp_basic(cur, timestamp_table):
+    common_test_timestamp(cur, timestamp_table)
+
+
+@pytest.mark.connect
+def test_timestamp_no_string_conv(cur_no_string_conv, timestamp_table):
+    common_test_timestamp(cur_no_string_conv, timestamp_table)
 
 
 @pytest.mark.connect
@@ -120,3 +183,22 @@ def test_utf8_strings(cur):
     result = cur.fetchone()[0]
     assert result == b"\xaa"
     assert result.decode("UTF-8", "replace") == u"�"
+
+
+@pytest.mark.connect
+def test_string_conv(cur):
+    cur.execute('select "Test string"')
+    result = cur.fetchone()
+    is_unicode = isinstance(result[0], str)
+
+
+@pytest.mark.connect
+def test_string_no_string_conv(cur_no_string_conv):
+    cur = cur_no_string_conv
+    cur.execute('select "Test string"')
+    result = cur.fetchone()
+
+    if sys.version_info[0] < 3:
+        assert isinstance(result[0], str)
+    else:
+        assert isinstance(result[0], bytes)
