@@ -199,6 +199,6 @@ def test_string_no_string_conv(cur_no_string_conv):
     result = cur.fetchone()
 
     if sys.version_info[0] < 3:
-        assert not isinstance(result[0], unicode)
+        assert isinstance(result[0], str)
     else:
         assert isinstance(result[0], bytes)
