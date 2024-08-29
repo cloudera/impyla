@@ -1144,41 +1144,40 @@ class ThriftRPC(object):
         self.client = client
         self.retries = retries
 
-    def _rpc(self, func_name, request, retry_on_http_error=False):
+    def _rpc(self, func_name, request, safe_to_retry=False):
         self._log_request(func_name, request)
-        response = self._execute(func_name, request, retry_on_http_error)
+        response = self._execute(func_name, request, safe_to_retry)
         self._log_response(func_name, response)
         err_if_rpc_not_ok(response)
         return response
 
-    def _execute(self, func_name, request, retry_on_http_error=False):
+    def _execute(self, func_name, request, safe_to_retry=False):
         # pylint: disable=protected-access
         # get the thrift transport
         transport = self.client._iprot.trans
         tries_left = self.retries
-        last_http_exception = None
+        last_exception = None
+        open_finished = False
         while tries_left > 0:
             try:
                 log.debug('Attempting to open transport (tries_left=%s)',
                           tries_left)
                 open_transport(transport)
+                open_finished = True
                 log.debug('Transport opened')
                 func = getattr(self.client, func_name)
                 return func(request)
-            except socket.error:
-                log.exception('Failed to open transport (tries_left=%s)',
-                              tries_left)
-                last_http_exception = None
-            except TTransportException:
-                log.exception('Failed to open transport (tries_left=%s)',
-                              tries_left)
-                last_http_exception = None
+            except (socket.error, TTransportException) as e:
+                if open_finished and not safe_to_retry: raise e
+                msg = "RPC failed" if open_finished else "Failed to open transport"
+                log.exception('%s (tries_left=%s)', msg, tries_left)
+                last_exception = e
             except HttpError as h:
-                if not retry_on_http_error:
+                if not safe_to_retry:
                     log.debug('Caught HttpError %s %s in %s which is not retryable',
                               h, str(h.body or ''), func_name)
                     raise
-                last_http_exception = h
+                last_exception = h
                 if tries_left > 1:
                     retry_secs = None
                     retry_after = h.http_headers.get('Retry-After', None)
@@ -1203,15 +1202,16 @@ class ThriftRPC(object):
                 raise
             log.debug('Closing transport (tries_left=%s)', tries_left)
             transport.close()
+            open_finished = False
             tries_left -= 1
 
-        if last_http_exception is not None:
-            raise last_http_exception
+        if last_exception:
+            raise last_exception
         raise HiveServer2Error('Failed after retrying {0} times'
                                .format(self.retries))
 
-    def _operation(self, kind, request, retry_on_http_error=False):
-        resp = self._rpc(kind, request, retry_on_http_error)
+    def _operation(self, kind, request, safe_to_retry=False):
+        resp = self._rpc(kind, request, safe_to_retry)
         return self._get_operation(resp.operationHandle)
 
     def _log_request(self, kind, request):
