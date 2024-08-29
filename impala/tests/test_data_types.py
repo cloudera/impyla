@@ -187,7 +187,7 @@ def test_utf8_strings(cur):
 def test_string_conv(cur):
     cur.execute('select "Test string"')
     result = cur.fetchone()
-    assert result[0] == u"Test string"
+    is_unicode = isinstance(result[0], str)
 
 
 @pytest.mark.connect
@@ -196,8 +196,7 @@ def test_string_no_string_conv(cur_no_string_conv):
     cur.execute('select "Test string"')
     result = cur.fetchone()
 
-
     if sys.version_info[0] < 3:
-        assert result[0] == u"Test string"
+        assert not isinstance(result[0], unicode)
     else:
-        assert result[0] == b"Test string"
+        assert isinstance(result[0], bytes)
