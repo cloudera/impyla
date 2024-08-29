@@ -63,7 +63,8 @@ def decimal_table2(cur):
                           (cast(0.000000001 as decimal(18, 9))),
                           (cast(-0.000000001 as decimal(18, 9))),
                           (cast(999999999.999999999 as decimal(18, 9))),
-                          (cast(-999999999.999999999 as decimal(18, 9)))'''.format(table_name))
+                          (cast(-999999999.999999999 as decimal(18, 9))),
+                          (NULL)'''.format(table_name))
     try:
         yield table_name
     finally:
@@ -79,7 +80,8 @@ def common_test_decimal(cur, decimal_table):
                        (Decimal('-0.000000001'),),
                        (Decimal('0.000000001'),),
                        (Decimal('123456789.123456789'),),
-                       (Decimal('999999999.999999999'),)]
+                       (Decimal('999999999.999999999'),),
+                       (None,)]
 
 
 @pytest.mark.connect
