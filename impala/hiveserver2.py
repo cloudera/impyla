@@ -471,6 +471,7 @@ class HiveServer2Cursor(Cursor):
             return
         loop_start = time.time()
         while True:
+            start_rpc_time = time.time()
             req = TGetOperationStatusReq(operationHandle=self._last_operation.handle)
             resp = self._last_operation._rpc('GetOperationStatus', req, True)
             self._last_operation.update_has_result_set(resp)
@@ -490,7 +491,13 @@ class HiveServer2Cursor(Cursor):
             if not self._op_state_is_executing(operation_state):
                 self._last_operation_finished = True
                 break
-            time.sleep(self._get_sleep_interval(loop_start))
+            rpc_time = time.time() - start_rpc_time
+            sleep_time = self._get_sleep_interval(loop_start)
+            # Subtract RPC time from the total sleep time. If query option
+            # long_polling_time_ms is set then Impala will sleep in GetOperationStatus
+            # meaning that impyla may not need to sleep at all (IMPALA-13294).
+            if rpc_time < sleep_time:
+                time.sleep(sleep_time - rpc_time)
 
     def status(self):
         if self._last_operation is None:
