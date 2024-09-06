@@ -1,6 +1,22 @@
 Changelog
 =========
 
+0.20a2
+------
+* **Improvements**
+  - Support wildcard http_cookie_names (#509)
+  - Allow skipping utf8 conversion in Python3 (#548)
+  - Subtract RPC time from sleep in _wait_to_finish (#551)
+  - Reduced logging:
+    - Log "Closing operation" at debug level (#539)
+    - Never log passwords in http connections (#545)
+      - Before the fix passwords were logged at debug level
+
+* **Bug Fixes**
+  - Turn regex strings into raw strings (#535)
+  - Fix SQLAlchemy support for Impala on Python 3.10 (#538)
+  - Avoid retrying non-idempotent RPCs in binary connections (#549)
+
 0.20a1
 ------
 * **Improvements**
