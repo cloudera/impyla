@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.20a3
+------
+* **Bug Fixes**
+  - Always set ImpalaHttpClient.__preserve_all_cookies (#553)
+
 0.20a2
 ------
 * **Improvements**
