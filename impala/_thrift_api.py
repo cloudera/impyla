@@ -138,6 +138,7 @@ class ImpalaHttpClient(TTransportBase):
       self.__http_cookie_dict = dict()
       self.__auth_cookie_names = set()
     else:
+      self.__preserve_all_cookies = False
       if isinstance(http_cookie_names, six.string_types):
         http_cookie_names = [http_cookie_names]
       # Build a dictionary that maps cookie name to namedtuple.
