@@ -58,11 +58,12 @@ class HiveServer2Connection(Connection):
     # thrift service
     # it's instantiated with an alive TCLIService.Client
 
-    def __init__(self, service, default_db=None):
+    def __init__(self, service, default_db=None, cursor_configuration=None):
         log.debug('HiveServer2Connection(service=%s, default_db=%s)', service,
                   default_db)
         self.service = service
         self.default_db = default_db
+        self.cursor_configuration = cursor_configuration
 
     def close(self):
         """Close the session and the Thrift transport."""
@@ -147,7 +148,11 @@ class HiveServer2Connection(Connection):
 
         log.debug('.cursor(): getting new session_handle')
 
-        session = self.service.open_session(user, configuration)
+        session_configuration = {}
+        for conf in [self.cursor_configuration, configuration]:
+            if conf is not None:
+                session_configuration.update(conf)
+        session = self.service.open_session(user, session_configuration if session_configuration else None)
 
         log.debug('HiveServer2Cursor(service=%s, session_handle=%s, '
                   'default_config=%s, hs2_protocol_version=%s)',
