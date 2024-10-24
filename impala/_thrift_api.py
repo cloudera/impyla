@@ -68,12 +68,14 @@ class ImpalaHttpClient(TTransportBase):
   MIN_REQUEST_SIZE_FOR_EXPECT = 1024
 
   def __init__(self, uri_or_host, port=None, path=None, cafile=None, cert_file=None,
-               key_file=None, ssl_context=None, http_cookie_names=None):
+               key_file=None, ssl_context=None, http_cookie_names=None,
+               get_user_custom_headers_func=None):
     """ImpalaHttpClient supports two different types of construction:
 
     ImpalaHttpClient(host, port, path) - deprecated
     ImpalaHttpClient(uri, [port=<n>, path=<s>, cafile=<filename>, cert_file=<filename>,
-        key_file=<filename>, ssl_context=<context>, http_cookie_names=<cookienamelist>])
+        key_file=<filename>, ssl_context=<context>, http_cookie_names=<cookienamelist>],
+        get_user_custom_headers_func=<function_setting_http_headers>)
 
     Only the second supports https.  To properly authenticate against the server,
     provide the client's identity by specifying cert_file and key_file.  To properly
@@ -85,6 +87,8 @@ class ImpalaHttpClient(TTransportBase):
     one of these names is returned in an http response by the server or an intermediate
     proxy then it will be included in each subsequent request for the same connection. If
     it is set as wildcards, all cookies in an http response will be preserved.
+    The optional get_user_custom_headers_func parameter is a function returning
+    a list of tuples, each tuple contains a key-value pair.
     """
     if port is not None:
       warnings.warn(
@@ -157,7 +161,13 @@ class ImpalaHttpClient(TTransportBase):
     # __custom_headers is used to store HTTP headers which are generated in runtime for
     # new request.
     self.__custom_headers = None
+    # __user_custom_headers is a list of tuples, each tuple contains a key-value pair.
+    self.__user_custom_headers = None
     self.__get_custom_headers_func = None
+    if get_user_custom_headers_func:
+        self.__get_user_custom_headers_func = get_user_custom_headers_func
+    else:
+        self.__get_user_custom_headers_func = None
     # the default user agent if none is provied
     self.__custom_user_agent = 'Python/ImpylaHttpClient'
 
@@ -220,12 +230,19 @@ class ImpalaHttpClient(TTransportBase):
   def setGetCustomHeadersFunc(self, func):
     self.__get_custom_headers_func = func
 
+  # Set callback function which generate HTTP headers for a specific auth mechanism.
+  def setGetUserDefinedCustomHeadersFunc(self, func):
+    self.__get_user_custom_headers_func = func
+
   # Update HTTP headers based on the saved cookies and auth mechanism.
   def refreshCustomHeaders(self):
     if self.__get_custom_headers_func:
       cookie_header, has_auth_cookie = self.getHttpCookieHeaderForRequest()
       self.__custom_headers = \
           self.__get_custom_headers_func(cookie_header, has_auth_cookie)
+    if self.__get_user_custom_headers_func:
+       self.__user_custom_headers = \
+          self.__get_user_custom_headers_func(self.__custom_headers)
 
   # Return first value as a cookie list for Cookie header. It's a list of name-value
   # pairs in the form of <cookie-name>=<cookie-value>. Pairs in the list are separated by
@@ -329,6 +346,9 @@ class ImpalaHttpClient(TTransportBase):
       if self.__custom_headers:
         for key, val in six.iteritems(self.__custom_headers):
           self.__http.putheader(key, val)
+      if self.__user_custom_headers:
+        for key, val in self.__user_custom_headers:
+          self.__http.putheader(key, val)
 
       self.__http.endheaders()
 
@@ -393,7 +413,8 @@ def get_socket(host, port, use_ssl, ca_cert):
 def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
                        ca_cert=None, auth_mechanism='NOSASL', user=None,
                        password=None, kerberos_host=None, kerberos_service_name=None,
-                       http_cookie_names=None, jwt=None, user_agent=None):
+                       http_cookie_names=None, jwt=None, user_agent=None,
+                       get_user_custom_headers_func=None):
     # TODO: support timeout
     if timeout is not None:
         log.error('get_http_transport does not support a timeout')
@@ -408,12 +429,16 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
         url = 'https://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
         # TODO(#362): Add server authentication with thrift 0.12.
-        transport = ImpalaHttpClient(url, ssl_context=ssl_ctx,
-                                     http_cookie_names=http_cookie_names)
+        transport = ImpalaHttpClient(
+            url, ssl_context=ssl_ctx,
+            http_cookie_names=http_cookie_names,
+            get_user_custom_headers_func=get_user_custom_headers_func)
     else:
         url = 'http://%s:%s/%s' % (host, port, http_path)
         log.debug('get_http_transport url=%s', url)
-        transport = ImpalaHttpClient(url, http_cookie_names=http_cookie_names)
+        transport = ImpalaHttpClient(
+            url, http_cookie_names=http_cookie_names,
+            get_user_custom_headers_func=get_user_custom_headers_func)
 
     # set custom user agent if provided by user
     if user_agent:
