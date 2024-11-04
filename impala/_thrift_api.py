@@ -232,7 +232,8 @@ class ImpalaHttpClient(TTransportBase):
   def setGetCustomHeadersFunc(self, func):
     self.__get_custom_headers_func = func
 
-  # Set callback function which generate HTTP headers for a specific auth mechanism.
+  # Set the user-defined callback function which adds custom HTTP headers to outgoing
+  # messages.
   def setGetUserDefinedCustomHeadersFunc(self, func):
     self.__get_user_custom_headers_func = func
 
