@@ -163,9 +163,9 @@ class ImpalaHttpClient(TTransportBase):
     # __custom_headers is used to store HTTP headers which are generated in runtime for
     # new request.
     self.__custom_headers = None
+    self.__get_custom_headers_func = None
     # __user_custom_headers is a list of tuples, each tuple contains a key-value pair.
     self.__user_custom_headers = None
-    self.__get_custom_headers_func = None
     if get_user_custom_headers_func:
         self.__get_user_custom_headers_func = get_user_custom_headers_func
     else:
