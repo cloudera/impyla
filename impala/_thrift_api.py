@@ -87,8 +87,10 @@ class ImpalaHttpClient(TTransportBase):
     one of these names is returned in an http response by the server or an intermediate
     proxy then it will be included in each subsequent request for the same connection. If
     it is set as wildcards, all cookies in an http response will be preserved.
-    The optional get_user_custom_headers_func parameter is a function returning
-    a list of tuples, each tuple contains a key-value pair.
+    The optional get_user_custom_headers_func parameter can be used to add http headers
+    to outgoing http messages when using hs2-http protocol. The parameter should be a
+    function returning a list of tuples, each tuple containing a key-value pair
+    representing the header name and value.
     """
     if port is not None:
       warnings.warn(
