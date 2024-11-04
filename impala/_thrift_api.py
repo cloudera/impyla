@@ -237,7 +237,11 @@ class ImpalaHttpClient(TTransportBase):
   def setGetUserDefinedCustomHeadersFunc(self, func):
     self.__get_user_custom_headers_func = func
 
-  # Update HTTP headers based on the saved cookies and auth mechanism.
+  # Update outgoing HTTP headers.
+  # This is done by two callback functions, if present
+  # __get_custom_headers_func adds headers based on the saved cookies and auth
+  # mechanism.
+  # __get_user_custom_headers_func adds custom user-supplied http headers.
   def refreshCustomHeaders(self):
     if self.__get_custom_headers_func:
       cookie_header, has_auth_cookie = self.getHttpCookieHeaderForRequest()
