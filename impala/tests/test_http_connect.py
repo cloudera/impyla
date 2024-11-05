@@ -81,36 +81,39 @@ def http_proxy_server():
 
 class RequestHandlerProxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
   """A custom http handler acts as an http proxy."""
+
+  # This class variable is used to store the most recently seen outgoing http
+  # message headers.
   saved_headers=None
 
   def __init__(self, request, client_address, server):
     SimpleHTTPServer.SimpleHTTPRequestHandler.__init__(self, request, client_address,
                                                   server)
 
-
-
   def do_POST(self):
     # Read the body of the incoming http post message.
     data_string = self.rfile.read(int(self.headers['Content-Length']))
-    # Forward the http post message to Impala
+    # Save the http headers from the message in a class variable.
+    RequestHandlerProxy.saved_headers = self.decode_raw_headers()
+    # Forward the http post message to Impala and get a response message.
     response = requests.post(url="http://localhost:28000/cliservice",
                              headers=self.headers, data=data_string)
-
-    header_list = self.decode_raw_headers()
-    RequestHandlerProxy.saved_headers=header_list
-
+    # Send the response message back to the client.
     self.send_response(code=response.status_code)
+    # Send the http headers.
     # In python3 response.headers is a CaseInsensitiveDict
-    # In pythin2 response.headers is a dict
+    # In python2 response.headers is a dict
     for key, value in response.headers.items():
       self.send_header(keyword=key, value=value)
     self.end_headers()
+    # Send the message body.
     self.wfile.write(response.content)
     self.wfile.close()
 
   def decode_raw_headers(self):
     """Decode a list of header strings into a list of tuples, each tuple containing a
-    key-value pair."""
+    key-value pair. The details of where the headers are differs between Python2 and
+    Python3"""
     if six.PY2:
       header_list = []
       # In Python2 self.headers is an instance of mimetools.Message and
@@ -132,11 +135,11 @@ class TestHTTPServerProxy(object):
     self.HOST = "localhost"
     self.PORT = get_unused_port()
     self.httpd = socketserver.TCPServer((self.HOST, self.PORT), clazz)
-
     self.http_server_thread = threading.Thread(target=self.httpd.serve_forever)
     self.http_server_thread.start()
 
   def get_headers(self):
+    """Return the most recently seen outgoing http message headers."""
     return self.clazz.saved_headers
 
 from impala.dbapi import connect
@@ -161,7 +164,7 @@ class TestHttpConnect(object):
       assert e.code == http_client.SERVICE_UNAVAILABLE
       assert e.body.decode("utf-8") == "extra text"
 
-  def test_duplicate_headers2(self, http_proxy_server):
+  def test_duplicate_headers(self, http_proxy_server):
     """FIXME"""
     con = connect("localhost", http_proxy_server.PORT, use_http_transport=True,
                   get_user_custom_headers_func=get_user_custom_headers_func)
