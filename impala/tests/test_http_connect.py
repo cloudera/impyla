@@ -90,9 +90,9 @@ class RequestHandlerProxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 
   def do_POST(self):
-
+    # Read the body of the incoming http post message.
     data_string = self.rfile.read(int(self.headers['Content-Length']))
-    # This works in python2 even though self.headers is a Message not a dict
+    # Forward the http post message to Impala
     response = requests.post(url="http://localhost:28000/cliservice",
                              headers=self.headers, data=data_string)
 
