@@ -105,12 +105,12 @@ class FaultInjectingHttpClient(ImpalaHttpClient, object):
 class TestHS2FaultInjection(object):
     """Class for testing the http fault injection in various rpcs used by Impyla"""
 
-    def setup(self):
+    def setup_method(self):
         url = 'http://%s:%s/%s' % (ENV.host, ENV.http_port, "cliservice")
         self.transport = FaultInjectingHttpClient(url)
         self.configuration = {'idle_session_timeout': '30'}
 
-    def teardown(self):
+    def teardown_method(self):
         self.transport.disable_fault()
 
     def connect(self):

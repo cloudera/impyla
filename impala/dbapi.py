@@ -44,7 +44,8 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
             ldap_user=None, ldap_password=None, use_kerberos=None,
             protocol=None, krb_host=None, use_http_transport=False,
             http_path='', auth_cookie_names=None, http_cookie_names=None,
-            retries=3, jwt=None, user_agent=None):
+            retries=3, jwt=None, user_agent=None,
+            get_user_custom_headers_func=None):
     """Get a connection to HiveServer2 (HS2).
 
     These options are largely compatible with the impala-shell command line
@@ -105,6 +106,10 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
         'Python/ImpylaHttpClient' is used
     use_ldap : bool, optional
         Specify `auth_mechanism='LDAP'` instead.
+    get_user_custom_headers_func : function, optional
+        Used to add custom headers to the http messages when using hs2-http protocol.
+        This is a function returning a list of tuples, each tuple contains a key-value
+        pair. This allows duplicate headers to be set.
 
         .. deprecated:: 0.18.0
     auth_cookie_names : list of str or str, optional
@@ -203,7 +208,8 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
                           http_path=http_path,
                           http_cookie_names=http_cookie_names,
                           retries=retries,
-                          jwt=jwt, user_agent=user_agent)
+                          jwt=jwt, user_agent=user_agent,
+                          get_user_custom_headers_func=get_user_custom_headers_func)
     return hs2.HiveServer2Connection(service, default_db=database)
 
 
