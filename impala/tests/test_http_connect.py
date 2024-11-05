@@ -18,9 +18,6 @@ from contextlib import closing
 import pytest
 import requests
 import six
-
-if six.PY2:
-  import httplib
 from six.moves import SimpleHTTPServer
 from six.moves import http_client
 from six.moves import socketserver
