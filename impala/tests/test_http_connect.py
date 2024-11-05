@@ -175,7 +175,8 @@ class TestHttpConnect(object):
 
     headers = http_proxy_server.get_headers()
     assert count_tuples_with_key(headers, "key1") == 2
-    print("x")
+    assert count_tuples_with_key(headers, "key2") == 1
+    assert count_tuples_with_key(headers, "key3") == 0
 
 def get_user_custom_headers_func(old_headers):
   headers = []
