@@ -80,7 +80,10 @@ def http_proxy_server():
   shutdown_server(server)
 
 class RequestHandlerProxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
-  """A custom http handler acts as an http proxy."""
+  """A custom http handler acts as a reverse http proxy. This proxy will forward http
+  messages to Impala and copy the responses back to the client. In addition, it will save
+  the outgoing http message headers in a class variable so tha they can be accessed by
+  test code."""
 
   # This class variable is used to store the most recently seen outgoing http
   # message headers.
