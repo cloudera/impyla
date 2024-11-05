@@ -165,7 +165,8 @@ class TestHttpConnect(object):
       assert e.body.decode("utf-8") == "extra text"
 
   def test_duplicate_headers(self, http_proxy_server):
-    """FIXME"""
+    """Test that we can use connect with the get_user_custom_headers_func parameter
+    to add duplicate http message headers to outgoing messages."""
     con = connect("localhost", http_proxy_server.PORT, use_http_transport=True,
                   get_user_custom_headers_func=get_user_custom_headers_func)
     cur = con.cursor()
@@ -173,12 +174,18 @@ class TestHttpConnect(object):
     rows = cur.fetchall()
     assert rows == [(1,)]
 
+    # Get the outgoing message headers from the last outgoing http message.
     headers = http_proxy_server.get_headers()
+    # For sanity test a few simple expected headers
+    assert count_tuples_with_key(headers, "Host") == 1
+    assert count_tuples_with_key(headers, "User-Agent") == 1
+    # Check that the custom headers are present
     assert count_tuples_with_key(headers, "key1") == 2
     assert count_tuples_with_key(headers, "key2") == 1
     assert count_tuples_with_key(headers, "key3") == 0
 
 def get_user_custom_headers_func(old_headers):
+  """Insert some custom http headers, including a duplicate"""
   headers = []
   headers.append(('key1', 'value1'))
   headers.append(('key1', 'value2'))
