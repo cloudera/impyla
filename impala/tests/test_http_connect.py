@@ -184,7 +184,7 @@ class TestHttpConnect(object):
     assert count_tuples_with_key(headers, "key2") == 1
     assert count_tuples_with_key(headers, "key3") == 0
 
-def get_user_custom_headers_func(old_headers):
+def get_user_custom_headers_func():
   """Insert some custom http headers, including a duplicate"""
   headers = []
   headers.append(('key1', 'value1'))

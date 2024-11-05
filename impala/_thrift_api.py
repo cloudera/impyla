@@ -249,7 +249,7 @@ class ImpalaHttpClient(TTransportBase):
           self.__get_custom_headers_func(cookie_header, has_auth_cookie)
     if self.__get_user_custom_headers_func:
        self.__user_custom_headers = \
-          self.__get_user_custom_headers_func(self.__custom_headers)
+          self.__get_user_custom_headers_func()
 
   # Return first value as a cookie list for Cookie header. It's a list of name-value
   # pairs in the form of <cookie-name>=<cookie-value>. Pairs in the list are separated by
