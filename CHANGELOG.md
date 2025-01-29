@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.21a1
+------
+* **Improvements**
+  - Allow users to add custom http headers when using hs2-http (#557)
+    - this change is intended to help with testing the server side
+
 0.20
 ------
 * **Improvements**
