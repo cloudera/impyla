@@ -41,7 +41,7 @@ setup(
     packages=find_packages(),
     install_package_data=True,
     package_data={'impala.thrift': ['*.thrift']},
-    install_requires=['six', 'bitarray', 'thrift==0.16.0', 'thrift_sasl==0.4.3'],
+    install_requires=['six', 'bitarray<3', 'thrift==0.16.0', 'thrift_sasl==0.4.3'],
     extras_require={
         "kerberos": ['kerberos>=1.3.0'],
     },
