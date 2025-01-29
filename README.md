@@ -43,7 +43,7 @@ Optional:
 
 * `sqlalchemy` for the SQLAlchemy engine
 
-* `pytest` for running tests; `unittest2` for testing on Python 2.6
+* `pytest` and `requests` for running tests; `unittest2` for testing on Python 2.6
 
 
 #### System Kerberos
