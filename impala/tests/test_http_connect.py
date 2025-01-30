@@ -107,7 +107,6 @@ def http_proxy_server():
       self.end_headers()
       # Send the message body.
       self.wfile.write(response.content)
-      self.wfile.close()
 
     def decode_raw_headers(self):
       """Decode a list of header strings into a list of tuples, each tuple containing a
