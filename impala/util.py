@@ -264,5 +264,4 @@ def get_basic_credentials_for_request_headers(user, password):
     - No translation of characters (+,/) for URL-safety
     """
     user_password = '%s:%s' % (user, password)
-    print(user_password)
     return base64.b64encode(user_password.encode()).decode()

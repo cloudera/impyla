@@ -203,7 +203,6 @@ class TestHttpConnect(object):
     rows = cur.fetchall()
     assert rows == [(1,)]
 
-    print(http_proxy_server.get_headers())
     headers = http_proxy_server.get_headers()
     assert ('Authorization', "Basic dGhpc2lzYXJhdGhlcmxvbmd1c2VybmFtZTp2ZXJ5IWxvbmchcGFzc3dvcmR0aGF0Y3JlYXRlc2Fsb25nYmFzaWM2NGVuY29kaW5n") in headers
 
