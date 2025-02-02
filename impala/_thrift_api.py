@@ -37,6 +37,7 @@ import ssl
 import sys
 
 from impala.error import HttpError
+from impala.util import get_basic_credentials_for_request_headers
 from impala.util import get_logger_and_init_null
 from impala.util import get_all_matching_cookies, get_all_cookies, get_cookie_expiry
 
@@ -177,10 +178,10 @@ class ImpalaHttpClient(TTransportBase):
   def basic_proxy_auth_header(proxy):
     if proxy is None or not proxy.username:
       return None
-    ap = "%s:%s" % (urllib.parse.unquote(proxy.username),
-                    urllib.parse.unquote(proxy.password))
-    cr = base64.b64encode(ap).strip()
-    return "Basic " + cr
+    return "Basic " + get_basic_credentials_for_request_headers(
+       user=urllib.parse.unquote(proxy.username),
+       password=urllib.parse.unquote(proxy.password),
+    )
 
   def using_proxy(self):
     return self.realhost is not None
@@ -462,11 +463,7 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
             log.debug('get_http_transport: password=fuggetaboutit')
         auth_mechanism = 'PLAIN'  # sasl doesn't know mechanism LDAP
         # Set the BASIC auth header
-        user_password = '%s:%s'.encode() % (user.encode(), password.encode())
-        try:
-            auth = base64.encodebytes(user_password).decode().strip('\n')
-        except AttributeError:
-            auth = base64.encodestring(user_password).decode().strip('\n')
+        auth = get_basic_credentials_for_request_headers(user, password)
 
         def get_custom_headers(cookie_header, has_auth_cookie):
             custom_headers = {}
