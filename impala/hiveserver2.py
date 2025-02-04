@@ -1286,7 +1286,8 @@ class HS2Service(ThriftRPC):
         resp = self._rpc('OpenSession', req, True)
         return HS2Session(self, resp.sessionHandle,
                           resp.configuration,
-                          resp.serverProtocolVersion)
+                          resp.serverProtocolVersion,
+                          retries=self.retries)
 
 
 class HS2Session(ThriftRPC):
@@ -1387,7 +1388,8 @@ class HS2Session(ThriftRPC):
         return True
 
     def _get_operation(self, handle):
-        return Operation(self, handle)
+        return Operation(self, handle,
+                         retries=self.retries)
 
 
 class Operation(ThriftRPC):
