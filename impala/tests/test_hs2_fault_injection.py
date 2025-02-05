@@ -113,29 +113,29 @@ class TestHS2FaultInjection(object):
     def teardown_method(self):
         self.transport.disable_fault()
 
-    def connect(self):
+    def connect(self, retries=3):
         self.transport.open()
         protocol = TBinaryProtocolAccelerated(self.transport)
         service = ThriftClient(protocol)
-        service = HS2Service(service, retries=3)
+        service = HS2Service(service, retries=retries)
         return hs2.HiveServer2Connection(service, default_db=None)
 
-    def __expect_msg_retry(self, impala_rpc_name):
+    def __expect_msg_retry(self, impala_rpc_name, retries):
         """Returns expected log message for rpcs which can be retried"""
-        return ("Caught HttpError HTTP code 502: Injected Fault  in {0} (tries_left=3)".
-                format(impala_rpc_name))
+        return ("Caught HttpError HTTP code 502: Injected Fault  in {0} (tries_left={1})".
+                format(impala_rpc_name, retries))
 
-    def __expect_msg_retry_with_extra(self, impala_rpc_name):
+    def __expect_msg_retry_with_extra(self, impala_rpc_name, retries):
         """Returns expected log message for rpcs which can be retried and where the http
         message has a message body"""
-        return ("Caught HttpError HTTP code 503: Injected Fault EXTRA in {0} (tries_left=3)".
-                format(impala_rpc_name))
+        return ("Caught HttpError HTTP code 503: Injected Fault EXTRA in {0} (tries_left={1})".
+                format(impala_rpc_name, retries))
 
-    def __expect_msg_retry_with_retry_after(self, impala_rpc_name):
+    def __expect_msg_retry_with_retry_after(self, impala_rpc_name, retries):
         """Returns expected log message for rpcs which can be retried and where the http
         message has a body and a Retry-After header that can be correctly decoded"""
-        return ("Caught HttpError HTTP code 503: Injected Fault EXTRA in {0} (tries_left=3), retry after 1 secs".
-                format(impala_rpc_name))
+        return ("Caught HttpError HTTP code 503: Injected Fault EXTRA in {0} (tries_left={1}), retry after 1 secs".
+                format(impala_rpc_name, retries))
 
     def __expect_msg_retry_with_retry_after_sleep(self):
         """Returns expected log message for the sleep which uses a value
@@ -146,12 +146,12 @@ class TestHS2FaultInjection(object):
         """Returns expected log message for the default sleep time of 1 second"""
         return ("sleeping for 1 second before retrying")
 
-    def __expect_msg_retry_with_retry_after_no_extra(self, impala_rpc_name):
+    def __expect_msg_retry_with_retry_after_no_extra(self, impala_rpc_name, retries):
         """Returns expected log message for rpcs which can be retried and the http
         message has a Retry-After header that can be correctly decoded"""
-        return ("Caught HttpError HTTP code 503: Injected Fault  in {0} (tries_left=3), retry after 1 secs".
-                format(impala_rpc_name))
-
+        return ("Caught HttpError HTTP code 503: Injected Fault  in {0} (tries_left={1}), retry after 1 secs".
+                format(impala_rpc_name, retries))
+  
     def __expect_msg_no_retry(self, impala_rpc_name):
         """Returns expected log message for rpcs which can not be retried"""
         return ("Caught HttpError HTTP code 502: Injected Fault  in {0} which is not retryable".
@@ -163,11 +163,11 @@ class TestHS2FaultInjection(object):
         Retries results in a successful connection."""
         caplog.set_level(logging.DEBUG)
         self.transport.enable_fault(502, "Injected Fault", 0.2)
-        con = self.connect()
+        con = self.connect(retries=4)
         cur = con.cursor(configuration=self.configuration)
         cur.close()
         con.close()
-        assert self.__expect_msg_retry("OpenSession") in caplog.text
+        assert self.__expect_msg_retry("OpenSession", 4) in caplog.text
 
     def test_connect_proxy(self, caplog):
         """Tests fault injection in cursor() call.
@@ -176,11 +176,11 @@ class TestHS2FaultInjection(object):
         Retries results in a successful connection."""
         caplog.set_level(logging.DEBUG)
         self.transport.enable_fault(503, "Injected Fault", 0.20, 'EXTRA')
-        con = self.connect()
+        con = self.connect(retries=4)
         cur = con.cursor(configuration=self.configuration)
         cur.close()
         con.close()
-        assert self.__expect_msg_retry_with_extra("OpenSession") in caplog.text
+        assert self.__expect_msg_retry_with_extra("OpenSession", 4) in caplog.text
         assert self.__expect_msg_retry_after_default_sleep() in caplog.text
 
     def test_connect_proxy_no_retry(self, caplog):
@@ -191,11 +191,11 @@ class TestHS2FaultInjection(object):
         caplog.set_level(logging.DEBUG)
         self.transport.enable_fault(503, "Injected Fault", 0.20, 'EXTRA',
                                     {"header1": "value1"})
-        con = self.connect()
+        con = self.connect(retries=4)
         cur = con.cursor(configuration=self.configuration)
         cur.close()
         con.close()
-        assert self.__expect_msg_retry_with_extra("OpenSession") in caplog.text
+        assert self.__expect_msg_retry_with_extra("OpenSession", 4) in caplog.text
         assert self.__expect_msg_retry_after_default_sleep() in caplog.text
 
     def test_connect_proxy_bad_retry(self, caplog):
@@ -207,11 +207,11 @@ class TestHS2FaultInjection(object):
         self.transport.enable_fault(503, "Injected Fault", 0.20, 'EXTRA',
                                     {"header1": "value1",
                                      "Retry-After": "junk"})
-        con = self.connect()
+        con = self.connect(retries=4)
         cur = con.cursor(configuration=self.configuration)
         cur.close()
         con.close()
-        assert self.__expect_msg_retry_with_extra("OpenSession") in caplog.text
+        assert self.__expect_msg_retry_with_extra("OpenSession", 4) in caplog.text
         assert self.__expect_msg_retry_after_default_sleep() in caplog.text
 
     def test_connect_proxy_retry(self, caplog):
@@ -222,11 +222,11 @@ class TestHS2FaultInjection(object):
         self.transport.enable_fault(503, "Injected Fault", 0.20, 'EXTRA',
                                     {"header1": "value1",
                                      "Retry-After": "1"})
-        con = self.connect()
+        con = self.connect(retries=4)
         cur = con.cursor(configuration=self.configuration)
         cur.close()
         con.close()
-        assert self.__expect_msg_retry_with_retry_after("OpenSession") in caplog.text
+        assert self.__expect_msg_retry_with_retry_after("OpenSession", 4) in caplog.text
         assert self.__expect_msg_retry_with_retry_after_sleep() in caplog.text
 
     def test_connect_proxy_retry_no_body(self, caplog):
@@ -237,11 +237,11 @@ class TestHS2FaultInjection(object):
         self.transport.enable_fault(503, "Injected Fault", 0.20, None,
                                     {"header1": "value1",
                                      "Retry-After": "1"})
-        con = self.connect()
+        con = self.connect(retries=4)
         cur = con.cursor(configuration=self.configuration)
         cur.close()
         con.close()
-        assert self.__expect_msg_retry_with_retry_after_no_extra("OpenSession") in caplog.text
+        assert self.__expect_msg_retry_with_retry_after_no_extra("OpenSession", 4) in caplog.text
 
     def test_execute_query(self, caplog):
         """Tests fault injection in execute().
@@ -265,7 +265,7 @@ class TestHS2FaultInjection(object):
     def test_get_query_state(self, caplog):
         """Tests fault injection in fetchall().
         GetOperationStatus rpc fails but is retried successfully."""
-        con = self.connect()
+        con = self.connect(retries=4)
         cur = con.cursor(configuration=self.configuration)
         caplog.set_level(logging.DEBUG)
         cur.execute_async('select 1', {})
@@ -273,12 +273,12 @@ class TestHS2FaultInjection(object):
         cur.fetchall()
         cur.close()
         con.close()
-        assert self.__expect_msg_retry("GetOperationStatus") in caplog.text
+        assert self.__expect_msg_retry("GetOperationStatus", 4) in caplog.text
 
     def test_get_result_set_metadata(self, caplog):
         """Tests fault injection in fetchcbatch().
         GetResultSetMetadata rpc fails and is retried succesfully."""
-        con = self.connect()
+        con = self.connect(retries=4)
         cur = con.cursor(configuration=self.configuration)
         caplog.set_level(logging.DEBUG)
         cur.execute('select 1', {})
@@ -286,7 +286,7 @@ class TestHS2FaultInjection(object):
         cur.fetchcbatch()
         cur.close()
         con.close()
-        assert self.__expect_msg_retry("GetResultSetMetadata") in caplog.text
+        assert self.__expect_msg_retry("GetResultSetMetadata", 4) in caplog.text
 
     def test_fetch_results(self, caplog):
         """Tests fault injection in fetchcbatch().
@@ -328,7 +328,7 @@ class TestHS2FaultInjection(object):
         """Tests fault injection in get_profile(), get_summary(), and get_log().
         GetRuntimeProfile, GetExecSummary and GetLog rpcs fail due to fault, but succeed
         after retries"""
-        con = self.connect()
+        con = self.connect(retries=4)
         cur = con.cursor(configuration=self.configuration)
         caplog.set_level(logging.DEBUG)
         cur.execute('select 1', {})
@@ -343,6 +343,6 @@ class TestHS2FaultInjection(object):
         self.transport.disable_fault()
         cur.close()
         con.close()
-        assert self.__expect_msg_retry("GetRuntimeProfile") in caplog.text
-        assert self.__expect_msg_retry("GetExecSummary") in caplog.text
-        assert self.__expect_msg_retry("GetLog") in caplog.text
+        assert self.__expect_msg_retry("GetRuntimeProfile", 4) in caplog.text
+        assert self.__expect_msg_retry("GetExecSummary", 4) in caplog.text
+        assert self.__expect_msg_retry("GetLog", 4) in caplog.text
