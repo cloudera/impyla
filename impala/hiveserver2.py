@@ -1317,7 +1317,7 @@ class HS2Session(ThriftRPC):
                                    statement=statement,
                                    confOverlay=configuration,
                                    runAsync=run_async)
-        # Do not try to retry http requests.
+        # Do not try to retry requests.
         # Read queries should be idempotent but most dml queries are not. Also retrying
         # query execution from client could be expensive and so likely makes sense to do
         # it if server is also aware of the retries.

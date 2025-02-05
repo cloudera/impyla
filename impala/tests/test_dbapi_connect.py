@@ -15,6 +15,7 @@
 from __future__ import absolute_import, print_function
 
 import sys
+import time
 
 from impala.error import NotSupportedError
 
@@ -257,42 +258,41 @@ class ImpalaConnectionTests(unittest.TestCase):
     def test_retry_dml(self):
         """Regression test for #549."""
         # Connection with higher timeout to avoid errors.
-
         self.connection = connect(ENV.host, ENV.port, timeout=TIMEOUT_S)
-        # Connect with low timeout to trigger failed RPCs.
-        # TODO: This reproduces the issue in the default Impala dev env (no local catalog),
-        #       but may fail to reproduce it in the future if Impala will get faster.
-        #       Ideally the error would be injected in a more stable way.
-        LOW_TIMEOUT_S = 3
-        low_timeout_connection = connect(ENV.host, ENV.port, timeout=LOW_TIMEOUT_S)
         create = "CREATE TABLE {0} (f1 INT)".format(self.tablename)
         insert = "INSERT INTO TABLE {0} SELECT 1".format(self.tablename)
         invalidate = "INVALIDATE METADATA {0}".format(self.tablename)
         select = "SELECT * FROM {0}".format(self.tablename)
         drop = "DROP TABLE {0}".format(self.tablename)
-        cur = low_timeout_connection.cursor()
-        cur.execute(create)
+        reliable_cur = self.connection.cursor()
+        reliable_cur.execute(create)
         successful_inserts = 0
-        NUM_INSERTS = 5
+        NUM_INSERTS = 3
         for i in range(NUM_INSERTS):
+            # Connect with low timeout to trigger failed RPCs.
+            LOW_TIMEOUT_S = 3
+            low_timeout_connection = connect(ENV.host, ENV.port, timeout=LOW_TIMEOUT_S)
+            cur = low_timeout_connection.cursor()
             try:
-                cur.execute(invalidate)
-                cur.execute(insert)
+                # Use IMPALAD_LOAD_TABLES_DELAY>LOW_TIMEOUT_S to trigger timeout.
+                configuration = {"debug_action":"IMPALAD_LOAD_TABLES_DELAY:SLEEP@4000"}
+                cur.execute(insert, configuration=configuration)
                 successful_inserts += 1
             except:
-                con = connect(ENV.host, ENV.port, timeout=LOW_TIMEOUT_S)
-                cur = con.cursor()
-                pass
+                # Sleep until the insert is expected to be finished and close the session.
+                time.sleep(5)
+                cur.close()
+                low_timeout_connection.close()
+        assert successful_inserts == 0
         # Use the reliable connection for result checking and cleanup.
-        cur = self.connection.cursor()
-        cur.execute(select)
-        result = cur.fetchall()
-        # It is unknown whether unsuccessful INSERTs actually inserted rows.
-        assert len(result) <= NUM_INSERTS
-        assert len(result) >= successful_inserts
-        cur.execute(drop)
+        reliable_cur.execute(select)
+        result = reliable_cur.fetchall()
+        # All inserts must have actually finished after client timeout.
+        assert len(result) == NUM_INSERTS
+        reliable_cur.execute(drop)
         # If all inserts are successful then probably the Impala cluster is too fast.
         assert successful_inserts < NUM_INSERTS
+
 
 class ImpalaSocketTests(unittest.TestCase):
 
