@@ -30,6 +30,7 @@ from impala.dbapi import connect, AUTH_MECHANISMS
 from impala.util import _random_id
 from impala.tests.util import ImpylaTestEnv, SocketTracker
 
+from thrift.transport.TTransport import TTransportException
 
 ENV = ImpylaTestEnv()
 DEFAULT_AUTH = True
@@ -260,28 +261,33 @@ class ImpalaConnectionTests(unittest.TestCase):
         # Connection with higher timeout to avoid errors.
         self.connection = connect(ENV.host, ENV.port, timeout=TIMEOUT_S)
         create = "CREATE TABLE {0} (f1 INT)".format(self.tablename)
+        refresh = "REFRESH {0}".format(self.tablename)
         insert = "INSERT INTO TABLE {0} SELECT 1".format(self.tablename)
-        invalidate = "INVALIDATE METADATA {0}".format(self.tablename)
         select = "SELECT * FROM {0}".format(self.tablename)
         drop = "DROP TABLE {0}".format(self.tablename)
         reliable_cur = self.connection.cursor()
         reliable_cur.execute(create)
+        reliable_cur.execute(refresh) # Load table metadata to make subsequent operations faster.
         successful_inserts = 0
         NUM_INSERTS = 3
         for i in range(NUM_INSERTS):
             # Connect with low timeout to trigger failed RPCs.
-            LOW_TIMEOUT_S = 3
+            LOW_TIMEOUT_S = 1
             low_timeout_connection = connect(ENV.host, ENV.port, timeout=LOW_TIMEOUT_S)
-            cur = low_timeout_connection.cursor()
+            low_timeout_cur = low_timeout_connection.cursor()
             try:
                 # Use IMPALAD_LOAD_TABLES_DELAY>LOW_TIMEOUT_S to trigger timeout.
-                configuration = {"debug_action":"IMPALAD_LOAD_TABLES_DELAY:SLEEP@4000"}
-                cur.execute(insert, configuration=configuration)
+                # IMPALAD_LOAD_TABLES_DELAY was added in Impala 4.4.0 (IMPALA-12493), so with
+                # older Impala servers the test is not expected to work.
+                DELAY_S = LOW_TIMEOUT_S + 1
+                configuration = {"debug_action": "IMPALAD_LOAD_TABLES_DELAY:SLEEP@{}".format(1000 * DELAY_S)}
+                low_timeout_cur.execute(insert, configuration=configuration)
                 successful_inserts += 1
-            except:
+            except TTransportException:
                 # Sleep until the insert is expected to be finished and close the session.
-                time.sleep(5)
-                cur.close()
+                SLEEP_S = DELAY_S - LOW_TIMEOUT_S + 2
+                time.sleep(SLEEP_S)
+                low_timeout_cur.close()
                 low_timeout_connection.close()
         assert successful_inserts == 0
         # Use the reliable connection for result checking and cleanup.
