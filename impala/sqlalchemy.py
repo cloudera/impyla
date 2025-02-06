@@ -229,7 +229,7 @@ class ImpalaDialect(DefaultDialect):
         m = re.match(r'.*?(\d{1,3})\.(\d{1,3})\.(\d{1,3}).*', v)
         return tuple([int(x) for x in m.group(1, 2, 3) if x is not None])
 
-    def has_table(self, connection, table_name, schema=None):
+    def has_table(self, connection, table_name, schema=None, **kw):
         tables = self.get_table_names(connection, schema)
         if table_name in tables:
             return True

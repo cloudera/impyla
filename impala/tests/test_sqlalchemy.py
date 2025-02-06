@@ -20,6 +20,7 @@ from sqlalchemy.schema import MetaData, CreateTable
 
 from impala.sqlalchemy import STRING, INT, DOUBLE, TINYINT, DATE, VARCHAR
 from impala.tests.util import ImpylaTestEnv
+import pandas as pd
 
 TEST_ENV = ImpylaTestEnv()
 
@@ -104,3 +105,17 @@ def test_sqlalchemy_multiinsert():
             assert expected_result == result
         finally:
             table.drop(conn)
+
+def test_pandas_dataframe_to_sql():
+    engine = create_test_engine("impala")
+    # Creating a sample dataframe to push to the DB.
+    df = pd.DataFrame([[1, 2, 3], [4, 5, 6], [7, 8, 9]], columns=['a', 'b', 'c'])
+
+    with engine.connect() as conn:
+        df.to_sql('test_table', conn, if_exists='replace', index=False)
+        expected = df.copy()
+
+        result = pd.read_sql('SELECT * FROM test_table')
+        # Column names might have the table name as prefix. Need to fix them to test equivalence.
+        result.columns = [i.split(".")[-1] for i in result.columns]
+        assert expected == result
