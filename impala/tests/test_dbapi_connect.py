@@ -257,7 +257,9 @@ class ImpalaConnectionTests(unittest.TestCase):
         self._execute_queries(self.connection)
 
     def test_retry_dml(self):
-        """Regression test for #549."""
+        """Regression test for #549.
+        Checks the INSERT statements are not retried when the client disconnects due to timeout
+        during execute()."""
         # Connection with higher timeout to avoid errors.
         self.connection = connect(ENV.host, ENV.port, timeout=TIMEOUT_S)
         create = "CREATE TABLE {0} (f1 INT)".format(self.tablename)
