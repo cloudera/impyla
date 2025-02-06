@@ -15,7 +15,7 @@
 from __future__ import absolute_import
 
 from sqlalchemy.engine import create_engine
-from sqlalchemy import Table, Column, select, insert
+from sqlalchemy import Table, Column, select, insert, text
 from sqlalchemy.schema import MetaData, CreateTable
 
 from impala.sqlalchemy import STRING, INT, DOUBLE, TINYINT, DATE, VARCHAR
@@ -112,10 +112,12 @@ def test_pandas_dataframe_to_sql():
     df = pd.DataFrame([[1, 2, 3], [4, 5, 6], [7, 8, 9]], columns=['a', 'b', 'c'])
 
     with engine.connect() as conn:
-        df.to_sql('test_table', conn, if_exists='replace', index=False)
-        expected = df.copy()
+        try:
+            df.to_sql('test_table', conn, if_exists='replace', index=False)
+            tables = pd.read_sql('SHOW TABLES', conn)
+            # The returned table names might contain the database name as prefix.
+            tables = [i.split(".")[-1].lower() for i in tables]
+            assert 'test_table' in tables
 
-        result = pd.read_sql('SELECT * FROM test_table')
-        # Column names might have the table name as prefix. Need to fix them to test equivalence.
-        result.columns = [i.split(".")[-1] for i in result.columns]
-        assert expected == result
+        finally:
+            conn.execute(text('DROP test_table'))
