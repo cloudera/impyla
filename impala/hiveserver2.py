@@ -1310,7 +1310,7 @@ class HS2Session(ThriftRPC):
     def close(self):
         req = TCloseSessionReq(sessionHandle=self.handle)
         # CloseSession rpcs don't retry as a session cannot be closed twice.
-        self._rpc('CloseSession', req, False)
+        resp = self._rpc('CloseSession', req, False)
 
     def execute(self, statement, configuration=None, run_async=False):
         req = TExecuteStatementReq(sessionHandle=self.handle,
