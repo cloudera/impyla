@@ -188,6 +188,23 @@ class TestHttpConnect(object):
     assert count_tuples_with_key(headers, "key1") == 2
     assert count_tuples_with_key(headers, "key2") == 1
     assert count_tuples_with_key(headers, "key3") == 0
+    
+  def test_basic_auth_headers(self, http_proxy_server):
+    con = connect(
+      "localhost",
+      http_proxy_server.PORT,
+      use_http_transport=True,
+      user="thisisaratherlongusername",
+      password="very!long!passwordthatcreatesalongbasic64encoding",
+      auth_mechanism="PLAIN"
+    )
+    cur = con.cursor()
+    cur.execute('select 1')
+    rows = cur.fetchall()
+    assert rows == [(1,)]
+
+    headers = http_proxy_server.get_headers()
+    assert ('Authorization', "Basic dGhpc2lzYXJhdGhlcmxvbmd1c2VybmFtZTp2ZXJ5IWxvbmchcGFzc3dvcmR0aGF0Y3JlYXRlc2Fsb25nYmFzaWM2NGVuY29kaW5n") in headers
 
 def get_user_custom_headers_func():
   """Insert some custom http headers, including a duplicate."""
