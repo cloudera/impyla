@@ -114,10 +114,10 @@ def test_pandas_dataframe_to_sql():
     with engine.connect() as conn:
         try:
             df.to_sql('test_table', conn, if_exists='replace', index=False)
-            tables = pd.read_sql('SHOW TABLES', conn)
+            table = pd.read_sql('DESCRIBE test_table', conn)
             # The returned table names might contain the database name as prefix.
-            tables = [i.split(".")[-1].lower() for i in tables]
-            assert 'test_table' in tables
+            columns = table['name'].tolist()
+            assert ['a', 'b', 'c'] == columns
 
         finally:
-            conn.execute(text('DROP test_table'))
+            conn.execute(text('DROP TABLE test_table'))
