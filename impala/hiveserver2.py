@@ -1310,14 +1310,14 @@ class HS2Session(ThriftRPC):
     def close(self):
         req = TCloseSessionReq(sessionHandle=self.handle)
         # CloseSession rpcs don't retry as a session cannot be closed twice.
-        self._rpc('CloseSession', req, False)
+        resp = self._rpc('CloseSession', req, False)
 
     def execute(self, statement, configuration=None, run_async=False):
         req = TExecuteStatementReq(sessionHandle=self.handle,
                                    statement=statement,
                                    confOverlay=configuration,
                                    runAsync=run_async)
-        # Do not try to retry http requests.
+        # Do not attempt to retry requests.
         # Read queries should be idempotent but most dml queries are not. Also retrying
         # query execution from client could be expensive and so likely makes sense to do
         # it if server is also aware of the retries.
