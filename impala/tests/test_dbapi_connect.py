@@ -289,6 +289,9 @@ class ImpalaConnectionTests(unittest.TestCase):
                 # Sleep until the insert is expected to be finished and close the session.
                 SLEEP_S = DELAY_S - LOW_TIMEOUT_S + 2
                 time.sleep(SLEEP_S)
+                # Reopen the transport to allow closing the session correctly.
+                low_timeout_cur.session.client._iprot.trans.close()
+                low_timeout_cur.session.client._iprot.trans.open()
                 low_timeout_cur.close()
                 low_timeout_connection.close()
         assert successful_inserts == 0
