@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 
+import base64
 import sys
 import warnings
 import logging
@@ -252,3 +253,15 @@ def get_all_matching_cookies(cookie_names, path, resp_headers):
             if c and cookie_matches_path(c, path):
                 matching_cookies.append(c)
     return matching_cookies
+
+
+def get_basic_credentials_for_request_headers(user, password):
+    """Returns base64 encoded credentials for HTTP request headers
+
+    This function produces RFC 2617-compliant basic credentials:
+    - RFC 2045 encoding of username:password without limitations to 76 chars
+      per line (and without trailing newline)
+    - No translation of characters (+,/) for URL-safety
+    """
+    user_password = '%s:%s' % (user, password)
+    return base64.b64encode(user_password.encode()).decode()

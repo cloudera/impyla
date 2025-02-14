@@ -25,7 +25,7 @@ else:
 
 import pytest
 from impala.util import (cookie_matches_path, get_cookie_expiry, get_all_cookies,
-                         get_all_matching_cookies)
+                         get_all_matching_cookies, get_basic_credentials_for_request_headers)
 
 
 class ImpalaUtilTests(unittest.TestCase):
@@ -210,6 +210,20 @@ class ImpalaUtilTests(unittest.TestCase):
             headers)
         assert len(cookies) == 1
         assert cookies[0].key == 'c_cookie' and cookies[0].value == 'c_value'
+
+    def test_get_basic_credentials_for_request_headers(self):
+        assert get_basic_credentials_for_request_headers(
+            user="foo",
+            password="bar"
+        ) == "Zm9vOmJhcg=="
+        assert get_basic_credentials_for_request_headers(
+            user="thisisaratherlongusername",
+            password="withanotherverylongpasswordresultinginanencodinglongerthan76chars"
+        ) == "dGhpc2lzYXJhdGhlcmxvbmd1c2VybmFtZTp3aXRoYW5vdGhlcnZlcnlsb25ncGFzc3dvcmRyZXN1bHRpbmdpbmFuZW5jb2Rpbmdsb25nZXJ0aGFuNzZjaGFycw=="
+        assert get_basic_credentials_for_request_headers(
+            user="?",
+            password="?"
+        ) == "Pzo/"
 
 
 def make_cookie_headers(cookie_vals):
