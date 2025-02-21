@@ -115,7 +115,6 @@ def test_pandas_dataframe_to_sql():
         try:
             df.to_sql('test_table', conn, if_exists='replace', index=False)
             table = pd.read_sql('DESCRIBE test_table', conn)
-            # The returned table names might contain the database name as prefix.
             columns = table['name'].tolist()
             assert ['a', 'b', 'c'] == columns
 
