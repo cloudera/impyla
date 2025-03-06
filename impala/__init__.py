@@ -13,7 +13,5 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
+# setup.py also contains the version - the two should have the same value!
+__version__ = u'v0.20.0'
