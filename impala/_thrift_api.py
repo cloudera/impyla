@@ -418,6 +418,7 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
                        password=None, kerberos_host=None, kerberos_service_name=None,
                        http_cookie_names=None, jwt=None, user_agent=None,
                        get_user_custom_headers_func=None):
+    host_url = "[%s]" % host if ":" in host else host # add brackets for ipv6 address
     # TODO: support timeout
     if timeout is not None:
         log.error('get_http_transport does not support a timeout')
@@ -429,7 +430,7 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
           ssl_ctx.check_hostname = False  # Mandated by the SSL lib for CERT_NONE mode.
           ssl_ctx.verify_mode = ssl.CERT_NONE
 
-        url = 'https://%s:%s/%s' % (host, port, http_path)
+        url = 'https://%s:%s/%s' % (host_url, port, http_path)
         log.debug('get_http_transport url=%s', url)
         # TODO(#362): Add server authentication with thrift 0.12.
         transport = ImpalaHttpClient(
@@ -437,7 +438,7 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
             http_cookie_names=http_cookie_names,
             get_user_custom_headers_func=get_user_custom_headers_func)
     else:
-        url = 'http://%s:%s/%s' % (host, port, http_path)
+        url = 'http://%s:%s/%s' % (host_url, port, http_path)
         log.debug('get_http_transport url=%s', url)
         transport = ImpalaHttpClient(
             url, http_cookie_names=http_cookie_names,

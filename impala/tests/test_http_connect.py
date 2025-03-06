@@ -24,9 +24,19 @@ from six.moves import http_client
 from six.moves import socketserver
 
 from impala.error import HttpError
-from impala.tests.util import ImpylaTestEnv
+from impala.tests.util import ImpylaTestEnv, is_ipv6_only_host
 
 ENV = ImpylaTestEnv()
+
+IS_IPV6_ONLY_HOST = is_ipv6_only_host(ENV.host, ENV.port)
+LOCAL_HOST = "::1" if IS_IPV6_ONLY_HOST else "127.0.0.1"
+
+# socketserver.TCPServer cannot listen both on ipv4 and ipv6. Listen to ipv6
+# if the hs2-http server has only ipv6 address.
+class IPv4or6TcpServer(socketserver.TCPServer):
+  address_family = socket.AF_INET6 if IS_IPV6_ONLY_HOST else socket.AF_INET
+  def __init__(self, host_port, req_handler):
+    socketserver.TCPServer.__init__(self, host_port, req_handler)
 
 @pytest.fixture
 def http_503_server():
@@ -56,9 +66,9 @@ def http_503_server():
 
   class TestHTTPServer503(object):
     def __init__(self):
-      self.HOST = "localhost"
+      self.HOST = LOCAL_HOST
       self.PORT = get_unused_port()
-      self.httpd = socketserver.TCPServer((self.HOST, self.PORT), RequestHandler503)
+      self.httpd = IPv4or6TcpServer((self.HOST, self.PORT), RequestHandler503)
 
       self.http_server_thread = threading.Thread(target=self.httpd.serve_forever)
       self.http_server_thread.start()
@@ -94,8 +104,9 @@ def http_proxy_server():
       # Save the http headers from the message in a class variable.
       RequestHandlerProxy.saved_headers = self.decode_raw_headers()
       # Forward the http post message to Impala and get a response message.
+      host = "[%s]" % ENV.host  if ":" in ENV.host else ENV.host
       response = requests.post(
-        url="http://localhost:{0}/cliservice".format(ENV.http_port),
+        url="http://{0}:{1}/cliservice".format(host, ENV.http_port),
         headers=self.headers, data=data_string)
       # Send the response message back to the client.
       self.send_response(code=response.status_code)
@@ -130,9 +141,9 @@ def http_proxy_server():
   class TestHTTPServerProxy(object):
     def __init__(self, clazz):
       self.clazz = clazz
-      self.HOST = "localhost"
+      self.HOST = LOCAL_HOST
       self.PORT = get_unused_port()
-      self.httpd = socketserver.TCPServer((self.HOST, self.PORT), clazz)
+      self.httpd = IPv4or6TcpServer((self.HOST, self.PORT), clazz)
       self.http_server_thread = threading.Thread(target=self.httpd.serve_forever)
       self.http_server_thread.start()
 
@@ -151,7 +162,7 @@ from impala.dbapi import connect
 
 class TestHttpConnect(object):
   def test_simple_connect(self):
-    con = connect("localhost", ENV.http_port, use_http_transport=True, http_path="cliservice")
+    con = connect(ENV.host, ENV.http_port, use_http_transport=True, http_path="cliservice")
     cur = con.cursor()
     cur.execute('select 1')
     rows = cur.fetchall()
@@ -160,7 +171,7 @@ class TestHttpConnect(object):
   def test_http_interactions(self, http_503_server):
     """Test interactions with the http server when using hs2-http protocol.
     Check that there is an HttpError exception when the server returns a 503 error."""
-    con = connect("localhost", http_503_server.PORT, use_http_transport=True)
+    con = connect(ENV.host, http_503_server.PORT, use_http_transport=True)
     try:
       con.cursor()
       assert False, "Should have got exception"
@@ -172,7 +183,7 @@ class TestHttpConnect(object):
   def test_duplicate_headers(self, http_proxy_server):
     """Test that we can use 'connect' with the get_user_custom_headers_func parameter
     to add duplicate http message headers to outgoing messages."""
-    con = connect("localhost", http_proxy_server.PORT, use_http_transport=True,
+    con = connect(ENV.host, http_proxy_server.PORT, use_http_transport=True,
                   get_user_custom_headers_func=get_user_custom_headers_func)
     cur = con.cursor()
     cur.execute('select 1')
@@ -191,7 +202,7 @@ class TestHttpConnect(object):
     
   def test_basic_auth_headers(self, http_proxy_server):
     con = connect(
-      "localhost",
+      ENV.host,
       http_proxy_server.PORT,
       use_http_transport=True,
       user="thisisaratherlongusername",

@@ -106,7 +106,8 @@ class TestHS2FaultInjection(object):
     """Class for testing the http fault injection in various rpcs used by Impyla"""
 
     def setup_method(self):
-        url = 'http://%s:%s/%s' % (ENV.host, ENV.http_port, "cliservice")
+        host = "[%s]" % ENV.host if ":" in ENV.host else ENV.host
+        url = 'http://%s:%s/%s' % (host, ENV.http_port, "cliservice")
         self.transport = FaultInjectingHttpClient(url)
         self.configuration = {'idle_session_timeout': '30'}
 

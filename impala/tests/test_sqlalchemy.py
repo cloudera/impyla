@@ -54,7 +54,8 @@ def create_simple_test_table():
                )
 
 def create_test_engine(diealect):
-    return create_engine('{0}://{1}:{2}'.format(diealect, TEST_ENV.host, TEST_ENV.port))
+    host = "[%s]" % TEST_ENV.host if ":" in TEST_ENV.host else TEST_ENV.host
+    return create_engine('{0}://{1}:{2}'.format(diealect, host, TEST_ENV.port))
 
 def test_sqlalchemy_impala_compilation():
     engine = create_test_engine("impala")

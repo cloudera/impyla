@@ -28,6 +28,17 @@ def get_env_var(name, coercer, default):
         sys.stderr.write("{0} not set; using {1!r}\n".format(name, default))
         return default
 
+def is_ipv6_only_host(host, port):
+    has_ipv6 = False
+    for addr in socket.getaddrinfo(host, port, socket.AF_UNSPEC,
+                                  socket.SOCK_STREAM, socket.IPPROTO_TCP):
+        (family, _, _, _, _) = addr
+        if family == socket.AF_INET:
+            return False # found ipv4
+        elif family == socket.AF_INET6:
+            has_ipv6 = True
+    return has_ipv6
+
 
 class ImpylaTestEnv(object):
 
