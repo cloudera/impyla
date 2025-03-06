@@ -24,12 +24,10 @@ def readme():
     with open('README.md', 'r') as ip:
         return ip.read()
 
-import versioneer  # noqa
-
 setup(
     name='impyla',
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
+    # impala/__init__.py also contains the version - the two should have the same value!
+    version='v0.20.0',
     description='Python client for the Impala distributed query engine',
     long_description_content_type='text/markdown',
     long_description=readme(),
@@ -52,13 +50,14 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
     ],
     entry_points={
         'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect',
