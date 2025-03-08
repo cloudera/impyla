@@ -22,17 +22,20 @@ class TRuntimeProfileFormat(object):
     STRING = 0
     BASE64 = 1
     THRIFT = 2
+    JSON = 3
 
     _VALUES_TO_NAMES = {
         0: "STRING",
         1: "BASE64",
         2: "THRIFT",
+        3: "JSON",
     }
 
     _NAMES_TO_VALUES = {
         "STRING": 0,
         "BASE64": 1,
         "THRIFT": 2,
+        "JSON": 3,
     }
 
 
@@ -121,6 +124,120 @@ class TCounter(object):
         return not (self == other)
 
 
+class TAggCounter(object):
+    """
+    Attributes:
+     - name
+     - unit
+     - has_value
+     - values
+
+    """
+
+
+    def __init__(self, name=None, unit=None, has_value=None, values=None,):
+        self.name = name
+        self.unit = unit
+        self.has_value = has_value
+        self.values = values
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.name = iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.I32:
+                    self.unit = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.LIST:
+                    self.has_value = []
+                    (_etype3, _size0) = iprot.readListBegin()
+                    for _i4 in range(_size0):
+                        _elem5 = iprot.readBool()
+                        self.has_value.append(_elem5)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.LIST:
+                    self.values = []
+                    (_etype9, _size6) = iprot.readListBegin()
+                    for _i10 in range(_size6):
+                        _elem11 = iprot.readI64()
+                        self.values.append(_elem11)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('TAggCounter')
+        if self.name is not None:
+            oprot.writeFieldBegin('name', TType.STRING, 1)
+            oprot.writeString(self.name)
+            oprot.writeFieldEnd()
+        if self.unit is not None:
+            oprot.writeFieldBegin('unit', TType.I32, 2)
+            oprot.writeI32(self.unit)
+            oprot.writeFieldEnd()
+        if self.has_value is not None:
+            oprot.writeFieldBegin('has_value', TType.LIST, 3)
+            oprot.writeListBegin(TType.BOOL, len(self.has_value))
+            for iter12 in self.has_value:
+                oprot.writeBool(iter12)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.values is not None:
+            oprot.writeFieldBegin('values', TType.LIST, 4)
+            oprot.writeListBegin(TType.I64, len(self.values))
+            for iter13 in self.values:
+                oprot.writeI64(iter13)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.name is None:
+            raise TProtocolException(message='Required field name is unset!')
+        if self.unit is None:
+            raise TProtocolException(message='Required field unit is unset!')
+        if self.has_value is None:
+            raise TProtocolException(message='Required field has_value is unset!')
+        if self.values is None:
+            raise TProtocolException(message='Required field values is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
 class TEventSequence(object):
     """
     Attributes:
@@ -153,20 +270,20 @@ class TEventSequence(object):
             elif fid == 2:
                 if ftype == TType.LIST:
                     self.timestamps = []
-                    (_etype3, _size0) = iprot.readListBegin()
-                    for _i4 in range(_size0):
-                        _elem5 = iprot.readI64()
-                        self.timestamps.append(_elem5)
+                    (_etype17, _size14) = iprot.readListBegin()
+                    for _i18 in range(_size14):
+                        _elem19 = iprot.readI64()
+                        self.timestamps.append(_elem19)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 3:
                 if ftype == TType.LIST:
                     self.labels = []
-                    (_etype9, _size6) = iprot.readListBegin()
-                    for _i10 in range(_size6):
-                        _elem11 = iprot.readString()
-                        self.labels.append(_elem11)
+                    (_etype23, _size20) = iprot.readListBegin()
+                    for _i24 in range(_size20):
+                        _elem25 = iprot.readString()
+                        self.labels.append(_elem25)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -187,15 +304,15 @@ class TEventSequence(object):
         if self.timestamps is not None:
             oprot.writeFieldBegin('timestamps', TType.LIST, 2)
             oprot.writeListBegin(TType.I64, len(self.timestamps))
-            for iter12 in self.timestamps:
-                oprot.writeI64(iter12)
+            for iter26 in self.timestamps:
+                oprot.writeI64(iter26)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.labels is not None:
             oprot.writeFieldBegin('labels', TType.LIST, 3)
             oprot.writeListBegin(TType.STRING, len(self.labels))
-            for iter13 in self.labels:
-                oprot.writeString(iter13)
+            for iter27 in self.labels:
+                oprot.writeString(iter27)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
@@ -208,6 +325,144 @@ class TEventSequence(object):
             raise TProtocolException(message='Required field timestamps is unset!')
         if self.labels is None:
             raise TProtocolException(message='Required field labels is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class TAggEventSequence(object):
+    """
+    Attributes:
+     - name
+     - label_dict
+     - label_idxs
+     - timestamps
+
+    """
+
+
+    def __init__(self, name=None, label_dict=None, label_idxs=None, timestamps=None,):
+        self.name = name
+        self.label_dict = label_dict
+        self.label_idxs = label_idxs
+        self.timestamps = timestamps
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.name = iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.LIST:
+                    self.label_dict = []
+                    (_etype31, _size28) = iprot.readListBegin()
+                    for _i32 in range(_size28):
+                        _elem33 = iprot.readString()
+                        self.label_dict.append(_elem33)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.LIST:
+                    self.label_idxs = []
+                    (_etype37, _size34) = iprot.readListBegin()
+                    for _i38 in range(_size34):
+                        _elem39 = []
+                        (_etype43, _size40) = iprot.readListBegin()
+                        for _i44 in range(_size40):
+                            _elem45 = iprot.readI32()
+                            _elem39.append(_elem45)
+                        iprot.readListEnd()
+                        self.label_idxs.append(_elem39)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.LIST:
+                    self.timestamps = []
+                    (_etype49, _size46) = iprot.readListBegin()
+                    for _i50 in range(_size46):
+                        _elem51 = []
+                        (_etype55, _size52) = iprot.readListBegin()
+                        for _i56 in range(_size52):
+                            _elem57 = iprot.readI64()
+                            _elem51.append(_elem57)
+                        iprot.readListEnd()
+                        self.timestamps.append(_elem51)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('TAggEventSequence')
+        if self.name is not None:
+            oprot.writeFieldBegin('name', TType.STRING, 1)
+            oprot.writeString(self.name)
+            oprot.writeFieldEnd()
+        if self.label_dict is not None:
+            oprot.writeFieldBegin('label_dict', TType.LIST, 2)
+            oprot.writeListBegin(TType.STRING, len(self.label_dict))
+            for iter58 in self.label_dict:
+                oprot.writeString(iter58)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.label_idxs is not None:
+            oprot.writeFieldBegin('label_idxs', TType.LIST, 3)
+            oprot.writeListBegin(TType.LIST, len(self.label_idxs))
+            for iter59 in self.label_idxs:
+                oprot.writeListBegin(TType.I32, len(iter59))
+                for iter60 in iter59:
+                    oprot.writeI32(iter60)
+                oprot.writeListEnd()
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.timestamps is not None:
+            oprot.writeFieldBegin('timestamps', TType.LIST, 4)
+            oprot.writeListBegin(TType.LIST, len(self.timestamps))
+            for iter61 in self.timestamps:
+                oprot.writeListBegin(TType.I64, len(iter61))
+                for iter62 in iter61:
+                    oprot.writeI64(iter62)
+                oprot.writeListEnd()
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.name is None:
+            raise TProtocolException(message='Required field name is unset!')
+        if self.label_dict is None:
+            raise TProtocolException(message='Required field label_dict is unset!')
+        if self.label_idxs is None:
+            raise TProtocolException(message='Required field label_idxs is unset!')
+        if self.timestamps is None:
+            raise TProtocolException(message='Required field timestamps is unset!')
         return
 
     def __repr__(self):
@@ -268,10 +523,10 @@ class TTimeSeriesCounter(object):
             elif fid == 4:
                 if ftype == TType.LIST:
                     self.values = []
-                    (_etype17, _size14) = iprot.readListBegin()
-                    for _i18 in range(_size14):
-                        _elem19 = iprot.readI64()
-                        self.values.append(_elem19)
+                    (_etype66, _size63) = iprot.readListBegin()
+                    for _i67 in range(_size63):
+                        _elem68 = iprot.readI64()
+                        self.values.append(_elem68)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -305,8 +560,8 @@ class TTimeSeriesCounter(object):
         if self.values is not None:
             oprot.writeFieldBegin('values', TType.LIST, 4)
             oprot.writeListBegin(TType.I64, len(self.values))
-            for iter20 in self.values:
-                oprot.writeI64(iter20)
+            for iter69 in self.values:
+                oprot.writeI64(iter69)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.start_index is not None:
@@ -325,6 +580,149 @@ class TTimeSeriesCounter(object):
             raise TProtocolException(message='Required field period_ms is unset!')
         if self.values is None:
             raise TProtocolException(message='Required field values is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class TAggTimeSeriesCounter(object):
+    """
+    Attributes:
+     - name
+     - unit
+     - period_ms
+     - values
+     - start_index
+
+    """
+
+
+    def __init__(self, name=None, unit=None, period_ms=None, values=None, start_index=None,):
+        self.name = name
+        self.unit = unit
+        self.period_ms = period_ms
+        self.values = values
+        self.start_index = start_index
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.name = iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.I32:
+                    self.unit = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.LIST:
+                    self.period_ms = []
+                    (_etype73, _size70) = iprot.readListBegin()
+                    for _i74 in range(_size70):
+                        _elem75 = iprot.readI32()
+                        self.period_ms.append(_elem75)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.LIST:
+                    self.values = []
+                    (_etype79, _size76) = iprot.readListBegin()
+                    for _i80 in range(_size76):
+                        _elem81 = []
+                        (_etype85, _size82) = iprot.readListBegin()
+                        for _i86 in range(_size82):
+                            _elem87 = iprot.readI64()
+                            _elem81.append(_elem87)
+                        iprot.readListEnd()
+                        self.values.append(_elem81)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 5:
+                if ftype == TType.LIST:
+                    self.start_index = []
+                    (_etype91, _size88) = iprot.readListBegin()
+                    for _i92 in range(_size88):
+                        _elem93 = iprot.readI64()
+                        self.start_index.append(_elem93)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('TAggTimeSeriesCounter')
+        if self.name is not None:
+            oprot.writeFieldBegin('name', TType.STRING, 1)
+            oprot.writeString(self.name)
+            oprot.writeFieldEnd()
+        if self.unit is not None:
+            oprot.writeFieldBegin('unit', TType.I32, 2)
+            oprot.writeI32(self.unit)
+            oprot.writeFieldEnd()
+        if self.period_ms is not None:
+            oprot.writeFieldBegin('period_ms', TType.LIST, 3)
+            oprot.writeListBegin(TType.I32, len(self.period_ms))
+            for iter94 in self.period_ms:
+                oprot.writeI32(iter94)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.values is not None:
+            oprot.writeFieldBegin('values', TType.LIST, 4)
+            oprot.writeListBegin(TType.LIST, len(self.values))
+            for iter95 in self.values:
+                oprot.writeListBegin(TType.I64, len(iter95))
+                for iter96 in iter95:
+                    oprot.writeI64(iter96)
+                oprot.writeListEnd()
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.start_index is not None:
+            oprot.writeFieldBegin('start_index', TType.LIST, 5)
+            oprot.writeListBegin(TType.I64, len(self.start_index))
+            for iter97 in self.start_index:
+                oprot.writeI64(iter97)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.name is None:
+            raise TProtocolException(message='Required field name is unset!')
+        if self.unit is None:
+            raise TProtocolException(message='Required field unit is unset!')
+        if self.period_ms is None:
+            raise TProtocolException(message='Required field period_ms is unset!')
+        if self.values is None:
+            raise TProtocolException(message='Required field values is unset!')
+        if self.start_index is None:
+            raise TProtocolException(message='Required field start_index is unset!')
         return
 
     def __repr__(self):
@@ -463,6 +861,183 @@ class TSummaryStatsCounter(object):
         return not (self == other)
 
 
+class TAggSummaryStatsCounter(object):
+    """
+    Attributes:
+     - name
+     - unit
+     - has_value
+     - sum
+     - total_num_values
+     - min_value
+     - max_value
+
+    """
+
+
+    def __init__(self, name=None, unit=None, has_value=None, sum=None, total_num_values=None, min_value=None, max_value=None,):
+        self.name = name
+        self.unit = unit
+        self.has_value = has_value
+        self.sum = sum
+        self.total_num_values = total_num_values
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.STRING:
+                    self.name = iprot.readString()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.I32:
+                    self.unit = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.LIST:
+                    self.has_value = []
+                    (_etype101, _size98) = iprot.readListBegin()
+                    for _i102 in range(_size98):
+                        _elem103 = iprot.readBool()
+                        self.has_value.append(_elem103)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.LIST:
+                    self.sum = []
+                    (_etype107, _size104) = iprot.readListBegin()
+                    for _i108 in range(_size104):
+                        _elem109 = iprot.readI64()
+                        self.sum.append(_elem109)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 5:
+                if ftype == TType.LIST:
+                    self.total_num_values = []
+                    (_etype113, _size110) = iprot.readListBegin()
+                    for _i114 in range(_size110):
+                        _elem115 = iprot.readI64()
+                        self.total_num_values.append(_elem115)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 6:
+                if ftype == TType.LIST:
+                    self.min_value = []
+                    (_etype119, _size116) = iprot.readListBegin()
+                    for _i120 in range(_size116):
+                        _elem121 = iprot.readI64()
+                        self.min_value.append(_elem121)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 7:
+                if ftype == TType.LIST:
+                    self.max_value = []
+                    (_etype125, _size122) = iprot.readListBegin()
+                    for _i126 in range(_size122):
+                        _elem127 = iprot.readI64()
+                        self.max_value.append(_elem127)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('TAggSummaryStatsCounter')
+        if self.name is not None:
+            oprot.writeFieldBegin('name', TType.STRING, 1)
+            oprot.writeString(self.name)
+            oprot.writeFieldEnd()
+        if self.unit is not None:
+            oprot.writeFieldBegin('unit', TType.I32, 2)
+            oprot.writeI32(self.unit)
+            oprot.writeFieldEnd()
+        if self.has_value is not None:
+            oprot.writeFieldBegin('has_value', TType.LIST, 3)
+            oprot.writeListBegin(TType.BOOL, len(self.has_value))
+            for iter128 in self.has_value:
+                oprot.writeBool(iter128)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.sum is not None:
+            oprot.writeFieldBegin('sum', TType.LIST, 4)
+            oprot.writeListBegin(TType.I64, len(self.sum))
+            for iter129 in self.sum:
+                oprot.writeI64(iter129)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.total_num_values is not None:
+            oprot.writeFieldBegin('total_num_values', TType.LIST, 5)
+            oprot.writeListBegin(TType.I64, len(self.total_num_values))
+            for iter130 in self.total_num_values:
+                oprot.writeI64(iter130)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.min_value is not None:
+            oprot.writeFieldBegin('min_value', TType.LIST, 6)
+            oprot.writeListBegin(TType.I64, len(self.min_value))
+            for iter131 in self.min_value:
+                oprot.writeI64(iter131)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.max_value is not None:
+            oprot.writeFieldBegin('max_value', TType.LIST, 7)
+            oprot.writeListBegin(TType.I64, len(self.max_value))
+            for iter132 in self.max_value:
+                oprot.writeI64(iter132)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.name is None:
+            raise TProtocolException(message='Required field name is unset!')
+        if self.unit is None:
+            raise TProtocolException(message='Required field unit is unset!')
+        if self.has_value is None:
+            raise TProtocolException(message='Required field has_value is unset!')
+        if self.sum is None:
+            raise TProtocolException(message='Required field sum is unset!')
+        if self.total_num_values is None:
+            raise TProtocolException(message='Required field total_num_values is unset!')
+        if self.min_value is None:
+            raise TProtocolException(message='Required field min_value is unset!')
+        if self.max_value is None:
+            raise TProtocolException(message='Required field max_value is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
 class TRuntimeProfileNodeMetadata(object):
     """
     Attributes:
@@ -531,6 +1106,201 @@ class TRuntimeProfileNodeMetadata(object):
         return not (self == other)
 
 
+class TAggregatedRuntimeProfileNode(object):
+    """
+    Attributes:
+     - num_instances
+     - input_profiles
+     - counters
+     - info_strings
+     - summary_stats_counters
+     - event_sequences
+     - time_series_counters
+
+    """
+
+
+    def __init__(self, num_instances=None, input_profiles=None, counters=None, info_strings=None, summary_stats_counters=None, event_sequences=None, time_series_counters=None,):
+        self.num_instances = num_instances
+        self.input_profiles = input_profiles
+        self.counters = counters
+        self.info_strings = info_strings
+        self.summary_stats_counters = summary_stats_counters
+        self.event_sequences = event_sequences
+        self.time_series_counters = time_series_counters
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.I32:
+                    self.num_instances = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 2:
+                if ftype == TType.LIST:
+                    self.input_profiles = []
+                    (_etype136, _size133) = iprot.readListBegin()
+                    for _i137 in range(_size133):
+                        _elem138 = iprot.readString()
+                        self.input_profiles.append(_elem138)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.LIST:
+                    self.counters = []
+                    (_etype142, _size139) = iprot.readListBegin()
+                    for _i143 in range(_size139):
+                        _elem144 = TAggCounter()
+                        _elem144.read(iprot)
+                        self.counters.append(_elem144)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.MAP:
+                    self.info_strings = {}
+                    (_ktype146, _vtype147, _size145) = iprot.readMapBegin()
+                    for _i149 in range(_size145):
+                        _key150 = iprot.readString()
+                        _val151 = {}
+                        (_ktype153, _vtype154, _size152) = iprot.readMapBegin()
+                        for _i156 in range(_size152):
+                            _key157 = iprot.readString()
+                            _val158 = []
+                            (_etype162, _size159) = iprot.readListBegin()
+                            for _i163 in range(_size159):
+                                _elem164 = iprot.readI32()
+                                _val158.append(_elem164)
+                            iprot.readListEnd()
+                            _val151[_key157] = _val158
+                        iprot.readMapEnd()
+                        self.info_strings[_key150] = _val151
+                    iprot.readMapEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 5:
+                if ftype == TType.LIST:
+                    self.summary_stats_counters = []
+                    (_etype168, _size165) = iprot.readListBegin()
+                    for _i169 in range(_size165):
+                        _elem170 = TAggSummaryStatsCounter()
+                        _elem170.read(iprot)
+                        self.summary_stats_counters.append(_elem170)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 6:
+                if ftype == TType.LIST:
+                    self.event_sequences = []
+                    (_etype174, _size171) = iprot.readListBegin()
+                    for _i175 in range(_size171):
+                        _elem176 = TAggEventSequence()
+                        _elem176.read(iprot)
+                        self.event_sequences.append(_elem176)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 7:
+                if ftype == TType.LIST:
+                    self.time_series_counters = []
+                    (_etype180, _size177) = iprot.readListBegin()
+                    for _i181 in range(_size177):
+                        _elem182 = TAggTimeSeriesCounter()
+                        _elem182.read(iprot)
+                        self.time_series_counters.append(_elem182)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('TAggregatedRuntimeProfileNode')
+        if self.num_instances is not None:
+            oprot.writeFieldBegin('num_instances', TType.I32, 1)
+            oprot.writeI32(self.num_instances)
+            oprot.writeFieldEnd()
+        if self.input_profiles is not None:
+            oprot.writeFieldBegin('input_profiles', TType.LIST, 2)
+            oprot.writeListBegin(TType.STRING, len(self.input_profiles))
+            for iter183 in self.input_profiles:
+                oprot.writeString(iter183)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.counters is not None:
+            oprot.writeFieldBegin('counters', TType.LIST, 3)
+            oprot.writeListBegin(TType.STRUCT, len(self.counters))
+            for iter184 in self.counters:
+                iter184.write(oprot)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.info_strings is not None:
+            oprot.writeFieldBegin('info_strings', TType.MAP, 4)
+            oprot.writeMapBegin(TType.STRING, TType.MAP, len(self.info_strings))
+            for kiter185, viter186 in self.info_strings.items():
+                oprot.writeString(kiter185)
+                oprot.writeMapBegin(TType.STRING, TType.LIST, len(viter186))
+                for kiter187, viter188 in viter186.items():
+                    oprot.writeString(kiter187)
+                    oprot.writeListBegin(TType.I32, len(viter188))
+                    for iter189 in viter188:
+                        oprot.writeI32(iter189)
+                    oprot.writeListEnd()
+                oprot.writeMapEnd()
+            oprot.writeMapEnd()
+            oprot.writeFieldEnd()
+        if self.summary_stats_counters is not None:
+            oprot.writeFieldBegin('summary_stats_counters', TType.LIST, 5)
+            oprot.writeListBegin(TType.STRUCT, len(self.summary_stats_counters))
+            for iter190 in self.summary_stats_counters:
+                iter190.write(oprot)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.event_sequences is not None:
+            oprot.writeFieldBegin('event_sequences', TType.LIST, 6)
+            oprot.writeListBegin(TType.STRUCT, len(self.event_sequences))
+            for iter191 in self.event_sequences:
+                iter191.write(oprot)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        if self.time_series_counters is not None:
+            oprot.writeFieldBegin('time_series_counters', TType.LIST, 7)
+            oprot.writeListBegin(TType.STRUCT, len(self.time_series_counters))
+            for iter192 in self.time_series_counters:
+                iter192.write(oprot)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
 class TRuntimeProfileNode(object):
     """
     Attributes:
@@ -546,11 +1316,12 @@ class TRuntimeProfileNode(object):
      - time_series_counters
      - summary_stats_counters
      - node_metadata
+     - aggregated
 
     """
 
 
-    def __init__(self, name=None, num_children=None, counters=None, metadata=None, indent=None, info_strings=None, info_strings_display_order=None, child_counters_map=None, event_sequences=None, time_series_counters=None, summary_stats_counters=None, node_metadata=None,):
+    def __init__(self, name=None, num_children=None, counters=None, metadata=None, indent=None, info_strings=None, info_strings_display_order=None, child_counters_map=None, event_sequences=None, time_series_counters=None, summary_stats_counters=None, node_metadata=None, aggregated=None,):
         self.name = name
         self.num_children = num_children
         self.counters = counters
@@ -563,6 +1334,7 @@ class TRuntimeProfileNode(object):
         self.time_series_counters = time_series_counters
         self.summary_stats_counters = summary_stats_counters
         self.node_metadata = node_metadata
+        self.aggregated = aggregated
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -586,11 +1358,11 @@ class TRuntimeProfileNode(object):
             elif fid == 3:
                 if ftype == TType.LIST:
                     self.counters = []
-                    (_etype24, _size21) = iprot.readListBegin()
-                    for _i25 in range(_size21):
-                        _elem26 = TCounter()
-                        _elem26.read(iprot)
-                        self.counters.append(_elem26)
+                    (_etype196, _size193) = iprot.readListBegin()
+                    for _i197 in range(_size193):
+                        _elem198 = TCounter()
+                        _elem198.read(iprot)
+                        self.counters.append(_elem198)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -607,70 +1379,70 @@ class TRuntimeProfileNode(object):
             elif fid == 6:
                 if ftype == TType.MAP:
                     self.info_strings = {}
-                    (_ktype28, _vtype29, _size27) = iprot.readMapBegin()
-                    for _i31 in range(_size27):
-                        _key32 = iprot.readString()
-                        _val33 = iprot.readString()
-                        self.info_strings[_key32] = _val33
+                    (_ktype200, _vtype201, _size199) = iprot.readMapBegin()
+                    for _i203 in range(_size199):
+                        _key204 = iprot.readString()
+                        _val205 = iprot.readString()
+                        self.info_strings[_key204] = _val205
                     iprot.readMapEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 7:
                 if ftype == TType.LIST:
                     self.info_strings_display_order = []
-                    (_etype37, _size34) = iprot.readListBegin()
-                    for _i38 in range(_size34):
-                        _elem39 = iprot.readString()
-                        self.info_strings_display_order.append(_elem39)
+                    (_etype209, _size206) = iprot.readListBegin()
+                    for _i210 in range(_size206):
+                        _elem211 = iprot.readString()
+                        self.info_strings_display_order.append(_elem211)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 8:
                 if ftype == TType.MAP:
                     self.child_counters_map = {}
-                    (_ktype41, _vtype42, _size40) = iprot.readMapBegin()
-                    for _i44 in range(_size40):
-                        _key45 = iprot.readString()
-                        _val46 = set()
-                        (_etype50, _size47) = iprot.readSetBegin()
-                        for _i51 in range(_size47):
-                            _elem52 = iprot.readString()
-                            _val46.add(_elem52)
+                    (_ktype213, _vtype214, _size212) = iprot.readMapBegin()
+                    for _i216 in range(_size212):
+                        _key217 = iprot.readString()
+                        _val218 = set()
+                        (_etype222, _size219) = iprot.readSetBegin()
+                        for _i223 in range(_size219):
+                            _elem224 = iprot.readString()
+                            _val218.add(_elem224)
                         iprot.readSetEnd()
-                        self.child_counters_map[_key45] = _val46
+                        self.child_counters_map[_key217] = _val218
                     iprot.readMapEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 9:
                 if ftype == TType.LIST:
                     self.event_sequences = []
-                    (_etype56, _size53) = iprot.readListBegin()
-                    for _i57 in range(_size53):
-                        _elem58 = TEventSequence()
-                        _elem58.read(iprot)
-                        self.event_sequences.append(_elem58)
+                    (_etype228, _size225) = iprot.readListBegin()
+                    for _i229 in range(_size225):
+                        _elem230 = TEventSequence()
+                        _elem230.read(iprot)
+                        self.event_sequences.append(_elem230)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 10:
                 if ftype == TType.LIST:
                     self.time_series_counters = []
-                    (_etype62, _size59) = iprot.readListBegin()
-                    for _i63 in range(_size59):
-                        _elem64 = TTimeSeriesCounter()
-                        _elem64.read(iprot)
-                        self.time_series_counters.append(_elem64)
+                    (_etype234, _size231) = iprot.readListBegin()
+                    for _i235 in range(_size231):
+                        _elem236 = TTimeSeriesCounter()
+                        _elem236.read(iprot)
+                        self.time_series_counters.append(_elem236)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
             elif fid == 11:
                 if ftype == TType.LIST:
                     self.summary_stats_counters = []
-                    (_etype68, _size65) = iprot.readListBegin()
-                    for _i69 in range(_size65):
-                        _elem70 = TSummaryStatsCounter()
-                        _elem70.read(iprot)
-                        self.summary_stats_counters.append(_elem70)
+                    (_etype240, _size237) = iprot.readListBegin()
+                    for _i241 in range(_size237):
+                        _elem242 = TSummaryStatsCounter()
+                        _elem242.read(iprot)
+                        self.summary_stats_counters.append(_elem242)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -678,6 +1450,12 @@ class TRuntimeProfileNode(object):
                 if ftype == TType.STRUCT:
                     self.node_metadata = TRuntimeProfileNodeMetadata()
                     self.node_metadata.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 13:
+                if ftype == TType.STRUCT:
+                    self.aggregated = TAggregatedRuntimeProfileNode()
+                    self.aggregated.read(iprot)
                 else:
                     iprot.skip(ftype)
             else:
@@ -701,8 +1479,8 @@ class TRuntimeProfileNode(object):
         if self.counters is not None:
             oprot.writeFieldBegin('counters', TType.LIST, 3)
             oprot.writeListBegin(TType.STRUCT, len(self.counters))
-            for iter71 in self.counters:
-                iter71.write(oprot)
+            for iter243 in self.counters:
+                iter243.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.metadata is not None:
@@ -716,53 +1494,57 @@ class TRuntimeProfileNode(object):
         if self.info_strings is not None:
             oprot.writeFieldBegin('info_strings', TType.MAP, 6)
             oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.info_strings))
-            for kiter72, viter73 in self.info_strings.items():
-                oprot.writeString(kiter72)
-                oprot.writeString(viter73)
+            for kiter244, viter245 in self.info_strings.items():
+                oprot.writeString(kiter244)
+                oprot.writeString(viter245)
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         if self.info_strings_display_order is not None:
             oprot.writeFieldBegin('info_strings_display_order', TType.LIST, 7)
             oprot.writeListBegin(TType.STRING, len(self.info_strings_display_order))
-            for iter74 in self.info_strings_display_order:
-                oprot.writeString(iter74)
+            for iter246 in self.info_strings_display_order:
+                oprot.writeString(iter246)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.child_counters_map is not None:
             oprot.writeFieldBegin('child_counters_map', TType.MAP, 8)
             oprot.writeMapBegin(TType.STRING, TType.SET, len(self.child_counters_map))
-            for kiter75, viter76 in self.child_counters_map.items():
-                oprot.writeString(kiter75)
-                oprot.writeSetBegin(TType.STRING, len(viter76))
-                for iter77 in viter76:
-                    oprot.writeString(iter77)
+            for kiter247, viter248 in self.child_counters_map.items():
+                oprot.writeString(kiter247)
+                oprot.writeSetBegin(TType.STRING, len(viter248))
+                for iter249 in viter248:
+                    oprot.writeString(iter249)
                 oprot.writeSetEnd()
             oprot.writeMapEnd()
             oprot.writeFieldEnd()
         if self.event_sequences is not None:
             oprot.writeFieldBegin('event_sequences', TType.LIST, 9)
             oprot.writeListBegin(TType.STRUCT, len(self.event_sequences))
-            for iter78 in self.event_sequences:
-                iter78.write(oprot)
+            for iter250 in self.event_sequences:
+                iter250.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.time_series_counters is not None:
             oprot.writeFieldBegin('time_series_counters', TType.LIST, 10)
             oprot.writeListBegin(TType.STRUCT, len(self.time_series_counters))
-            for iter79 in self.time_series_counters:
-                iter79.write(oprot)
+            for iter251 in self.time_series_counters:
+                iter251.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.summary_stats_counters is not None:
             oprot.writeFieldBegin('summary_stats_counters', TType.LIST, 11)
             oprot.writeListBegin(TType.STRUCT, len(self.summary_stats_counters))
-            for iter80 in self.summary_stats_counters:
-                iter80.write(oprot)
+            for iter252 in self.summary_stats_counters:
+                iter252.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.node_metadata is not None:
             oprot.writeFieldBegin('node_metadata', TType.STRUCT, 12)
             self.node_metadata.write(oprot)
+            oprot.writeFieldEnd()
+        if self.aggregated is not None:
+            oprot.writeFieldBegin('aggregated', TType.STRUCT, 13)
+            self.aggregated.write(oprot)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -803,13 +1585,15 @@ class TRuntimeProfileTree(object):
     Attributes:
      - nodes
      - exec_summary
+     - profile_version
 
     """
 
 
-    def __init__(self, nodes=None, exec_summary=None,):
+    def __init__(self, nodes=None, exec_summary=None, profile_version=None,):
         self.nodes = nodes
         self.exec_summary = exec_summary
+        self.profile_version = profile_version
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -823,11 +1607,11 @@ class TRuntimeProfileTree(object):
             if fid == 1:
                 if ftype == TType.LIST:
                     self.nodes = []
-                    (_etype84, _size81) = iprot.readListBegin()
-                    for _i85 in range(_size81):
-                        _elem86 = TRuntimeProfileNode()
-                        _elem86.read(iprot)
-                        self.nodes.append(_elem86)
+                    (_etype256, _size253) = iprot.readListBegin()
+                    for _i257 in range(_size253):
+                        _elem258 = TRuntimeProfileNode()
+                        _elem258.read(iprot)
+                        self.nodes.append(_elem258)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -835,6 +1619,11 @@ class TRuntimeProfileTree(object):
                 if ftype == TType.STRUCT:
                     self.exec_summary = impala._thrift_gen.ExecStats.ttypes.TExecSummary()
                     self.exec_summary.read(iprot)
+                else:
+                    iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.I32:
+                    self.profile_version = iprot.readI32()
                 else:
                     iprot.skip(ftype)
             else:
@@ -850,13 +1639,17 @@ class TRuntimeProfileTree(object):
         if self.nodes is not None:
             oprot.writeFieldBegin('nodes', TType.LIST, 1)
             oprot.writeListBegin(TType.STRUCT, len(self.nodes))
-            for iter87 in self.nodes:
-                iter87.write(oprot)
+            for iter259 in self.nodes:
+                iter259.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.exec_summary is not None:
             oprot.writeFieldBegin('exec_summary', TType.STRUCT, 2)
             self.exec_summary.write(oprot)
+            oprot.writeFieldEnd()
+        if self.profile_version is not None:
+            oprot.writeFieldBegin('profile_version', TType.I32, 3)
+            oprot.writeI32(self.profile_version)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -903,11 +1696,11 @@ class TRuntimeProfileForest(object):
             if fid == 1:
                 if ftype == TType.LIST:
                     self.profile_trees = []
-                    (_etype91, _size88) = iprot.readListBegin()
-                    for _i92 in range(_size88):
-                        _elem93 = TRuntimeProfileTree()
-                        _elem93.read(iprot)
-                        self.profile_trees.append(_elem93)
+                    (_etype263, _size260) = iprot.readListBegin()
+                    for _i264 in range(_size260):
+                        _elem265 = TRuntimeProfileTree()
+                        _elem265.read(iprot)
+                        self.profile_trees.append(_elem265)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -930,8 +1723,8 @@ class TRuntimeProfileForest(object):
         if self.profile_trees is not None:
             oprot.writeFieldBegin('profile_trees', TType.LIST, 1)
             oprot.writeListBegin(TType.STRUCT, len(self.profile_trees))
-            for iter94 in self.profile_trees:
-                iter94.write(oprot)
+            for iter266 in self.profile_trees:
+                iter266.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.host_profile is not None:
@@ -963,12 +1756,28 @@ TCounter.thrift_spec = (
     (2, TType.I32, 'unit', None, None, ),  # 2
     (3, TType.I64, 'value', None, None, ),  # 3
 )
+all_structs.append(TAggCounter)
+TAggCounter.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'name', None, None, ),  # 1
+    (2, TType.I32, 'unit', None, None, ),  # 2
+    (3, TType.LIST, 'has_value', (TType.BOOL, None, False), None, ),  # 3
+    (4, TType.LIST, 'values', (TType.I64, None, False), None, ),  # 4
+)
 all_structs.append(TEventSequence)
 TEventSequence.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'name', None, None, ),  # 1
     (2, TType.LIST, 'timestamps', (TType.I64, None, False), None, ),  # 2
     (3, TType.LIST, 'labels', (TType.STRING, None, False), None, ),  # 3
+)
+all_structs.append(TAggEventSequence)
+TAggEventSequence.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'name', None, None, ),  # 1
+    (2, TType.LIST, 'label_dict', (TType.STRING, None, False), None, ),  # 2
+    (3, TType.LIST, 'label_idxs', (TType.LIST, (TType.I32, None, False), False), None, ),  # 3
+    (4, TType.LIST, 'timestamps', (TType.LIST, (TType.I64, None, False), False), None, ),  # 4
 )
 all_structs.append(TTimeSeriesCounter)
 TTimeSeriesCounter.thrift_spec = (
@@ -978,6 +1787,15 @@ TTimeSeriesCounter.thrift_spec = (
     (3, TType.I32, 'period_ms', None, None, ),  # 3
     (4, TType.LIST, 'values', (TType.I64, None, False), None, ),  # 4
     (5, TType.I64, 'start_index', None, None, ),  # 5
+)
+all_structs.append(TAggTimeSeriesCounter)
+TAggTimeSeriesCounter.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'name', None, None, ),  # 1
+    (2, TType.I32, 'unit', None, None, ),  # 2
+    (3, TType.LIST, 'period_ms', (TType.I32, None, False), None, ),  # 3
+    (4, TType.LIST, 'values', (TType.LIST, (TType.I64, None, False), False), None, ),  # 4
+    (5, TType.LIST, 'start_index', (TType.I64, None, False), None, ),  # 5
 )
 all_structs.append(TSummaryStatsCounter)
 TSummaryStatsCounter.thrift_spec = (
@@ -989,11 +1807,33 @@ TSummaryStatsCounter.thrift_spec = (
     (5, TType.I64, 'min_value', None, None, ),  # 5
     (6, TType.I64, 'max_value', None, None, ),  # 6
 )
+all_structs.append(TAggSummaryStatsCounter)
+TAggSummaryStatsCounter.thrift_spec = (
+    None,  # 0
+    (1, TType.STRING, 'name', None, None, ),  # 1
+    (2, TType.I32, 'unit', None, None, ),  # 2
+    (3, TType.LIST, 'has_value', (TType.BOOL, None, False), None, ),  # 3
+    (4, TType.LIST, 'sum', (TType.I64, None, False), None, ),  # 4
+    (5, TType.LIST, 'total_num_values', (TType.I64, None, False), None, ),  # 5
+    (6, TType.LIST, 'min_value', (TType.I64, None, False), None, ),  # 6
+    (7, TType.LIST, 'max_value', (TType.I64, None, False), None, ),  # 7
+)
 all_structs.append(TRuntimeProfileNodeMetadata)
 TRuntimeProfileNodeMetadata.thrift_spec = (
     None,  # 0
     (1, TType.I32, 'plan_node_id', None, None, ),  # 1
     (2, TType.I32, 'data_sink_id', None, None, ),  # 2
+)
+all_structs.append(TAggregatedRuntimeProfileNode)
+TAggregatedRuntimeProfileNode.thrift_spec = (
+    None,  # 0
+    (1, TType.I32, 'num_instances', None, None, ),  # 1
+    (2, TType.LIST, 'input_profiles', (TType.STRING, None, False), None, ),  # 2
+    (3, TType.LIST, 'counters', (TType.STRUCT, [TAggCounter, None], False), None, ),  # 3
+    (4, TType.MAP, 'info_strings', (TType.STRING, None, TType.MAP, (TType.STRING, None, TType.LIST, (TType.I32, None, False), False), False), None, ),  # 4
+    (5, TType.LIST, 'summary_stats_counters', (TType.STRUCT, [TAggSummaryStatsCounter, None], False), None, ),  # 5
+    (6, TType.LIST, 'event_sequences', (TType.STRUCT, [TAggEventSequence, None], False), None, ),  # 6
+    (7, TType.LIST, 'time_series_counters', (TType.STRUCT, [TAggTimeSeriesCounter, None], False), None, ),  # 7
 )
 all_structs.append(TRuntimeProfileNode)
 TRuntimeProfileNode.thrift_spec = (
@@ -1010,12 +1850,14 @@ TRuntimeProfileNode.thrift_spec = (
     (10, TType.LIST, 'time_series_counters', (TType.STRUCT, [TTimeSeriesCounter, None], False), None, ),  # 10
     (11, TType.LIST, 'summary_stats_counters', (TType.STRUCT, [TSummaryStatsCounter, None], False), None, ),  # 11
     (12, TType.STRUCT, 'node_metadata', [TRuntimeProfileNodeMetadata, None], None, ),  # 12
+    (13, TType.STRUCT, 'aggregated', [TAggregatedRuntimeProfileNode, None], None, ),  # 13
 )
 all_structs.append(TRuntimeProfileTree)
 TRuntimeProfileTree.thrift_spec = (
     None,  # 0
     (1, TType.LIST, 'nodes', (TType.STRUCT, [TRuntimeProfileNode, None], False), None, ),  # 1
     (2, TType.STRUCT, 'exec_summary', [impala._thrift_gen.ExecStats.ttypes.TExecSummary, None], None, ),  # 2
+    (3, TType.I32, 'profile_version', None, None, ),  # 3
 )
 all_structs.append(TRuntimeProfileForest)
 TRuntimeProfileForest.thrift_spec = (

@@ -148,11 +148,12 @@ class TPlanNodeExecSummary(object):
      - estimated_stats
      - exec_stats
      - is_broadcast
+     - num_hosts
 
     """
 
 
-    def __init__(self, node_id=None, fragment_idx=None, label=None, label_detail=None, num_children=None, estimated_stats=None, exec_stats=None, is_broadcast=None,):
+    def __init__(self, node_id=None, fragment_idx=None, label=None, label_detail=None, num_children=None, estimated_stats=None, exec_stats=None, is_broadcast=None, num_hosts=None,):
         self.node_id = node_id
         self.fragment_idx = fragment_idx
         self.label = label
@@ -161,6 +162,7 @@ class TPlanNodeExecSummary(object):
         self.estimated_stats = estimated_stats
         self.exec_stats = exec_stats
         self.is_broadcast = is_broadcast
+        self.num_hosts = num_hosts
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -218,6 +220,11 @@ class TPlanNodeExecSummary(object):
                     self.is_broadcast = iprot.readBool()
                 else:
                     iprot.skip(ftype)
+            elif fid == 9:
+                if ftype == TType.I32:
+                    self.num_hosts = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -263,6 +270,10 @@ class TPlanNodeExecSummary(object):
             oprot.writeFieldBegin('is_broadcast', TType.BOOL, 8)
             oprot.writeBool(self.is_broadcast)
             oprot.writeFieldEnd()
+        if self.num_hosts is not None:
+            oprot.writeFieldBegin('num_hosts', TType.I32, 9)
+            oprot.writeI32(self.num_hosts)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -294,13 +305,17 @@ class TExecProgress(object):
     Attributes:
      - total_scan_ranges
      - num_completed_scan_ranges
+     - total_fragment_instances
+     - num_completed_fragment_instances
 
     """
 
 
-    def __init__(self, total_scan_ranges=None, num_completed_scan_ranges=None,):
+    def __init__(self, total_scan_ranges=None, num_completed_scan_ranges=None, total_fragment_instances=None, num_completed_fragment_instances=None,):
         self.total_scan_ranges = total_scan_ranges
         self.num_completed_scan_ranges = num_completed_scan_ranges
+        self.total_fragment_instances = total_fragment_instances
+        self.num_completed_fragment_instances = num_completed_fragment_instances
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -321,6 +336,16 @@ class TExecProgress(object):
                     self.num_completed_scan_ranges = iprot.readI64()
                 else:
                     iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.I64:
+                    self.total_fragment_instances = iprot.readI64()
+                else:
+                    iprot.skip(ftype)
+            elif fid == 4:
+                if ftype == TType.I64:
+                    self.num_completed_fragment_instances = iprot.readI64()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -338,6 +363,14 @@ class TExecProgress(object):
         if self.num_completed_scan_ranges is not None:
             oprot.writeFieldBegin('num_completed_scan_ranges', TType.I64, 2)
             oprot.writeI64(self.num_completed_scan_ranges)
+            oprot.writeFieldEnd()
+        if self.total_fragment_instances is not None:
+            oprot.writeFieldBegin('total_fragment_instances', TType.I64, 3)
+            oprot.writeI64(self.total_fragment_instances)
+            oprot.writeFieldEnd()
+        if self.num_completed_fragment_instances is not None:
+            oprot.writeFieldBegin('num_completed_fragment_instances', TType.I64, 4)
+            oprot.writeI64(self.num_completed_fragment_instances)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -539,12 +572,15 @@ TPlanNodeExecSummary.thrift_spec = (
     (6, TType.STRUCT, 'estimated_stats', [TExecStats, None], None, ),  # 6
     (7, TType.LIST, 'exec_stats', (TType.STRUCT, [TExecStats, None], False), None, ),  # 7
     (8, TType.BOOL, 'is_broadcast', None, None, ),  # 8
+    (9, TType.I32, 'num_hosts', None, None, ),  # 9
 )
 all_structs.append(TExecProgress)
 TExecProgress.thrift_spec = (
     None,  # 0
     (1, TType.I64, 'total_scan_ranges', None, None, ),  # 1
     (2, TType.I64, 'num_completed_scan_ranges', None, None, ),  # 2
+    (3, TType.I64, 'total_fragment_instances', None, None, ),  # 3
+    (4, TType.I64, 'num_completed_fragment_instances', None, None, ),  # 4
 )
 all_structs.append(TExecSummary)
 TExecSummary.thrift_spec = (
