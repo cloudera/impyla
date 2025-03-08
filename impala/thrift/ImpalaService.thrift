@@ -207,6 +207,7 @@ enum TImpalaQueryOptions {
   // If true, the planner will not generate plans with streaming preaggregations.
   DISABLE_STREAMING_PREAGGREGATIONS = 35
 
+  // Select between off, local, or global runtime filters.
   RUNTIME_FILTER_MODE = 36
 
   // Size (in bytes) of a runtime Bloom Filter. Will be rounded up to nearest power of
@@ -470,7 +471,7 @@ enum TImpalaQueryOptions {
   // The maximum amount of time, in milliseconds, a fetch rows request (TFetchResultsReq)
   // from the client should spend fetching results (including waiting for results to
   // become available and materialize). When result spooling is enabled, a fetch request
-  // to may read multiple RowBatches, in which case, the timeout controls how long the
+  // may read multiple RowBatches, in which case, the timeout controls how long the
   // client waits for all returned RowBatches to be produced. If the timeout is hit, the
   // client returns whatever rows it has already read. Defaults to 10000 milliseconds. A
   // value of 0 causes fetch requests to wait indefinitely.
@@ -510,7 +511,7 @@ enum TImpalaQueryOptions {
   PREAGG_BYTES_LIMIT = 98
 
   // Indicates whether the FE should rewrite disjunctive predicates to conjunctive
-  // normal form (CNF) for optimization purposes. Default is False.
+  // normal form (CNF) for optimization purposes. Default is true.
   ENABLE_CNF_REWRITES = 99
 
   // The max number of conjunctive normal form (CNF) exprs to create when converting
@@ -734,7 +735,9 @@ enum TImpalaQueryOptions {
   // If true, replanning is enabled.
   ENABLE_REPLAN = 143;
 
-  // If true, test replan by imposing artificial two executor groups in FE.
+  // If true, test replan by imposing artificial two executor groups in FE and always
+  // compute ProcessingCost. The degree of parallelism adjustment, however, still require
+  // COMPUTE_PROCESSING_COST option set to true.
   TEST_REPLAN = 144;
 
   // Maximum wait time on HMS ACID lock in seconds.
@@ -792,13 +795,13 @@ enum TImpalaQueryOptions {
   // Valid values are in [1, 128]. Default to 128.
   MAX_FRAGMENT_INSTANCES_PER_NODE = 156
 
-  // Configures the in-memory sort algorithm used in the sorter. Determines the
-  // maximum number of pages in an initial in-memory run (fixed + variable length).
-  // 0 means unlimited, which will create 1 big run with no in-memory merge phase.
-  // Setting any other other value can create multiple miniruns which leads to an
-  // in-memory merge phase. The minimum value in that case is 2.
-  // Generally, with larger workloads the recommended value is 10 or more to avoid
-  // high fragmentation of variable length data.
+  // Configures the in-memory sort algorithm used in the sorter. Determines the maximum
+  // number of pages in an initial in-memory run (fixed + variable length).
+  // Maximizing the sort run size can help mitigate back-pressure in the sorter. It
+  // creates multiple miniruns and merges them in-memory. The run size must be at least 2,
+  // but 10 or more are recommended to avoid high fragmentation of variable length data.
+  // Setting 0 or a negative value disables the run size limitation.
+  // Defaults to 0 (disabled).
   MAX_SORT_RUN_SIZE = 157;
 
   // Allowing implicit casts with loss of precision, adds the capability to use
@@ -832,7 +835,7 @@ enum TImpalaQueryOptions {
   LARGE_AGG_MEM_THRESHOLD = 162
 
   // Correlation factor that will be used to calculate a lower memory estimation of
-  // aggregation node when the default memory estimation exceed
+  // aggregation node when the default memory estimation exceeds
   // LARGE_AGG_MEM_THRESHOLD. The reduction is achieved by calculating a memScale
   // multiplier (a fraction between 0.0 and 1.0). Given N as number of non-literal
   // grouping expressions:
@@ -843,8 +846,8 @@ enum TImpalaQueryOptions {
   // value means there is high correlation between grouping expressions / columns, while
   // low value means there is low correlation between them. High correlation means
   // aggregation node can be scheduled with lower memory estimation (lower memScale).
-  // Setting value 1.0 will result in an equal memory estimate as the default estimation
-  // (no change). Default to 0.5.
+  // Setting value 0.0 will result in an equal memory estimate as the default estimation
+  // (no change). Defaults to 0.5.
   AGG_MEM_CORRELATION_FACTOR = 163
 
   // A per coordinator approximate limit on the memory consumption
@@ -877,8 +880,9 @@ enum TImpalaQueryOptions {
   // See KUDU-3326 for details.
   KUDU_TABLE_RESERVE_SECONDS = 168
 
-  // When true, TIMESTAMPs read from Kudu will be converted from UTC to local time.
-  // Writes are unaffected.
+  // When true, UNIXTIME_MICRO columns read from Kudu will be interpreted as UTC and
+  // and UTC->local timezone conversion is applied when converting to Impala TIMESTAMP.
+  // Writes are unaffected (see WRITE_KUDU_UTC_TIMESTAMPS).
   CONVERT_KUDU_UTC_TIMESTAMPS = 169
 
   // This only makes sense when 'CONVERT_KUDU_UTC_TIMESTAMPS' is true. When true, it
@@ -890,6 +894,87 @@ enum TImpalaQueryOptions {
   // For those regions that do not observe DST, could set this flag to false
   // to re-enable kudu local timestamp bloom filter.
   DISABLE_KUDU_LOCAL_TIMESTAMP_BLOOM_FILTER = 170
+
+  // A range of [0.0..1.0] that controls the cardinality reduction scale from runtime
+  // filter analysis. This is a linear scale with 0.0 meaning no cardinality estimate
+  // reduction should be applied and 1.0 meaning maximum cardinality estimate reduction
+  // should be applied. For example, if a table has 1M rows and runtime filters are
+  // estimated to reduce cardinality to 500K, setting value 0.25 will result in an 875K
+  // cardinality estimate. Default to 1.0.
+  RUNTIME_FILTER_CARDINALITY_REDUCTION_SCALE = 171
+
+  // Maximum number of backend executor that can send bloom runtime filter updates to
+  // one intermediate aggregator. Given N as number of backend executor excluding
+  // coordinator, the selected number of designated intermediate aggregator is
+  // ceil(N / MAX_NUM_FILTERS_AGGREGATED_PER_HOST). Setting 1, 0, or negative value
+  // will disable the intermediate aggregator feature. Default to -1 (disabled).
+  MAX_NUM_FILTERS_AGGREGATED_PER_HOST = 172
+
+  // Divide the CPU requirement of a query to fit the total available CPU in
+  // the executor group. For example, setting value 2 will fit the query with CPU
+  // requirement 2X to an executor group with total available CPU X. Note that setting
+  // with a fractional value less than 1 effectively multiplies the query CPU
+  // requirement. A valid value is > 0.0.
+  // If this query option is not set, value of backend flag --query_cpu_count_divisor
+  // (default to 1.0) will be picked up instead.
+  QUERY_CPU_COUNT_DIVISOR = 173
+
+  // Enables intermediate result caching. The frontend will determine eligibility and
+  // potentially insert tuple cache nodes into the plan. This can only be set if the
+  // allow_tuple_caching feature startup flag is set to true.
+  ENABLE_TUPLE_CACHE = 174
+
+  // Disables statistic-based count(*)-optimization for Iceberg tables.
+  ICEBERG_DISABLE_COUNT_STAR_OPTIMIZATION = 175
+
+  // List of runtime filter id to skip if it exists in query plan.
+  // If using JDBC client, use double quote to wrap multiple ids, like:
+  //   RUNTIME_FILTER_IDS_TO_SKIP="1,2,3"
+  // If using impala-shell client, double quote is not required.
+  RUNTIME_FILTER_IDS_TO_SKIP = 176
+
+  // Decide what strategy to use to compute number of slot per node to run a query.
+  // Default to number of instances of largest query fragment (LARGEST_FRAGMENT).
+  // See TSlotCountStrategy in Query.thrift for documentation of its possible values.
+  SLOT_COUNT_STRATEGY = 177
+
+  // Indicate if external JDBC table handler should clean DBCP DataSource object from
+  // cache when its reference count equals 0. By caching DBCP DataSource objects, we can
+  // avoid to reload JDBC driver.
+  CLEAN_DBCP_DS_CACHE = 178
+
+  // Enables cache for isTrueWithNullSlots, which can be expensive when evaluating lots
+  // of expressions. The cache helps with generated expressions, which often contain lots
+  // of repeated patterns.
+  USE_NULL_SLOTS_CACHE = 179
+
+  // When true, Impala TIMESTAMPs are converted from local timezone to UTC before being
+  // written to Kudu as UNIXTIME_MICRO.
+  // Reads are unaffected (see CONVERT_KUDU_UTC_TIMESTAMPS).
+  WRITE_KUDU_UTC_TIMESTAMPS = 180
+
+  // Turns off optimized JSON count star (zero slots) scan, falls back to rapidjson parse.
+  DISABLE_OPTIMIZED_JSON_COUNT_STAR = 181
+
+  // How long to wait for statement completion for ExecuteStatement/executeAndWait and
+  // GetOperationStatus/get_state RPCs. Waiting on the server side allows for immediate
+  // notification when the query completes and avoid added latency from waiting on the
+  // client side. This defaults to off (0ms).
+  LONG_POLLING_TIME_MS = 182
+
+  // Enables the verification process for intermediate result caching.
+  // Tuple cache verification is performed only when the startup flag
+  // tuple_cache_debug_dump_dir is specified and enable_tuple_cache_verification is set
+  // to true.
+  ENABLE_TUPLE_CACHE_VERIFICATION = 183
+
+  // If True, enable tuple analysis for both preaggregation and final aggregation node.
+  // Enabling this feature can lower cardinality estimate of multi-column grouping.
+  ENABLE_TUPLE_ANALYSIS_IN_AGGREGATE = 184
+
+  // If True, account for probability of having duplicate grouping key exist in multiple
+  // nodes during preaggreation.
+  ESTIMATE_DUPLICATE_IN_PREAGG = 185
 }
 
 // The summary of a DML statement.

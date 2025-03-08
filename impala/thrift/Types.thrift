@@ -30,7 +30,6 @@ typedef i32 TDataSinkId
 typedef i32 TTupleId
 typedef i32 TSlotId
 typedef i32 TTableId
-typedef i32 TJoinTableId
 
 // TODO: Consider moving unrelated enums to better locations.
 
@@ -78,6 +77,8 @@ struct TScalarType {
 struct TStructField {
   1: required string name
   2: optional string comment
+  // Valid for Iceberg tables
+  3: optional i32 field_id
 }
 
 struct TTypeNode {
@@ -109,6 +110,17 @@ enum TStmtType {
   SET = 5
   ADMIN_FN = 6
   TESTCASE = 7
+  CONVERT = 8
+  UNKNOWN = 9
+  KILL = 10
+}
+
+enum TIcebergOperation {
+  INSERT = 0
+  DELETE = 1
+  UPDATE = 2
+  OPTIMIZE = 3
+  MERGE = 4
 }
 
 // Level of verboseness for "explain" output.
@@ -142,9 +154,19 @@ enum TPrefetchMode {
 // A TNetworkAddress is the standard host, port representation of a
 // network address. The hostname field must be resolvable to an IPv4
 // address.
+// uds_address is Unix Domain Socket address. UDS is limited to KRPC.
+// We use the unique name in "Abstract Namespace" as UDS address in the form of
+// "@impala-krpc:<unique-id>". This field is optional. It is only used for KRPC
+// bind/listen/connect when FLAGS_rpc_use_unix_domain_socket is set as true.
 struct TNetworkAddress {
   1: required string hostname
   2: required i32 port
+  3: optional string uds_address
+}
+
+// A list of network addresses
+struct TAddressesList {
+  1: required list<TNetworkAddress> addresses;
 }
 
 // Wire format for UniqueId
@@ -152,6 +174,9 @@ struct TUniqueId {
   1: required i64 hi
   2: required i64 lo
 }
+
+// Used to uniquely identify individual impalads.
+typedef TUniqueId TBackendId;
 
 enum TFunctionCategory {
   SCALAR = 0
@@ -264,4 +289,10 @@ struct TFunction {
 
   // NOTE: when adding fields to this struct, do not renumber the field IDs or
   // add new required fields. This struct is serialized into user metastores.
+}
+
+// The sorting order used in SORT BY queries.
+enum TSortingOrder {
+  LEXICAL = 0
+  ZORDER = 1
 }
