@@ -158,7 +158,37 @@ enum TErrorCode {
   EXEC_TIME_LIMIT_EXCEEDED = 128,
   CPU_LIMIT_EXCEEDED = 129,
   SCAN_BYTES_LIMIT_EXCEEDED = 130,
-  ROWS_PRODUCED_LIMIT_EXCEEDED = 131
+  ROWS_PRODUCED_LIMIT_EXCEEDED = 131,
+  EXPR_REWRITE_RESULT_LIMIT_EXCEEDED = 132,
+  UNRESPONSIVE_BACKEND = 133,
+  PARQUET_DATE_OUT_OF_RANGE = 134,
+  DISCONNECTED_SESSION_CLOSED = 135,
+  UNAUTHORIZED_SESSION_USER = 136,
+  ZSTD_ERROR = 137,
+  LZ4_BLOCK_DECOMPRESS_DECOMPRESS_SIZE_INCORRECT = 138,
+  LZ4_BLOCK_DECOMPRESS_INVALID_INPUT_LENGTH = 139,
+  LZ4_BLOCK_DECOMPRESS_INVALID_COMPRESSED_LENGTH = 140,
+  LZ4_DECOMPRESS_SAFE_FAILED = 141,
+  LZ4_COMPRESS_DEFAULT_FAILED = 142,
+  MAX_STATEMENT_LENGTH_EXCEEDED = 143,
+  AVRO_INVALID_DATE = 144,
+  ORC_TIMESTAMP_OUT_OF_RANGE = 145,
+  ORC_DATE_OUT_OF_RANGE = 146,
+  ORC_NESTED_TYPE_MISMATCH = 147,
+  ORC_TYPE_NOT_ROOT_AT_STRUCT = 148,
+  NAAJ_OUT_OF_MEMORY = 149,
+  INVALID_QUERY_HANDLE = 150,
+  JOIN_ROWS_PRODUCED_LIMIT_EXCEEDED = 151,
+  LOCAL_DISK_FAULTY = 152,
+  JWKS_PARSE_ERROR = 153,
+  JWT_VERIFY_FAILED = 154,
+  PARQUET_ROWS_SKIPPING = 155,
+  QUERY_OPTION_PARSE_FAILED = 156,
+  CATALOG_INCOMPATIBLE_PROTOCOL = 157,
+  STATESTORE_INCOMPATIBLE_PROTOCOL = 158,
+  JDBC_CONFIGURATION_ERROR = 159,
+  TUPLE_CACHE_INCONSISTENCY = 160,
+  OAUTH_VERIFY_FAILED = 161
 }
 const list<string> TErrorMessage = [
   // OK
@@ -196,7 +226,7 @@ const list<string> TErrorMessage = [
   // PARQUET_MISSING_PRECISION
   "File '$0' column '$1' does not have the decimal precision set.",
   // PARQUET_WRONG_PRECISION
-  "File '$0' column '$1' has a precision that does not match the table metadata  precision. File metadata precision: $2, table metadata precision: $3.",
+  "File '$0' column '$1' has a precision that does not match the table metadata precision. File metadata precision: $2, table metadata precision: $3.",
   // PARQUET_BAD_CONVERTED_TYPE
   "File '$0' column '$1' does not have converted type set to DECIMAL",
   // PARQUET_INCOMPATIBLE_DECIMAL
@@ -282,7 +312,7 @@ const list<string> TErrorMessage = [
   // STALE_METADATA_FILE_TOO_SHORT
   "Metadata for file '$0' appears stale. Try running \"refresh $1\" to reload the file metadata.",
   // PARQUET_BAD_VERSION_NUMBER
-  "File '$0' has an invalid version number: $1\nThis could be due to stale metadata. Try running \"refresh $2\".",
+  "File '$0' has an invalid Parquet version number: $1.\nPlease check that it is a valid Parquet file. This error can also occur due to stale metadata. If you believe this is a valid Parquet file, try running \"refresh $2\".",
   // SCANNER_INCOMPLETE_READ
   "Tried to read $0 bytes but could only read $1 bytes. This may indicate data file corruption. (file $2, byte offset: $3)",
   // SCANNER_INVALID_READ
@@ -310,7 +340,7 @@ const list<string> TErrorMessage = [
   // IMPALA_KUDU_TYPE_MISSING
   "Impala type $0 is not available in Kudu.",
   // KUDU_NOT_SUPPORTED_ON_OS
-  "Kudu is not supported on this operating system.",
+  "Not in use.",
   // KUDU_NOT_ENABLED
   "Kudu features are disabled by the startup flag --disable_kudu.",
   // PARTITIONED_HASH_JOIN_REPARTITION_FAILS
@@ -364,13 +394,13 @@ const list<string> TErrorMessage = [
   // PARQUET_TIMESTAMP_OUT_OF_RANGE
   "Parquet file '$0' column '$1' contains an out of range timestamp. The valid date range is 1400-01-01..9999-12-31.",
   // SCRATCH_ALLOCATION_FAILED
-  "Could not create files in any configured scratch directories (--scratch_dirs=$0) on backend '$1'. $2 of scratch is currently in use by this Impala Daemon ($3 by this query). See logs for previous errors that may have prevented creating or writing scratch files.",
+  "Could not create files in any configured scratch directories (--scratch_dirs=$0) on backend '$1'. $2 of scratch is currently in use by this Impala Daemon ($3 by this query). See logs for previous errors that may have prevented creating or writing scratch files. The following directories were at capacity: $4",
   // SCRATCH_READ_TRUNCATED
   "Error reading $0 bytes from scratch file '$1' on backend $2 at offset $3: could only read $4 bytes",
   // KUDU_TIMESTAMP_OUT_OF_RANGE
   "Kudu table '$0' column '$1' contains an out of range timestamp. The valid date range is 1400-01-01..9999-12-31.",
   // MAX_ROW_SIZE
-  "Row of size $0 could not be materialized in plan node with id $1. Increase the max_row_size query option (currently $2) to process larger rows.",
+  "Row of size $0 could not be materialized by $1. Increase the max_row_size query option (currently $2) to process larger rows.",
   // IR_VERIFY_FAILED
   "Failed to verify generated IR function $0, see log for more details.",
   // MINIMUM_RESERVATION_UNAVAILABLE
@@ -378,7 +408,7 @@ const list<string> TErrorMessage = [
   // ADMISSION_REJECTED
   "Rejected query from pool $0: $1",
   // ADMISSION_TIMED_OUT
-  "Admission for query exceeded timeout $0ms in pool $1. Queued reason: $2",
+  "Admission for query exceeded timeout $0ms in pool $1. Queued reason: $2 Additional Details: $3",
   // THREAD_CREATION_FAILED
   "Failed to create thread $0 in category $1: $2",
   // DISK_IO_ERROR
@@ -424,5 +454,65 @@ const list<string> TErrorMessage = [
   // SCAN_BYTES_LIMIT_EXCEEDED
   "Query $0 terminated due to scan bytes limit of $1",
   // ROWS_PRODUCED_LIMIT_EXCEEDED
-  "Query $0 terminated due to rows produced limit of $1. Unset or increase NUM_ROWS_PRODUCED_LIMIT query option to produce more rows."
+  "Query $0 terminated due to rows produced limit of $1. Unset or increase NUM_ROWS_PRODUCED_LIMIT query option to produce more rows.",
+  // EXPR_REWRITE_RESULT_LIMIT_EXCEEDED
+  "Expression rewrite rejected due to result size ($0) exceeding the limit ($1).",
+  // UNRESPONSIVE_BACKEND
+  "Query $0 cancelled due to unresponsive backend: $1 has not sent a report in $2ms (max allowed lag is $3ms)",
+  // PARQUET_DATE_OUT_OF_RANGE
+  "Parquet file '$0' column '$1' contains an out of range date. The valid date range is 0001-01-01..9999-12-31.",
+  // DISCONNECTED_SESSION_CLOSED
+  "Session closed because it has no active connections",
+  // UNAUTHORIZED_SESSION_USER
+  "The user authorized on the connection '$0' does not match the session username '$1'",
+  // ZSTD_ERROR
+  "$0 failed with error: $1",
+  // LZ4_BLOCK_DECOMPRESS_DECOMPRESS_SIZE_INCORRECT
+  "LZ4Block: Decompressed size is not correct.",
+  // LZ4_BLOCK_DECOMPRESS_INVALID_INPUT_LENGTH
+  "LZ4Block: Invalid input length.",
+  // LZ4_BLOCK_DECOMPRESS_INVALID_COMPRESSED_LENGTH
+  "LZ4Block: Invalid compressed length.  Data is likely corrupt.",
+  // LZ4_DECOMPRESS_SAFE_FAILED
+  "LZ4: LZ4_decompress_safe failed",
+  // LZ4_COMPRESS_DEFAULT_FAILED
+  "LZ4: LZ4_compress_default failed",
+  // MAX_STATEMENT_LENGTH_EXCEEDED
+  "Statement length of $0 bytes exceeds the maximum statement length ($1 bytes)",
+  // AVRO_INVALID_DATE
+  "Avro file '$0' is corrupt: out of range date value $1 at offset $2. The valid date range is -719162..2932896 (0001-01-01..9999-12-31).",
+  // ORC_TIMESTAMP_OUT_OF_RANGE
+  "ORC file '$0' column '$1' contains an out of range timestamp. The valid date range is 1400-01-01..9999-12-31.",
+  // ORC_DATE_OUT_OF_RANGE
+  "ORC file '$0' column '$1' contains an out of range date. The valid date range is 0001-01-01..9999-12-31.",
+  // ORC_NESTED_TYPE_MISMATCH
+  "File '$0' has an incompatible ORC schema for column '$1', Column type: $2, ORC schema: $3",
+  // ORC_TYPE_NOT_ROOT_AT_STRUCT
+  "Root of the $0 type returned by the ORC lib is not STRUCT: $1. Either there are bugs in the ORC lib or ORC file '$2' is corrupt.",
+  // NAAJ_OUT_OF_MEMORY
+  "Unable to perform Null-Aware Anti-Join. Could not get enough reservation to fit all rows with NULLs from the build side in memory. Memory required for $0 rows was $1. $2/$3 of the join's reservation was available for the rows.",
+  // INVALID_QUERY_HANDLE
+  "Invalid or unknown query handle: $0.",
+  // JOIN_ROWS_PRODUCED_LIMIT_EXCEEDED
+  "Query $0 terminated due to join rows produced exceeds the limit of $1 at node with id $2. Unset or increase JOIN_ROWS_PRODUCED_LIMIT query option to produce more rows.",
+  // LOCAL_DISK_FAULTY
+  "Query execution failure caused by local disk IO fatal error on backend: $0.",
+  // JWKS_PARSE_ERROR
+  "Error parsing JWKS: $0.",
+  // JWT_VERIFY_FAILED
+  "Error verifying JWT Token: $0.",
+  // PARQUET_ROWS_SKIPPING
+  "Couldn't skip rows in column '$0' in file '$1'.",
+  // QUERY_OPTION_PARSE_FAILED
+  "Failed to parse query option '$0': $1",
+  // CATALOG_INCOMPATIBLE_PROTOCOL
+  "Client has incompatible protocol version V$0 conflicting with catalogd's version V$1",
+  // STATESTORE_INCOMPATIBLE_PROTOCOL
+  "Subscriber '$0' has incompatible protocol version V$1 conflicting with statestored's version V$2",
+  // JDBC_CONFIGURATION_ERROR
+  "Error in JDBC table configuration: $0.",
+  // TUPLE_CACHE_INCONSISTENCY
+  "Inconsistent tuple cache found: $0.",
+  // OAUTH_VERIFY_FAILED
+  "Error verifying OAuth Token: $0."
 ]
