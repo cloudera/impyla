@@ -14,12 +14,17 @@ Fork the repo and send a pull request against `master`.  Contributions welcome!
     rm -rf $IMPYLA_REPO/impala/thrift/*.thrift
     ```
 
-1. Execute `$IMPYLA_REPO/impala/thrift/process_thrift.sh`
+1. `cp $IMPALA_REPO/common/thrift/ImpalaService.thrift $IMPYLA_REPO/impala/thrift`
+
+Hand edit ImpalaService.thrift to exclude files, API and definitions unrelated to query
+profile such as Frontend.thrift, BackendGflags.thrift, and Query.thrift.
+
+2. Execute `$IMPYLA_REPO/impala/thrift/process_thrift.sh`
 
 This should only need to be done very irregularly, as the generated code is
 committed to the repo.  Only when the original thrift IDL files change. People
 checking out the repo to develop on it do NOT need to run the codegen.  Codegen
-performed with Thrift 0.9.x.
+performed with Thrift 0.16.x.
 
 
 #### UDF maintenance

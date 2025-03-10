@@ -48,7 +48,6 @@ struct TExecStats {
 
   // Total CPU time spent across all threads. For operators that have an async
   // component (e.g. multi-threaded) this will be >= latency_ns.
-  // TODO-MT: remove this or latency_ns
   2: optional i64 cpu_time_ns
 
   // Number of rows returned.
@@ -76,12 +75,18 @@ struct TPlanNodeExecSummary {
 
   // If true, this is an exchange node that is the receiver of a broadcast.
   8: optional bool is_broadcast
+
+  // The number of hosts. It cannot be inferred from exec_stats, since the length of the
+  // list can be greater when mt_dop > 0.
+  9: optional i32 num_hosts
 }
 
 // Progress counters for an in-flight query.
 struct TExecProgress {
   1: optional i64 total_scan_ranges
   2: optional i64 num_completed_scan_ranges
+  3: optional i64 total_fragment_instances;
+  4: optional i64 num_completed_fragment_instances;
 }
 
 // Execution summary of an entire query.
@@ -95,8 +100,9 @@ struct TExecSummary {
   // Flattened execution summary of the plan tree.
   3: optional list<TPlanNodeExecSummary> nodes
 
-  // For each exch node in 'nodes', contains the index to the root node of the sending
-  // fragment for this exch. Both the key and value are indices into 'nodes'.
+  // For each node in 'nodes' that consumes input from the root of a different fragment,
+  // i.e. an exchange or join node with a separate build, contains the index to the root
+  // node of the source fragment. Both the key and value are indices into 'nodes'.
   4: optional map<i32, i32> exch_to_sender_map
 
   // List of errors that were encountered during execution. This can be non-empty

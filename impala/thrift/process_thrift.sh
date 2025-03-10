@@ -32,7 +32,9 @@ SYNC_IMPYLA_THRIFT_FILES="${SYNC_IMPYLA_THRIFT_FILES:-false}"
 if [ "$SYNC_IMPYLA_THRIFT_FILES" = true ] ; then
   echo "Copying thrift files from the main Impala repo at $IMPALA_REPO"
   cp $IMPALA_REPO/common/thrift/hive-3-api/TCLIService.thrift $IMPYLA_REPO/impala/thrift
-  cp $IMPALA_REPO/common/thrift/ImpalaService.thrift $IMPYLA_REPO/impala/thrift
+  # ImpalaService.thrift require hand edit to exclude files unrelated to query profile
+  # such as Frontend.thrift, BackendGflags.thrift, and Query.thrift.
+  # cp $IMPALA_REPO/common/thrift/ImpalaService.thrift $IMPYLA_REPO/impala/thrift
   cp $IMPALA_REPO/common/thrift/ErrorCodes.thrift $IMPYLA_REPO/impala/thrift
   cp $IMPALA_REPO/common/thrift/ExecStats.thrift $IMPYLA_REPO/impala/thrift
   cp $IMPALA_REPO/common/thrift/Metrics.thrift $IMPYLA_REPO/impala/thrift
@@ -81,7 +83,7 @@ if [ "$SYNC_IMPYLA_THRIFT_FILES" = true ] ; then
 fi
 
 echo "Generating thrift python modules"
-THRIFT_BIN="$IMPALA_TOOLCHAIN_PACKAGES_HOME/thrift-$IMPALA_THRIFT_CPP_VERSION/bin/thrift"
+THRIFT_BIN="$IMPALA_TOOLCHAIN_PACKAGES_HOME/thrift-$IMPALA_THRIFT_PY_VERSION/bin/thrift"
 $THRIFT_BIN -r --gen py:new_style,no_utf8strings -out $IMPYLA_REPO $IMPYLA_REPO/impala/thrift/ImpalaService.thrift
 
 echo "Removing extraneous $IMPYLA_REPO/__init__.py"
