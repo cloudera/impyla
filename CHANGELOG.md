@@ -1,7 +1,12 @@
 Changelog
 =========
 
-0.21a1
+0.21a3
+* **Improvements**
+  - Update Impala Thrift definitions. (#575)
+    - this helps in testing newer features in Impala
+
+0.21a2
 ------
 * **Improvements**
   - Remove versioneer and add Python3.12/3.13 testing (#572)
