@@ -108,6 +108,9 @@ class TStmtType(object):
     SET = 5
     ADMIN_FN = 6
     TESTCASE = 7
+    CONVERT = 8
+    UNKNOWN = 9
+    KILL = 10
 
     _VALUES_TO_NAMES = {
         0: "QUERY",
@@ -118,6 +121,9 @@ class TStmtType(object):
         5: "SET",
         6: "ADMIN_FN",
         7: "TESTCASE",
+        8: "CONVERT",
+        9: "UNKNOWN",
+        10: "KILL",
     }
 
     _NAMES_TO_VALUES = {
@@ -129,6 +135,33 @@ class TStmtType(object):
         "SET": 5,
         "ADMIN_FN": 6,
         "TESTCASE": 7,
+        "CONVERT": 8,
+        "UNKNOWN": 9,
+        "KILL": 10,
+    }
+
+
+class TIcebergOperation(object):
+    INSERT = 0
+    DELETE = 1
+    UPDATE = 2
+    OPTIMIZE = 3
+    MERGE = 4
+
+    _VALUES_TO_NAMES = {
+        0: "INSERT",
+        1: "DELETE",
+        2: "UPDATE",
+        3: "OPTIMIZE",
+        4: "MERGE",
+    }
+
+    _NAMES_TO_VALUES = {
+        "INSERT": 0,
+        "DELETE": 1,
+        "UPDATE": 2,
+        "OPTIMIZE": 3,
+        "MERGE": 4,
     }
 
 
@@ -222,6 +255,21 @@ class TFunctionBinaryType(object):
         "JAVA": 1,
         "NATIVE": 2,
         "IR": 3,
+    }
+
+
+class TSortingOrder(object):
+    LEXICAL = 0
+    ZORDER = 1
+
+    _VALUES_TO_NAMES = {
+        0: "LEXICAL",
+        1: "ZORDER",
+    }
+
+    _NAMES_TO_VALUES = {
+        "LEXICAL": 0,
+        "ZORDER": 1,
     }
 
 
@@ -322,13 +370,15 @@ class TStructField(object):
     Attributes:
      - name
      - comment
+     - field_id
 
     """
 
 
-    def __init__(self, name=None, comment=None,):
+    def __init__(self, name=None, comment=None, field_id=None,):
         self.name = name
         self.comment = comment
+        self.field_id = field_id
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -349,6 +399,11 @@ class TStructField(object):
                     self.comment = iprot.readString()
                 else:
                     iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.I32:
+                    self.field_id = iprot.readI32()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -366,6 +421,10 @@ class TStructField(object):
         if self.comment is not None:
             oprot.writeFieldBegin('comment', TType.STRING, 2)
             oprot.writeString(self.comment)
+            oprot.writeFieldEnd()
+        if self.field_id is not None:
+            oprot.writeFieldBegin('field_id', TType.I32, 3)
+            oprot.writeI32(self.field_id)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -549,13 +608,15 @@ class TNetworkAddress(object):
     Attributes:
      - hostname
      - port
+     - uds_address
 
     """
 
 
-    def __init__(self, hostname=None, port=None,):
+    def __init__(self, hostname=None, port=None, uds_address=None,):
         self.hostname = hostname
         self.port = port
+        self.uds_address = uds_address
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -576,6 +637,11 @@ class TNetworkAddress(object):
                     self.port = iprot.readI32()
                 else:
                     iprot.skip(ftype)
+            elif fid == 3:
+                if ftype == TType.STRING:
+                    self.uds_address = iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -594,6 +660,10 @@ class TNetworkAddress(object):
             oprot.writeFieldBegin('port', TType.I32, 2)
             oprot.writeI32(self.port)
             oprot.writeFieldEnd()
+        if self.uds_address is not None:
+            oprot.writeFieldBegin('uds_address', TType.STRING, 3)
+            oprot.writeString(self.uds_address)
+            oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
 
@@ -602,6 +672,74 @@ class TNetworkAddress(object):
             raise TProtocolException(message='Required field hostname is unset!')
         if self.port is None:
             raise TProtocolException(message='Required field port is unset!')
+        return
+
+    def __repr__(self):
+        L = ['%s=%r' % (key, value)
+             for key, value in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class TAddressesList(object):
+    """
+    Attributes:
+     - addresses
+
+    """
+
+
+    def __init__(self, addresses=None,):
+        self.addresses = addresses
+
+    def read(self, iprot):
+        if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
+            iprot._fast_decode(self, iprot, [self.__class__, self.thrift_spec])
+            return
+        iprot.readStructBegin()
+        while True:
+            (fname, ftype, fid) = iprot.readFieldBegin()
+            if ftype == TType.STOP:
+                break
+            if fid == 1:
+                if ftype == TType.LIST:
+                    self.addresses = []
+                    (_etype17, _size14) = iprot.readListBegin()
+                    for _i18 in range(_size14):
+                        _elem19 = TNetworkAddress()
+                        _elem19.read(iprot)
+                        self.addresses.append(_elem19)
+                    iprot.readListEnd()
+                else:
+                    iprot.skip(ftype)
+            else:
+                iprot.skip(ftype)
+            iprot.readFieldEnd()
+        iprot.readStructEnd()
+
+    def write(self, oprot):
+        if oprot._fast_encode is not None and self.thrift_spec is not None:
+            oprot.trans.write(oprot._fast_encode(self, [self.__class__, self.thrift_spec]))
+            return
+        oprot.writeStructBegin('TAddressesList')
+        if self.addresses is not None:
+            oprot.writeFieldBegin('addresses', TType.LIST, 1)
+            oprot.writeListBegin(TType.STRUCT, len(self.addresses))
+            for iter20 in self.addresses:
+                iter20.write(oprot)
+            oprot.writeListEnd()
+            oprot.writeFieldEnd()
+        oprot.writeFieldStop()
+        oprot.writeStructEnd()
+
+    def validate(self):
+        if self.addresses is None:
+            raise TProtocolException(message='Required field addresses is unset!')
         return
 
     def __repr__(self):
@@ -1060,11 +1198,11 @@ class TFunction(object):
             elif fid == 3:
                 if ftype == TType.LIST:
                     self.arg_types = []
-                    (_etype17, _size14) = iprot.readListBegin()
-                    for _i18 in range(_size14):
-                        _elem19 = TColumnType()
-                        _elem19.read(iprot)
-                        self.arg_types.append(_elem19)
+                    (_etype24, _size21) = iprot.readListBegin()
+                    for _i25 in range(_size21):
+                        _elem26 = TColumnType()
+                        _elem26.read(iprot)
+                        self.arg_types.append(_elem26)
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
@@ -1137,8 +1275,8 @@ class TFunction(object):
         if self.arg_types is not None:
             oprot.writeFieldBegin('arg_types', TType.LIST, 3)
             oprot.writeListBegin(TType.STRUCT, len(self.arg_types))
-            for iter20 in self.arg_types:
-                iter20.write(oprot)
+            for iter27 in self.arg_types:
+                iter27.write(oprot)
             oprot.writeListEnd()
             oprot.writeFieldEnd()
         if self.ret_type is not None:
@@ -1208,6 +1346,7 @@ TStructField.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'name', None, None, ),  # 1
     (2, TType.STRING, 'comment', None, None, ),  # 2
+    (3, TType.I32, 'field_id', None, None, ),  # 3
 )
 all_structs.append(TTypeNode)
 TTypeNode.thrift_spec = (
@@ -1226,6 +1365,12 @@ TNetworkAddress.thrift_spec = (
     None,  # 0
     (1, TType.STRING, 'hostname', None, None, ),  # 1
     (2, TType.I32, 'port', None, None, ),  # 2
+    (3, TType.STRING, 'uds_address', None, None, ),  # 3
+)
+all_structs.append(TAddressesList)
+TAddressesList.thrift_spec = (
+    None,  # 0
+    (1, TType.LIST, 'addresses', (TType.STRUCT, [TNetworkAddress, None], False), None, ),  # 1
 )
 all_structs.append(TUniqueId)
 TUniqueId.thrift_spec = (

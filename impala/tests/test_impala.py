@@ -84,8 +84,13 @@ def test_get_log(cur, empty_table):
        is closed.
     """
     query = """SELECT * FROM {0}""".format(empty_table)
-    cur.execute(query)
-    cur.fetchall()
+    for mt_dop in ['0', '2']:
+        cur.execute(query, configuration={'mt_dop': mt_dop})
+        cur.fetchall()
+        validate_log(cur)
+        cur.close_operation()
+
+def validate_log(cur):
     # The query should be closed at this point.
     assert not cur._last_operation_active
     log = cur.get_log()
@@ -93,5 +98,17 @@ def test_get_log(cur, empty_table):
     # Also check that summary and runtime profile are available
     summary = cur.get_summary()
     assert summary is not None
+    for node in summary.nodes:
+        assert hasattr(node, 'node_id')
+        assert hasattr(node, 'fragment_idx')
+        assert hasattr(node, 'label')
+        assert hasattr(node, 'label_detail')
+        assert hasattr(node, 'num_children')
+        assert hasattr(node, 'estimated_stats')
+        assert hasattr(node, 'exec_stats')
+        assert hasattr(node, 'is_broadcast')
+        assert hasattr(node, 'num_hosts')
+        assert node.num_hosts > 0
+        assert len(node.exec_stats) >= node.num_hosts
     profile = cur.get_profile()
     assert profile is not None
