@@ -29,6 +29,7 @@ from six.moves import range
 from thrift.transport.TTransport import TTransportException
 from thrift.Thrift import TApplicationException
 from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated
+from impala._thrift_gen.ExecStats.ttypes import TExecStats
 from impala._thrift_gen.TCLIService.ttypes import (
     TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
     TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
@@ -727,8 +728,9 @@ class HiveServer2Cursor(Cursor):
 
     def build_summary_table(self, summary, output, idx=0,
                             is_fragment_root=False, indent_level=0):
-        return build_summary_table(summary, idx, is_fragment_root,
-                                   indent_level, output)
+        return build_exec_summary_table(
+            summary, idx, indent_level, is_fragment_root, output, is_prettyprint=True,
+            separate_prefix_column=False)
 
     def get_databases(self):
         def op():
@@ -1551,8 +1553,8 @@ class Operation(ThriftRPC):
 
         return schema
 
-
-def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
+def build_exec_summary_table(summary, idx, indent_level, new_indent_level, output,
+                             is_prettyprint=True, separate_prefix_column=False):
     """Direct translation of Coordinator::PrintExecSummary() to recursively
     build a list of rows of summary statistics, one per exec node
 
@@ -1560,16 +1562,22 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
 
     idx: the index of the node to print
 
-    is_fragment_root: true if the node to print is the root of a fragment (and
-    therefore feeds into an exchange)
-
     indent_level: the number of spaces to print before writing the node's
     label, to give the appearance of a tree. The 0th child of a node has the
     same indent_level as its parent. All other children have an indent_level
     of one greater than their parent.
 
+    new_indent_level: If true, this indent level is different from the previous row's.
+
     output: the list of rows into which to append the rows produced for this
     node and its children.
+
+    is_prettyprint: Optional. If True, print time, units, and bytes columns in pretty
+    printed format.
+
+    separate_prefix_column: Optional. If True, the prefix and operator name will be
+    returned as separate column. Otherwise, prefix and operater name will be concatenated
+    into single column.
 
     Returns the index of the next exec node in summary.exec_nodes that should
     be processed, used internally to this method only.
@@ -1585,23 +1593,27 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
         setattr(max_stats, attr, 0)
 
     node = summary.nodes[idx]
-    for stats in node.exec_stats:
-        for attr in attrs:
-            val = getattr(stats, attr)
-            if val is not None:
-                setattr(agg_stats, attr, getattr(agg_stats, attr) + val)
-                setattr(max_stats, attr, max(getattr(max_stats, attr), val))
+    if node.exec_stats is not None:
+        for stats in node.exec_stats:
+            for attr in attrs:
+                val = getattr(stats, attr)
+                if val is not None:
+                    setattr(agg_stats, attr, getattr(agg_stats, attr) + val)
+                    setattr(max_stats, attr, max(getattr(max_stats, attr), val))
 
-    if len(node.exec_stats) > 0:
+    if node.exec_stats is not None and node.exec_stats:
         avg_time = agg_stats.latency_ns / len(node.exec_stats)
     else:
         avg_time = 0
 
+    is_sink = node.node_id == -1
     # If the node is a broadcast-receiving exchange node, the cardinality of
     # rows produced is the max over all instances (which should all have
     # received the same number of rows). Otherwise, the cardinality is the sum
     # over all instances which process disjoint partitions.
-    if node.is_broadcast and is_fragment_root:
+    if is_sink:
+        cardinality = -1
+    elif node.is_broadcast:
         cardinality = max_stats.cardinality
     else:
         cardinality = agg_stats.cardinality
@@ -1610,10 +1622,11 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     label_prefix = ""
     if indent_level > 0:
         label_prefix = "|"
-        if is_fragment_root:
-            label_prefix += "    " * indent_level
+        label_prefix += "  |" * (indent_level - 1)
+        if new_indent_level:
+            label_prefix += "--"
         else:
-            label_prefix += "--" * indent_level
+            label_prefix += "  "
 
     def prettyprint(val, units, divisor):
         for unit in units:
@@ -1634,22 +1647,49 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     def prettyprint_time(time_val):
         return prettyprint(time_val, ["ns", "us", "ms", "s"], 1000.0)
 
-    row = [label_prefix + node.label,
-           len(node.exec_stats),
-           prettyprint_time(avg_time),
-           prettyprint_time(max_stats.latency_ns),
-           prettyprint_units(cardinality),
-           prettyprint_units(est_stats.cardinality),
-           prettyprint_bytes(max_stats.memory_used),
-           prettyprint_bytes(est_stats.memory_used),
-           node.label_detail]
+    instances = 0
+    if node.exec_stats is not None:
+        instances = len(node.exec_stats)
+    latency = max_stats.latency_ns
+    cardinality_est = est_stats.cardinality
+    memory_used = max_stats.memory_used
+    memory_est = est_stats.memory_used
+    if (is_prettyprint):
+        avg_time = prettyprint_time(avg_time)
+        latency = prettyprint_time(latency)
+        cardinality = "" if is_sink else prettyprint_units(cardinality)
+        cardinality_est = "" if is_sink else prettyprint_units(cardinality_est)
+        memory_used = prettyprint_bytes(memory_used)
+        memory_est = prettyprint_bytes(memory_est)
+
+    row = list()
+    if separate_prefix_column:
+        row.append(label_prefix)
+        row.append(node.label)
+    else:
+        row.append(label_prefix + node.label)
+
+    row.extend([
+        node.num_hosts,
+        instances,
+        avg_time,
+        latency,
+        cardinality,
+        cardinality_est,
+        memory_used,
+        memory_est,
+        node.label_detail])
 
     output.append(row)
     try:
         sender_idx = summary.exch_to_sender_map[idx]
-        # This is an exchange node, so the sender is a fragment root, and
-        # should be printed next.
-        build_summary_table(summary, sender_idx, True, indent_level, output)
+        # This is an exchange node or a join node with a separate builder, so the source
+        # is a fragment root, and should be printed next.
+        sender_indent_level = indent_level + node.num_children
+        sender_new_indent_level = node.num_children > 0
+        build_exec_summary_table(summary, sender_idx, sender_indent_level,
+                                 sender_new_indent_level, output, is_prettyprint,
+                                 separate_prefix_column)
     except (KeyError, TypeError):
         # Fall through if idx not in map, or if exch_to_sender_map itself is
         # not set
@@ -1658,14 +1698,14 @@ def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
     idx += 1
     if node.num_children > 0:
         first_child_output = []
-        idx = build_summary_table(summary, idx, False, indent_level,
-                                  first_child_output)
+        idx = build_exec_summary_table(summary, idx, indent_level, False,
+                                       first_child_output, is_prettyprint,
+                                       separate_prefix_column)
         # pylint: disable=unused-variable
-        # TODO: is child_idx supposed to be unused?  See #120
-        for child_idx in range(1, node.num_children):
+        for child_idx in xrange(1, node.num_children):
             # All other children are indented (we only have 0, 1 or 2 children
             # for every exec node at the moment)
-            idx = build_summary_table(summary, idx, False, indent_level + 1,
-                                      output)
+            idx = build_exec_summary_table(summary, idx, indent_level + 1, True, output,
+                                           is_prettyprint, separate_prefix_column)
         output += first_child_output
     return idx

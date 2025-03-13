@@ -112,3 +112,69 @@ def validate_log(cur):
         assert len(node.exec_stats) >= node.num_hosts
     profile = cur.get_profile()
     assert profile is not None
+
+def test_build_summary_table(tmp_db, cur, empty_table):
+    """Test build_exec_summary function of impyla.
+    """
+    tmp_db_lower = tmp_db.lower()
+    # Assert column Operator, #Host, #Inst, #Rows, Est. #Rows, Est. Peak Mem, and Detail.
+    # Skip column Avg Time, Max Time, and Peak Mem.
+
+    def skip_cols(row):
+        assert len(row) == 10, row
+        output = list(row)
+        del output[7]
+        del output[4]
+        del output[3]
+        return output
+
+    def validate_summary_table(table, expected):
+        for i in range(0, len(expected)):
+            row = skip_cols(table[i])
+            assert expected[i] == row, 'Expect {0} but found {1}'.format(
+                str(expected[i]), str(row))
+
+    query = """SELECT * FROM {0} a INNER JOIN {1} b ON (a.i = b.i)""".format(
+        empty_table, empty_table)
+    cur.execute(query)
+    cur.fetchall()
+    summary = cur.get_summary()
+    output_dop_0 = list()
+    cur.build_summary_table(summary, output_dop_0)
+    assert len(output_dop_0) == 8, output_dop_0
+    expected_dop_0 = [
+        ['F02:ROOT', 1, 1, '', '', '4.00 MB', ''],
+        ['04:EXCHANGE', 1, 1, '0', '0', '16.00 KB', 'UNPARTITIONED'],
+        ['F00:EXCHANGE SENDER', 1, 1, '', '', '64.00 KB', ''],
+        ['02:HASH JOIN', 1, 1, '0', '0', '1.94 MB', 'INNER JOIN, BROADCAST'],
+        ['|--03:EXCHANGE', 1, 1, '0', '0', '16.00 KB', 'BROADCAST'],
+        ['|  F01:EXCHANGE SENDER', 1, 1, '', '', '32.00 KB', ''],
+        ['|  01:SCAN HDFS', 1, 1, '0', '0', '0 B',
+         '{0}.{1} b'.format(tmp_db_lower, empty_table)],
+        ['00:SCAN HDFS', 1, 1, '0', '0', '0 B',
+         '{0}.{1} a'.format(tmp_db_lower, empty_table)],
+    ]
+    validate_summary_table(output_dop_0, expected_dop_0)
+    cur.close_operation()
+
+    cur.execute(query, configuration={'mt_dop': '2'})
+    cur.fetchall()
+    summary = cur.get_summary()
+    output_dop_2 = list()
+    cur.build_summary_table(summary, output_dop_2)
+    assert len(output_dop_2) == 9, output_dop_2
+    expected_dop_2 = [
+        ['F02:ROOT', 1, 1, '', '', '4.00 MB', ''],
+        ['04:EXCHANGE', 1, 1, '0', '0', '16.00 KB', 'UNPARTITIONED'],
+        ['F00:EXCHANGE SENDER', 1, 1, '', '', '64.00 KB', ''],
+        ['02:HASH JOIN', 1, 1, '0', '0', '0 B', 'INNER JOIN, BROADCAST'],
+        ['|--F03:JOIN BUILD', 1, 1, '', '', '3.88 MB', ''],
+        ['|  03:EXCHANGE', 1, 1, '0', '0', '16.00 KB', 'BROADCAST'],
+        ['|  F01:EXCHANGE SENDER', 1, 1, '', '', '32.00 KB', ''],
+        ['|  01:SCAN HDFS', 1, 1, '0', '0', '0 B',
+         '{0}.{1} b'.format(tmp_db_lower, empty_table)],
+        ['00:SCAN HDFS', 1, 1, '0', '0', '0 B',
+         '{0}.{1} a'.format(tmp_db_lower, empty_table)],
+    ]
+    validate_summary_table(output_dop_2, expected_dop_2)
+    cur.close_operation()
