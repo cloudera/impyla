@@ -1,17 +1,16 @@
 Changelog
 =========
 
-0.21a3
-* **Improvements**
-  - Update Impala Thrift definitions. (#575)
-    - this helps in testing newer features in Impala
-
-0.21a2
+0.21
 ------
 * **Improvements**
   - Remove versioneer and add Python3.12/3.13 testing (#572)
     - this is a temporary solution till Python2 support is dropped
       as no version of versioneer handles both Python 2.7 and 3.12
+  - Allow users to add custom http headers when using hs2-http (#557)
+    - this change is intended to help with testing the server side
+  - Update Impala Thrift definitions. (#575)
+    - this helps in testing newer features in Impala
 
 * **Bug Fixes**
   - Fix IPv6 address handling in hs2-http protocol
@@ -20,11 +19,7 @@ Changelog
   - Fix passing retry count configuration to rpc operations (#564)
   - Fix has_table() with sqlalchemy2 (#568)
 
-0.21a1
-------
-* **Improvements**
-  - Allow users to add custom http headers when using hs2-http (#557)
-    - this change is intended to help with testing the server side
+Note that this may be the last release with Python 2.7 support.
 
 0.20
 ------
