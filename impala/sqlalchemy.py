@@ -203,8 +203,16 @@ class ImpalaDialect(DefaultDialect):
     type_compiler = ImpalaTypeCompiler
     execution_ctx_cls = ImpalaExecutionContext
 
+    # sqlalchemy dbapi() is deprecated in favor of import_dbapi().
+    # Keeping both to remain as compatible as possible.
     @classmethod
     def dbapi(cls):
+        # pylint: disable=method-hidden
+        import impala.dbapi
+        return impala.dbapi
+
+    @classmethod
+    def import_dbapi(cls):
         # pylint: disable=method-hidden
         import impala.dbapi
         return impala.dbapi
