@@ -69,6 +69,18 @@ def as_pandas(cursor, coerce_float=False):
                                   coerce_float=coerce_float)
 
 
+def as_dict(cursor):
+    """
+    :param cursor: `HiveServer2Cursor`
+        The cursor object that has a result set waiting to be fetched.
+    :return: list of dict
+    """
+    columns = [col[0].lower() for col in cursor.description]
+    data = [
+        dict(zip(columns, row)) for row in cursor.fetchall()]
+    return data
+
+
 def _random_id(prefix='', length=8):
     return prefix + ''.join(random.sample(string.ascii_uppercase, length))
 
