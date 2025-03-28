@@ -155,7 +155,6 @@ def test_build_summary_table(tmp_db, cur, empty_table):
          '{0}.{1} a'.format(tmp_db_lower, empty_table)],
     ]
     validate_summary_table(output_dop_0, expected_dop_0)
-    cur.close_operation()
 
     cur.execute(query, configuration={'mt_dop': '2'})
     cur.fetchall()
