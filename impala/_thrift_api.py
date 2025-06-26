@@ -483,7 +483,11 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
     elif auth_mechanism == 'GSSAPI':
         # For GSSAPI over http we need to dynamically generate custom request headers.
         def get_custom_headers(cookie_header, has_auth_cookie):
-            import kerberos
+            try:
+                import winkerberos as kerberos
+            except ImportError:
+                import kerberos
+
             custom_headers = {}
             if cookie_header:
                 log.debug('add cookies to HTTP header')
