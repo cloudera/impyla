@@ -109,10 +109,19 @@ def con(host, port, auth_mech, tmp_db):
 
 
 @fixture(scope='session')
+def session_cur(con):
+    # session level cursor usable in session/module level fixtures
+    cur = con.cursor()
+    yield cur
+    cur.close()
+
+
+@fixture(scope='function')
 def cur(con):
     cur = con.cursor()
     yield cur
     cur.close()
+
 
 @fixture(scope='session')
 def cur_no_string_conv(con):

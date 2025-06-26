@@ -20,17 +20,17 @@ from pytest import fixture
 from decimal import Decimal
 
 @fixture(scope='module')
-def decimal_table(cur):
+def decimal_table(session_cur):
     table_name = 'tmp_decimal_table'
     ddl = """CREATE TABLE {0} (
                  f1 decimal(10, 2),
                  f2 decimal(7, 5),
                  f3 decimal(38, 17))""".format(table_name)
-    cur.execute(ddl)
+    session_cur.execute(ddl)
     try:
         yield table_name
     finally:
-        cur.execute("DROP TABLE {0}".format(table_name))
+        session_cur.execute("DROP TABLE {0}".format(table_name))
 
 
 @pytest.mark.connect
@@ -53,11 +53,11 @@ def test_cursor_description_precision_scale(cur, decimal_table):
 
 
 @fixture(scope='module')
-def decimal_table2(cur):
+def decimal_table2(session_cur):
     table_name = 'tmp_decimal_table2'
     ddl = """CREATE TABLE {0} (val decimal(18, 9))""".format(table_name)
-    cur.execute(ddl)
-    cur.execute('''insert into {0}
+    session_cur.execute(ddl)
+    session_cur.execute('''insert into {0}
                    values (cast(123456789.123456789 as decimal(18, 9))),
                           (cast(-123456789.123456789 as decimal(18, 9))),
                           (cast(0.000000001 as decimal(18, 9))),
@@ -68,7 +68,7 @@ def decimal_table2(cur):
     try:
         yield table_name
     finally:
-        cur.execute("DROP TABLE {0}".format(table_name))
+        session_cur.execute("DROP TABLE {0}".format(table_name))
 
 
 def common_test_decimal(cur, decimal_table):
@@ -95,16 +95,16 @@ def test_decimal_no_string_conv(cur_no_string_conv, decimal_table2):
 
 
 @fixture(scope='module')
-def date_table(cur):
+def date_table(session_cur):
     table_name = 'tmp_date_table'
     ddl = """CREATE TABLE {0} (d date)""".format(table_name)
-    cur.execute(ddl)
-    cur.execute('''insert into {0}
+    session_cur.execute(ddl)
+    session_cur.execute('''insert into {0}
                    values (date "0001-01-01"), (date "1999-9-9")'''.format(table_name))
     try:
         yield table_name
     finally:
-        cur.execute("DROP TABLE {0}".format(table_name))
+        session_cur.execute("DROP TABLE {0}".format(table_name))
 
 
 def common_test_date(cur, date_table):
@@ -125,11 +125,11 @@ def test_date_no_string_conv(cur_no_string_conv, date_table):
 
 
 @fixture(scope='module')
-def timestamp_table(cur):
+def timestamp_table(session_cur):
     table_name = 'tmp_timestamp_table'
     ddl = """CREATE TABLE {0} (ts timestamp)""".format(table_name)
-    cur.execute(ddl)
-    cur.execute('''insert into {0}
+    session_cur.execute(ddl)
+    session_cur.execute('''insert into {0}
                    values (cast("1400-01-01 00:00:00" as timestamp)),
                           (cast("2014-06-23 13:30:51" as timestamp)),
                           (cast("2014-06-23 13:30:51.123" as timestamp)),
@@ -139,7 +139,7 @@ def timestamp_table(cur):
     try:
         yield table_name
     finally:
-        cur.execute("DROP TABLE {0}".format(table_name))
+        session_cur.execute("DROP TABLE {0}".format(table_name))
 
 
 def common_test_timestamp(cur, timestamp_table):
