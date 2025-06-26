@@ -29,6 +29,7 @@ from six.moves import range
 from thrift.transport.TTransport import TTransportException
 from thrift.Thrift import TApplicationException
 from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated
+from impala._thrift_gen.ExecStats.ttypes import TExecStats
 from impala._thrift_gen.TCLIService.ttypes import (
     TOpenSessionReq, TFetchResultsReq, TCloseSessionReq,
     TExecuteStatementReq, TGetInfoReq, TGetInfoType, TTypeId,
@@ -44,6 +45,7 @@ from impala._thrift_gen.RuntimeProfile.ttypes import TRuntimeProfileFormat
 from impala.compat import (Decimal, _xrange as xrange)
 from impala.error import (NotSupportedError, OperationalError,
                           ProgrammingError, HiveServer2Error, HttpError)
+from impala.exec_summary import build_exec_summary_table
 from impala.interface import Connection, Cursor, _bind_parameters
 from impala.util import get_logger_and_init_null
 
@@ -727,8 +729,9 @@ class HiveServer2Cursor(Cursor):
 
     def build_summary_table(self, summary, output, idx=0,
                             is_fragment_root=False, indent_level=0):
-        return build_summary_table(summary, idx, is_fragment_root,
-                                   indent_level, output)
+        return build_exec_summary_table(
+            summary, idx, indent_level, is_fragment_root, output, is_prettyprint=True,
+            separate_prefix_column=False)
 
     def get_databases(self):
         def op():
@@ -1550,122 +1553,3 @@ class Operation(ThriftRPC):
         log.debug('get_result_schema: schema=%s', schema)
 
         return schema
-
-
-def build_summary_table(summary, idx, is_fragment_root, indent_level, output):
-    """Direct translation of Coordinator::PrintExecSummary() to recursively
-    build a list of rows of summary statistics, one per exec node
-
-    summary: the TExecSummary object that contains all the summary data
-
-    idx: the index of the node to print
-
-    is_fragment_root: true if the node to print is the root of a fragment (and
-    therefore feeds into an exchange)
-
-    indent_level: the number of spaces to print before writing the node's
-    label, to give the appearance of a tree. The 0th child of a node has the
-    same indent_level as its parent. All other children have an indent_level
-    of one greater than their parent.
-
-    output: the list of rows into which to append the rows produced for this
-    node and its children.
-
-    Returns the index of the next exec node in summary.exec_nodes that should
-    be processed, used internally to this method only.
-    """
-    # pylint: disable=too-many-locals
-
-    attrs = ["latency_ns", "cpu_time_ns", "cardinality", "memory_used"]
-
-    # Initialise aggregate and maximum stats
-    agg_stats, max_stats = TExecStats(), TExecStats()
-    for attr in attrs:
-        setattr(agg_stats, attr, 0)
-        setattr(max_stats, attr, 0)
-
-    node = summary.nodes[idx]
-    for stats in node.exec_stats:
-        for attr in attrs:
-            val = getattr(stats, attr)
-            if val is not None:
-                setattr(agg_stats, attr, getattr(agg_stats, attr) + val)
-                setattr(max_stats, attr, max(getattr(max_stats, attr), val))
-
-    if len(node.exec_stats) > 0:
-        avg_time = agg_stats.latency_ns / len(node.exec_stats)
-    else:
-        avg_time = 0
-
-    # If the node is a broadcast-receiving exchange node, the cardinality of
-    # rows produced is the max over all instances (which should all have
-    # received the same number of rows). Otherwise, the cardinality is the sum
-    # over all instances which process disjoint partitions.
-    if node.is_broadcast and is_fragment_root:
-        cardinality = max_stats.cardinality
-    else:
-        cardinality = agg_stats.cardinality
-
-    est_stats = node.estimated_stats
-    label_prefix = ""
-    if indent_level > 0:
-        label_prefix = "|"
-        if is_fragment_root:
-            label_prefix += "    " * indent_level
-        else:
-            label_prefix += "--" * indent_level
-
-    def prettyprint(val, units, divisor):
-        for unit in units:
-            if val < divisor:
-                if unit == units[0]:
-                    return "%d%s" % (val, unit)
-                else:
-                    return "%3.2f%s" % (val, unit)
-            val /= divisor
-
-    def prettyprint_bytes(byte_val):
-        return prettyprint(
-            byte_val, [' B', ' KB', ' MB', ' GB', ' TB'], 1024.0)
-
-    def prettyprint_units(unit_val):
-        return prettyprint(unit_val, ["", "K", "M", "B"], 1000.0)
-
-    def prettyprint_time(time_val):
-        return prettyprint(time_val, ["ns", "us", "ms", "s"], 1000.0)
-
-    row = [label_prefix + node.label,
-           len(node.exec_stats),
-           prettyprint_time(avg_time),
-           prettyprint_time(max_stats.latency_ns),
-           prettyprint_units(cardinality),
-           prettyprint_units(est_stats.cardinality),
-           prettyprint_bytes(max_stats.memory_used),
-           prettyprint_bytes(est_stats.memory_used),
-           node.label_detail]
-
-    output.append(row)
-    try:
-        sender_idx = summary.exch_to_sender_map[idx]
-        # This is an exchange node, so the sender is a fragment root, and
-        # should be printed next.
-        build_summary_table(summary, sender_idx, True, indent_level, output)
-    except (KeyError, TypeError):
-        # Fall through if idx not in map, or if exch_to_sender_map itself is
-        # not set
-        pass
-
-    idx += 1
-    if node.num_children > 0:
-        first_child_output = []
-        idx = build_summary_table(summary, idx, False, indent_level,
-                                  first_child_output)
-        # pylint: disable=unused-variable
-        # TODO: is child_idx supposed to be unused?  See #120
-        for child_idx in range(1, node.num_children):
-            # All other children are indented (we only have 0, 1 or 2 children
-            # for every exec node at the moment)
-            idx = build_summary_table(summary, idx, False, indent_level + 1,
-                                      output)
-        output += first_child_output
-    return idx
