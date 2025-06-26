@@ -20,22 +20,22 @@ from pytest import fixture
 BIGGER_TABLE_NUM_ROWS = 100
 
 @fixture(scope='module')
-def bigger_table(cur):
+def bigger_table(session_cur):
     table_name = 'tmp_bigger_table'
     ddl = """CREATE TABLE {0} (s string)
              STORED AS PARQUET""".format(table_name)
-    cur.execute(ddl)
+    session_cur.execute(ddl)
     dml = """INSERT INTO {0}
              VALUES {1}""".format(table_name,
                  ",".join(["('row{0}')".format(i) for i in xrange(BIGGER_TABLE_NUM_ROWS)]))
     # Disable codegen and expr rewrites so query runs faster.
-    cur.execute("set disable_codegen=1")
-    cur.execute("set enable_expr_rewrites=0")
-    cur.execute(dml)
+    session_cur.execute("set disable_codegen=1")
+    session_cur.execute("set enable_expr_rewrites=0")
+    session_cur.execute(dml)
     try:
         yield table_name
     finally:
-        cur.execute("DROP TABLE {0}".format(table_name))
+        session_cur.execute("DROP TABLE {0}".format(table_name))
 
 
 def test_has_more_rows(cur, bigger_table):

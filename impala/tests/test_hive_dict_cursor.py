@@ -15,7 +15,7 @@
 from pytest import fixture
 
 
-@fixture(scope='session')
+@fixture(scope='function')
 def cur2(con):
     cur = con.cursor(dictify=True)
     yield cur
