@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.22a1
+------
+* **Improvements**
+  - Fallback to winkerberos if kerberos is not available (#587)
+  - Update build_summary_table function to match impala-shell (#578)
+  - Unpin bitarray dependency on Python 3 (#588)
+
+* **Bug Fixes**
+  - sqlalchemy 2 related fixes #580, #582
+
 0.21
 ------
 * **Improvements**
