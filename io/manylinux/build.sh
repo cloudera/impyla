@@ -144,7 +144,10 @@ set_up_virt_env_py27() {
   source impyla_test_env/bin/activate
   set -eu
 
-  LD_LIBRARY_PATH="$py27lib" easy_install -U setuptools
+  # Upgrade to last pip that supports Python 2.7 and newer setuptool
+  # to handle Environment Markers in setup.py.
+  LD_LIBRARY_PATH="$py27lib" pip install pip==20.3
+  LD_LIBRARY_PATH="$py27lib" pip install -U setuptools
 }
 
 sanity_check() {
