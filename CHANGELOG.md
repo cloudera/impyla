@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.22a1
+0.22
 ------
 * **Improvements**
   - Fallback to winkerberos if kerberos is not available (#587)

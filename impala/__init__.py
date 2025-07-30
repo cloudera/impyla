@@ -14,4 +14,4 @@
 
 from __future__ import absolute_import
 # setup.py also contains the version - the two should have the same value!
-__version__ = u'v0.22a1'
+__version__ = u'v0.22.0'
