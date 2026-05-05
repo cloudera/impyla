@@ -76,6 +76,7 @@ class ImpylaTestEnv(object):
                                          'NOSASL')
 
         self.ssl_cert = get_env_var('IMPYLA_SSL_CERT', identity, "")
+        self.ssl_wrong_cert = get_env_var('IMPYLA_SSL_WRONG_CERT', identity, "")
 
     def __repr__(self):
         kvs = ['{0}={1}'.format(k, v)
