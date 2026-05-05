@@ -928,11 +928,6 @@ def connect(host, port, timeout=None, use_ssl=False, ca_cert=None,
         kerberos_host = host
 
     if use_http_transport:
-        # TODO(#362): Add server authentication with thrift 0.12.
-        if ca_cert:
-            raise NotSupportedError("Server authentication is not supported " +
-                                    "with HTTP endpoints")
-
         transport = get_http_transport(
             host, port, http_path=http_path,
             use_ssl=use_ssl, ca_cert=ca_cert,

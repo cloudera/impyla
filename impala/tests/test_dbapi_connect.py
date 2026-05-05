@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import, print_function
 
+import ssl
 import sys
 import time
 
@@ -47,6 +48,7 @@ JWT_DISABLED_ERROR = "JWT authentication disabled"
 # export IMPALA_SSL_ARGS="--ssl_client_ca_certificate=$IMPALA_SSL_CERT_DIR/server-cert.pem --ssl_server_certificate=$IMPALA_SSL_CERT_DIR/server-cert.pem --ssl_private_key=$IMPALA_SSL_CERT_DIR/server-key.pem --hostname=localhost"
 # bin/start-impala-cluster.py --impalad_args="$IMPALA_SSL_ARGS" --catalogd_args="$IMPALA_SSL_ARGS" --state_store_args="$IMPALA_SSL_ARGS"
 # export IMPYLA_SSL_CERT=$IMPALA_SSL_CERT_DIR/server-cert.pem
+# export IMPYLA_SSL_WRONG_CERT=$IMPALA_SSL_CERT_DIR/incorrect-commonname-cert.pem
 SSL_DISABLED = ENV.ssl_cert == ""
 SSL_DISABLED_ERROR = "No ssl certificate set."
 
@@ -251,10 +253,38 @@ class ImpalaConnectionTests(unittest.TestCase):
         self._execute_queries(self.connection)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
-    def test_https_connection(self):
+    def test_ssl_connection_wrong_cert(self):
+        try:
+            connect(
+                ENV.host, ENV.port, use_ssl=True, timeout=TIMEOUT_S, ca_cert=ENV.ssl_wrong_cert)
+            assert False, "'connect' method should have thrown an exception but did not"
+        except TTransportException as e:
+            # The message is not too informative, verification error is swallowed by thrift.
+            assert "Could not connect to any of" in str(e)
+
+    @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    def test_https_connection_nocert(self):
         self.connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
                                   http_path="cliservice", use_ssl=True, timeout=TIMEOUT_S)
         self._execute_queries(self.connection)
+
+    @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    def test_https_connection_with_cert(self):
+        self.connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
+                                  http_path="cliservice", use_ssl=True, timeout=TIMEOUT_S,
+                                  ca_cert=ENV.ssl_cert)
+        self._execute_queries(self.connection)
+
+    @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    def test_https_connection_wrong_cert(self):
+        try:
+            connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
+                                 http_path="cliservice", use_ssl=True, timeout=TIMEOUT_S,
+                                 ca_cert=ENV.ssl_wrong_cert)
+            connection.cursor()
+            assert False, "'cursor' method should have thrown an exception but did not"
+        except ssl.SSLCertVerificationError as e:
+            assert "CERTIFICATE_VERIFY_FAILED" in str(e)
 
     def test_retry_dml(self):
         """Regression test for #549.
