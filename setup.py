@@ -27,7 +27,7 @@ def readme():
 setup(
     name='impyla',
     # impala/__init__.py also contains the version - the two should have the same value!
-    version='v0.22.0',
+    version='v0.23a1',
     description='Python client for the Impala distributed query engine',
     long_description_content_type='text/markdown',
     long_description=readme(),
