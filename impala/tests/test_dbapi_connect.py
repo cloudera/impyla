@@ -283,7 +283,8 @@ class ImpalaConnectionTests(unittest.TestCase):
                                  ca_cert=ENV.ssl_wrong_cert)
             connection.cursor()
             assert False, "'cursor' method should have thrown an exception but did not"
-        except ssl.SSLCertVerificationError as e:
+        except Exception as e:
+            # TODO: replace with ssl.SSLCertVerificationError when dropping Python 2.7
             assert "CERTIFICATE_VERIFY_FAILED" in str(e)
 
     def test_retry_dml(self):
