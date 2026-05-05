@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.23a1
+------
+* **Improvements**
+  - Add HTTP server verification for hs2-http (#598)
+
 0.22
 ------
 * **Improvements**
