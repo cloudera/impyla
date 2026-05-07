@@ -67,7 +67,7 @@ def test_has_more_rows_fetchcolumnar(cur, bigger_table):
                    from {0}
                    where s != cast(sleep(2) as string)""".format(bigger_table))
     expected_rows = [("row{0}".format(i),) for i in xrange(BIGGER_TABLE_NUM_ROWS)]
-    assert sorted(cur.fetchcolumnar()) == sorted(expected_rows)
+    assert sorted(cur.fetchcolumnar()[0]) == sorted(expected_rows)
 
 
 @fixture(scope='function')
