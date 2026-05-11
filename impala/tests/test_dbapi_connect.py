@@ -263,6 +263,20 @@ class ImpalaConnectionTests(unittest.TestCase):
             assert "Could not connect to any of" in str(e)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    def test_ssl_connection_default_certs(self):
+        try:
+            # With verify_cert=True, the system's CA certificates will be used to verify
+            # the server certificate. Since the server certificate is self-signed and not
+            # in the system CA store, verification should fail.
+            # TODO: writing positive test would be nice but is more difficult
+            connect(
+                ENV.host, ENV.port, use_ssl=True, timeout=TIMEOUT_S, verify_cert=True)
+            assert False, "'connect' method should have thrown an exception but did not"
+        except TTransportException as e:
+            # The message is not too informative, verification error is swallowed by thrift.
+            assert "Could not connect to any of" in str(e)
+
+    @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
     def test_https_connection_nocert(self):
         self.connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
                                   http_path="cliservice", use_ssl=True, timeout=TIMEOUT_S)
@@ -281,6 +295,22 @@ class ImpalaConnectionTests(unittest.TestCase):
             connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
                                  http_path="cliservice", use_ssl=True, timeout=TIMEOUT_S,
                                  ca_cert=ENV.ssl_wrong_cert)
+            connection.cursor()
+            assert False, "'cursor' method should have thrown an exception but did not"
+        except Exception as e:
+            # TODO: replace with ssl.SSLCertVerificationError when dropping Python 2.7
+            assert "CERTIFICATE_VERIFY_FAILED" in str(e)
+
+    @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    def test_https_connection_default_certs(self):
+        try:
+            # With verify_cert=True, the system's CA certificates will be used to verify
+            # the server certificate. Since the server certificate is self-signed and not
+            # in the system CA store, verification should fail.
+            # TODO: writing positive test would be nice but is more difficult
+            connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
+                                 http_path="cliservice", use_ssl=True, timeout=TIMEOUT_S,
+                                 verify_cert=True)
             connection.cursor()
             assert False, "'cursor' method should have thrown an exception but did not"
         except Exception as e:

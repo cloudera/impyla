@@ -382,10 +382,10 @@ class ImpalaHttpClient(TTransportBase):
       raise HttpError(self.code, self.message, body, self.headers)
 
 
-def get_socket(host, port, use_ssl, ca_cert):
+def get_socket(host, port, use_ssl, ca_cert, verify_cert):
     # based on the Impala shell impl
-    log.debug('get_socket: host=%s port=%s use_ssl=%s ca_cert=%s',
-              host, port, use_ssl, ca_cert)
+    log.debug('get_socket: host=%s port=%s use_ssl=%s ca_cert=%s verify_cert=%s',
+              host, port, use_ssl, ca_cert, verify_cert)
 
     if use_ssl:
         from thrift.transport.TSSLSocket import TSSLSocket
@@ -397,10 +397,11 @@ def get_socket(host, port, use_ssl, ca_cert):
           def isOpen(self):
             return self.handle is not None
 
-        if ca_cert is None:
-            return ImpalaTSSLSocket(host, port, validate=False)
-        else:
+        if ca_cert:
             return ImpalaTSSLSocket(host, port, validate=True, ca_certs=ca_cert)
+        else:
+            return ImpalaTSSLSocket(host, port, validate=verify_cert)
+
     else:
         return TSocket(host, port)
 
@@ -409,14 +410,15 @@ def get_http_transport(host, port, http_path, timeout=None, use_ssl=False,
                        ca_cert=None, auth_mechanism='NOSASL', user=None,
                        password=None, kerberos_host=None, kerberos_service_name=None,
                        http_cookie_names=None, jwt=None, user_agent=None,
-                       get_user_custom_headers_func=None):
+                       get_user_custom_headers_func=None, verify_cert=False):
     host_url = "[%s]" % host if ":" in host else host # add brackets for ipv6 address
     # TODO: support timeout
     if timeout is not None:
         log.error('get_http_transport does not support a timeout')
     if use_ssl:
         ssl_ctx = ssl.create_default_context(cafile=ca_cert)
-        if ca_cert:
+        if ca_cert or verify_cert:
+          ssl_ctx.check_hostname = True
           ssl_ctx.verify_mode = ssl.CERT_REQUIRED
         else:
           ssl_ctx.check_hostname = False  # Mandated by the SSL lib for CERT_NONE mode.
