@@ -43,7 +43,8 @@ setup(
                       'bitarray<3; python_version < "3"',
                       'bitarray; python_version >= "3"',
                       'thrift==0.16.0',
-                      'thrift_sasl==0.4.3'],
+                      'thrift_sasl==0.4.3',
+                      'pure-sasl>=0.6.2'],
     extras_require={
         "kerberos": ['kerberos>=1.3.0'],
     },
