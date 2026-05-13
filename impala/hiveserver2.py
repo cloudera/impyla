@@ -1039,10 +1039,16 @@ class CBatch(Batch):
                  convert_strings_to_unicode=True):
         self.expect_more_rows = expect_more_rows
         self.schema = schema
-        tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
-                 for (i, col) in enumerate(trowset.columns)]
-        num_cols = len(tcols)
-        num_rows = len(tcols[0].values)
+        if trowset:
+            tcols = [_TTypeId_to_TColumnValue_getters[schema[i][1]](col)
+                     for (i, col) in enumerate(trowset.columns)]
+            num_cols = len(tcols)
+            num_rows = len(tcols[0].values)
+        else:
+            # No results returned with STILL_EXECUTING_STATUS
+            tcols = []
+            num_cols = 0
+            num_rows = 0
         self.remaining_rows = num_rows
 
         log.debug('CBatch: input TRowSet num_cols=%s num_rows=%s tcols=%s',
@@ -1142,6 +1148,9 @@ class RBatch(Batch):
         self.expect_more_rows = expect_more_rows
         self.schema = schema
         self.rows = []
+        # Can be None with STILL_EXECUTING_STATUS
+        if not trowset:
+            return
         for trow in trowset.rows:
             row = []
             for (i, col_val) in enumerate(trow.colVals):
