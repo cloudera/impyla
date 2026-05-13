@@ -45,7 +45,7 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
             protocol=None, krb_host=None, use_http_transport=False,
             http_path='', auth_cookie_names=None, http_cookie_names=None,
             retries=3, jwt=None, user_agent=None,
-            get_user_custom_headers_func=None):
+            get_user_custom_headers_func=None, verify_cert=False):
     """Get a connection to HiveServer2 (HS2).
 
     These options are largely compatible with the impala-shell command line
@@ -66,9 +66,9 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
     use_ssl : bool, optional
         Enable SSL.
     ca_cert : str, optional
-        Local path to the the third-party CA certificate. If SSL is enabled but
-        the certificate is not specified, the server certificate will not be
-        validated.
+        Local path to the the third-party CA certificate. If set, the server certificate
+        will be verified using the provided CA cert. If SSL is enabled but
+        the certificate is not specified, see 'verify_cert' for behavior.
     auth_mechanism : {'NOSASL', 'PLAIN', 'GSSAPI', 'LDAP', 'JWT'}
         Specify the authentication mechanism. `'NOSASL'` for unsecured Impala.
         `'PLAIN'` for unsecured Hive (because Hive requires the SASL
@@ -110,6 +110,10 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
         Used to add custom headers to the http messages when using hs2-http protocol.
         This is a function returning a list of tuples, each tuple contains a key-value
         pair. This allows duplicate headers to be set.
+    verify_cert : bool, optional
+        Whether to verify the server's TLS certificate when using SSL using the systems's
+        CA certificates. Ignored if 'ca_cert' is provided, in which case the certificate
+        will be verified using the provided CA cert.
 
         .. deprecated:: 0.18.0
     auth_cookie_names : list of str or str, optional
@@ -209,7 +213,8 @@ def connect(host='localhost', port=21050, database=None, timeout=None,
                           http_cookie_names=http_cookie_names,
                           retries=retries,
                           jwt=jwt, user_agent=user_agent,
-                          get_user_custom_headers_func=get_user_custom_headers_func)
+                          get_user_custom_headers_func=get_user_custom_headers_func,
+                          verify_cert=verify_cert)
     return hs2.HiveServer2Connection(service, default_db=database)
 
 
