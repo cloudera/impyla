@@ -53,6 +53,23 @@ def test_has_more_rows(cur, bigger_table):
     expected_rows = [("row{0}".format(i),) for i in xrange(BIGGER_TABLE_NUM_ROWS)]
     assert sorted(cur.fetchall()) == sorted(expected_rows)
 
+
+def test_has_more_rows_fetchcolumnar(cur, bigger_table):
+    """Test that impyla correctly handles empty row batches returned with the
+    hasMoreRows flag when using columnar batching."""
+    # Set the fetch timeout very low and add sleeps so that Impala will return
+    # empty batches. Run on a single node with a single thread to make as predictable
+    # as possible.
+    cur.execute("set fetch_rows_timeout_ms=1")
+    cur.execute("set num_nodes=1")
+    cur.execute("set mt_dop=1")
+    cur.execute("""select *
+                   from {0}
+                   where s != cast(sleep(2) as string)""".format(bigger_table))
+    expected_rows = [("row{0}".format(i),) for i in xrange(BIGGER_TABLE_NUM_ROWS)]
+    assert sorted(cur.fetchcolumnar()[0]) == sorted(expected_rows)
+
+
 @fixture(scope='function')
 def empty_table(cur):
     table_name = 'tmp_empty_table'

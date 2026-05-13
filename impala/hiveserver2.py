@@ -643,7 +643,9 @@ class HiveServer2Cursor(Cursor):
                          convert_types=self.convert_types,
                          convert_strings_to_unicode=self.convert_strings_to_unicode))
             if len(batch) == 0:
-                break
+                if not batch.expect_more_rows:
+                    break
+                continue
             batches.append(batch)
         return batches
 
