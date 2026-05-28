@@ -120,4 +120,7 @@ def test_pandas_dataframe_to_sql():
             assert ['a', 'b', 'c'] == columns
 
         finally:
-            conn.execute(text('DROP TABLE test_table'))
+            try:
+                conn.execute(text('DROP TABLE IF EXISTS test_table'))
+            except Exception:
+                pass

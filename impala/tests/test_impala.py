@@ -14,7 +14,6 @@
 import sys
 
 import pytest
-from impala.compat import _xrange as xrange
 from pytest import fixture
 
 BIGGER_TABLE_NUM_ROWS = 100
@@ -27,7 +26,7 @@ def bigger_table(session_cur):
     session_cur.execute(ddl)
     dml = """INSERT INTO {0}
              VALUES {1}""".format(table_name,
-                 ",".join(["('row{0}')".format(i) for i in xrange(BIGGER_TABLE_NUM_ROWS)]))
+                 ",".join(["('row{0}')".format(i) for i in range(BIGGER_TABLE_NUM_ROWS)]))
     # Disable codegen and expr rewrites so query runs faster.
     session_cur.execute("set disable_codegen=1")
     session_cur.execute("set enable_expr_rewrites=0")
@@ -50,7 +49,7 @@ def test_has_more_rows(cur, bigger_table):
     cur.execute("""select *
                    from {0}
                    where s != cast(sleep(2) as string)""".format(bigger_table))
-    expected_rows = [("row{0}".format(i),) for i in xrange(BIGGER_TABLE_NUM_ROWS)]
+    expected_rows = [("row{0}".format(i),) for i in range(BIGGER_TABLE_NUM_ROWS)]
     assert sorted(cur.fetchall()) == sorted(expected_rows)
 
 
@@ -66,7 +65,7 @@ def test_has_more_rows_fetchcolumnar(cur, bigger_table):
     cur.execute("""select *
                    from {0}
                    where s != cast(sleep(2) as string)""".format(bigger_table))
-    expected_rows = [("row{0}".format(i),) for i in xrange(BIGGER_TABLE_NUM_ROWS)]
+    expected_rows = [("row{0}".format(i),) for i in range(BIGGER_TABLE_NUM_ROWS)]
     assert sorted(cur.fetchcolumnar()[0]) == sorted(expected_rows)
 
 

@@ -18,10 +18,9 @@ from contextlib import closing
 
 import pytest
 import requests
-import six
-from six.moves import SimpleHTTPServer
-from six.moves import http_client
-from six.moves import socketserver
+from http import server as SimpleHTTPServer
+import http.client as http_client
+import socketserver
 
 from impala.error import HttpError
 from impala.tests.util import ImpylaTestEnv, is_ipv6_only_host
@@ -48,15 +47,8 @@ def http_503_server():
       # Ensure that only one 'Host' header is contained in the request before responding.
       request_headers = None
       host_hdr_count = 0
-      if six.PY2:
-        # The unfortunately named self.headers here is an instance of mimetools.Message that
-        # contains the request headers.
-        request_headers = self.headers.headers
-        host_hdr_count = sum([header.startswith('Host:') for header in request_headers])
-      if six.PY3:
-        # In Python3 self.Headers is an HTTPMessage.
-        request_headers = self.headers
-        host_hdr_count = sum([header[0] == 'Host' for header in request_headers.items()])
+      request_headers = self.headers
+      host_hdr_count = sum([header[0] == 'Host' for header in request_headers.items()])
       assert host_hdr_count == 1, "need single 'Host:' header in %s" % request_headers
 
       # Respond with 503.
@@ -102,7 +94,7 @@ def http_proxy_server():
       # Read the body of the incoming http post message.
       data_string = self.rfile.read(int(self.headers['Content-Length']))
       # Save the http headers from the message in a class variable.
-      RequestHandlerProxy.saved_headers = self.decode_raw_headers()
+      RequestHandlerProxy.saved_headers = self.headers._headers
       # Forward the http post message to Impala and get a response message.
       host = "[%s]" % ENV.host  if ":" in ENV.host else ENV.host
       response = requests.post(
@@ -119,23 +111,6 @@ def http_proxy_server():
       # Send the message body.
       self.wfile.write(response.content)
 
-    def decode_raw_headers(self):
-      """Decode a list of header strings into a list of tuples, each tuple containing a
-      key-value pair. The details of how to get the headers differs between Python2
-      and Python3"""
-      if six.PY2:
-        header_list = []
-        # In Python2 self.headers is an instance of mimetools.Message and
-        # self.headers.headers is a list of raw header strings.
-        # An example header string: 'Accept-Encoding: identity\\r\\n'
-        for header in self.headers.headers:
-          stripped = header.strip()
-          key, value = stripped.split(':', 1)
-          header_list.append((key.strip(), value.strip()))
-        return header_list
-      if six.PY3:
-        # In Python 3 self.headers._headers is what we need
-        return self.headers._headers
 
 
   class TestHTTPServerProxy(object):

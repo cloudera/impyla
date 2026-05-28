@@ -19,7 +19,6 @@ __author__ = 'Stuart Bishop <stuart@stuartbishop.net>'
 
 import time
 import sys
-from six.moves import range
 
 from impala.tests.compat import unittest
 

@@ -39,9 +39,7 @@ setup(
     packages=find_packages(),
     install_package_data=True,
     package_data={'impala.thrift': ['*.thrift']},
-    install_requires=['six',
-                      'bitarray<3; python_version < "3"',
-                      'bitarray; python_version >= "3"',
+    install_requires=['bitarray',
                       'thrift==0.16.0',
                       'thrift_sasl==0.4.3'],
     extras_require={
@@ -51,16 +49,14 @@ setup(
               'pandas distributed db api pep 249 hive hiveserver2 hs2'),
     license='Apache License, Version 2.0',
     classifiers=[
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
     ],
     entry_points={
         'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect',

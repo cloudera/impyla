@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 import sys
 from datetime import datetime, timedelta
-from six.moves import http_client
+import http.client as http_client
 
 if sys.version_info[:2] <= (2, 6):
     import unittest2 as unittest

@@ -19,12 +19,11 @@ import re
 import socket
 
 import datetime
+from decimal import Decimal
 import operator
-import six
 import sys
 import time
 from bitarray import bitarray
-from six.moves import range
 
 from thrift.transport.TTransport import TTransportException
 from thrift.Thrift import TApplicationException
@@ -42,7 +41,6 @@ from impala._thrift_gen.ImpalaService.ImpalaHiveServer2Service import (
 from impala._thrift_api import (
     get_socket, get_http_transport, get_transport, ThriftClient)
 from impala._thrift_gen.RuntimeProfile.ttypes import TRuntimeProfileFormat
-from impala.compat import (Decimal, _xrange as xrange)
 from impala.error import (NotSupportedError, OperationalError,
                           ProgrammingError, HiveServer2Error, HttpError)
 from impala.exec_summary import build_exec_summary_table
@@ -321,7 +319,7 @@ class HiveServer2Cursor(Cursor):
         # If there was an error when closing last operation then
         # raise exception
         if exc_info:
-            six.reraise(*exc_info)
+            raise exc_info[1].with_traceback(exc_info[2])
 
     def cancel_operation(self, reset_state=True):
         if self._last_operation_active:
@@ -1027,7 +1025,7 @@ class Column(object):
         count = min(count, self.rows_left)
         start_pos = self.num_rows - self.rows_left
         self.rows_left -= count
-        for pos in xrange(start_pos, start_pos + count):
+        for pos in range(start_pos, start_pos + count):
             output_list[offset] = None if self.nulls[pos] else self.values[pos]
             offset += stride
         return count
@@ -1074,11 +1072,10 @@ class CBatch(Batch):
             # STRING columns are read as binary and decoded here to be able to handle
             # non-valid utf-8 strings in Python 3.
 
-            if six.PY3:
-                if convert_strings_to_unicode:
-                    self._convert_strings_to_unicode(type_, is_null, values, types=HS2_STRING_TYPES)
-                elif convert_types:
-                    self._convert_strings_to_unicode(type_, is_null, values, types=CONVERTED_TYPES)
+            if convert_strings_to_unicode:
+                self._convert_strings_to_unicode(type_, is_null, values, types=HS2_STRING_TYPES)
+            elif convert_types:
+                self._convert_strings_to_unicode(type_, is_null, values, types=CONVERTED_TYPES)
 
             if convert_types:
                 values = self._convert_values(type_, is_null, values)
@@ -1139,7 +1136,7 @@ class CBatch(Batch):
             assert row_count == rows_returned
         # Split 'dataset' to 'col_count' sized sublists and create tuples from them.
         return [tuple(dataset[i * col_count: (i + 1) * col_count])
-                for i in xrange(row_count)]
+                for i in range(row_count)]
 
 
 class RBatch(Batch):
