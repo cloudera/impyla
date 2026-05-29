@@ -20,10 +20,9 @@ import warnings
 import logging
 import string
 import random
-import six
 import datetime
 import os.path
-from six.moves import http_cookies
+from http import cookies as http_cookies
 
 
 try:
@@ -146,7 +145,7 @@ def _escape(s):
 def _py_to_sql_string(value):
     if value is None:
         return 'NULL'
-    elif isinstance(value, six.string_types):
+    elif isinstance(value, str):
         return "'" + _escape(value) + "'"
     else:
         return str(value)

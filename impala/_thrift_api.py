@@ -29,10 +29,11 @@ import os.path
 from collections import namedtuple
 from io import BytesIO
 
-from six.moves import urllib, http_client
+import urllib.parse
+import urllib.request
+import http.client as http_client
 import warnings
 
-import six
 import ssl
 import sys
 
@@ -146,7 +147,7 @@ class ImpalaHttpClient(TTransportBase):
       self.__auth_cookie_names = set()
     else:
       self.__preserve_all_cookies = False
-      if isinstance(http_cookie_names, six.string_types):
+      if isinstance(http_cookie_names, str):
         http_cookie_names = [http_cookie_names]
       # Build a dictionary that maps cookie name to namedtuple.
       self.__http_cookie_dict = \
@@ -339,7 +340,7 @@ class ImpalaHttpClient(TTransportBase):
         self.__http.putheader('User-Agent', user_agent)
 
       if self.__custom_headers:
-        for key, val in six.iteritems(self.__custom_headers):
+        for key, val in self.__custom_headers.items():
           self.__http.putheader(key, val)
       if self.__user_custom_headers:
         for key, val in self.__user_custom_headers:

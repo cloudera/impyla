@@ -14,7 +14,6 @@
 
 import os
 import sys
-import six
 import socket
 
 
@@ -80,7 +79,7 @@ class ImpylaTestEnv(object):
 
     def __repr__(self):
         kvs = ['{0}={1}'.format(k, v)
-               for (k, v) in six.iteritems(self.__dict__)]
+               for (k, v) in self.__dict__.items()]
         return 'ImpylaTestEnv(\n    {0})'.format(',\n    '.join(kvs))
 
 class SocketTracker(object):

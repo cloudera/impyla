@@ -26,9 +26,9 @@ experience
 
 Required:
 
-* Python 2.7+ or 3.5+
+* Python 3.8+ (Python 2.7 was supported up to Impyla 0.23.0)
 
-* `six`, `bitarray`
+* `bitarray`
 
 * `thrift==0.16.0`
 

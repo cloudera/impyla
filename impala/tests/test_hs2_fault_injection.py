@@ -13,8 +13,6 @@
 # limitations under the License.
 import logging
 
-import six
-
 from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated
 # noinspection PyProtectedMember
 from impala._thrift_gen.ImpalaService import ImpalaHiveServer2Service
