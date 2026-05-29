@@ -1,9 +1,10 @@
 Changelog
 =========
 
-0.23a1
+0.23
 ------
 * **Improvements**
+  - Add HTTP server verification for hs2-http (#598)
   - Allow verifying server using default certificates (#601)
     - enabled with verify_cert (default False) arg in connect()
     - may be turned on by default in a future release
@@ -11,11 +12,6 @@ Changelog
 * **Bug Fixes**
   - handle expect_more_rows in fetchcolumnar() (#596)
   - handle STILL_EXECUTING_STATUS during fetch (#594)
-
-0.23a1
-------
-* **Improvements**
-  - Add HTTP server verification for hs2-http (#598)
 
 0.22
 ------
