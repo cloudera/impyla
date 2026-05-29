@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "impyla"
+dynamic = ["version"]
+description = "Python client for the Impala distributed query engine"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "Apache License, Version 2.0"}
+authors = [
+    {name = "Uri Laserson", email = "laserson@cloudera.com"},
+]
+maintainers = [
+    {name = "Wes McKinney", email = "wes.mckinney@twosigma.com"},
+]
+keywords = [
+    "cloudera", "impala", "python", "hadoop", "sql", "hdfs", "mpp", "spark", "pydata",
+    "pandas", "distributed", "db api", "pep 249", "hive","hiveserver2", "hs2",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "bitarray",
+    "thrift==0.16.0",
+    "thrift_sasl==0.4.3",
+]
+
+[project.optional-dependencies]
+kerberos = ["kerberos>=1.3.0"]
+
+[project.urls]
+Homepage = "https://github.com/cloudera/impyla"
+Repository = "https://github.com/cloudera/impyla"
+Issues = "https://github.com/cloudera/impyla/issues"
+
+[project.entry-points."sqlalchemy.dialects"]
+impala = "impala.sqlalchemy:ImpalaDialect"
+impala4 = "impala.sqlalchemy:Impala4Dialect"
+
+[tool.setuptools.packages.find]
+include = ["impala*"]
+
+[tool.setuptools.package-data]
+impala = ["thrift/*.thrift"]
+
+[tool.setuptools.dynamic]
+version = {attr = "impala.__version__"}
