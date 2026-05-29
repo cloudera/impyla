@@ -12,54 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
+# Project configuration has been migrated to pyproject.toml
+# This file is maintained for backward compatibility only
 
-import ez_setup
-ez_setup.use_setuptools()
+from setuptools import setup
 
-from setuptools import setup, find_packages
-
-
-def readme():
-    with open('README.md', 'r') as ip:
-        return ip.read()
-
-setup(
-    name='impyla',
-    # impala/__init__.py also contains the version - the two should have the same value!
-    version='v0.23.0',
-    description='Python client for the Impala distributed query engine',
-    long_description_content_type='text/markdown',
-    long_description=readme(),
-    maintainer='Wes McKinney',
-    maintainer_email='wes.mckinney@twosigma.com',
-    author='Uri Laserson',
-    author_email='laserson@cloudera.com',
-    url='https://github.com/cloudera/impyla',
-    packages=find_packages(),
-    install_package_data=True,
-    package_data={'impala.thrift': ['*.thrift']},
-    install_requires=['bitarray',
-                      'thrift==0.16.0',
-                      'thrift_sasl==0.4.3'],
-    extras_require={
-        "kerberos": ['kerberos>=1.3.0'],
-    },
-    keywords=('cloudera impala python hadoop sql hdfs mpp spark pydata '
-              'pandas distributed db api pep 249 hive hiveserver2 hs2'),
-    license='Apache License, Version 2.0',
-    classifiers=[
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.12',
-        'Programming Language :: Python :: 3.13',
-        'Programming Language :: Python :: 3.14',
-    ],
-    entry_points={
-        'sqlalchemy.dialects': ['impala = impala.sqlalchemy:ImpalaDialect',
-                                'impala4 = impala.sqlalchemy:Impala4Dialect']
-    },
-    zip_safe=False)
+setup()

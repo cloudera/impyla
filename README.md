@@ -11,9 +11,9 @@ distributed data sets, see the [Ibis project][ibis].
 * HiveServer2 compliant; works with Impala and Hive, including nested data
 
 * Fully [DB API 2.0 (PEP 249)][pep249]-compliant Python client (similar to
-sqlite or MySQL clients) supporting Python 2.6+ and Python 3.3+.
+sqlite or MySQL clients) supporting Python 3.8+.
 
-* Works with Kerberos, LDAP, SSL
+* Works with Kerberos, LDAP, SSL, JWT
 
 * [SQLAlchemy][sqlalchemy] connector
 
@@ -81,7 +81,7 @@ or clone the repo:
 ```bash
 git clone https://github.com/cloudera/impyla.git
 cd impyla
-python setup.py install
+python -m pip install .
 ```
 
 #### Running the tests
