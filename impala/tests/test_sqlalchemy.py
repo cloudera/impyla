@@ -24,6 +24,42 @@ import pandas as pd
 
 TEST_ENV = ImpylaTestEnv()
 
+def table_metadata_from_ddl_template(con, ddl, table_name):
+    """
+    Helper for loading table metadata from ddl create table.
+    """
+    cur = con.cursor()
+    cur.execute(ddl.format(table=table_name))
+    cur.close()
+    engine = create_engine('impala://', creator=lambda x: con)
+    metadata = MetaData()
+    return Table(table_name, metadata, autoload=True, autoload_with=engine)
+
+def test_no_partitions_no_indexes(con):
+    """
+    Assert that table with no partitions contains no indices.
+    """
+    ddl = 'CREATE TABLE {table} (a STRING)'
+    table = table_metadata_from_ddl_template(con, ddl, 'no_partitions')
+    assert len(table.indexes) == 0
+
+def test_one_partitions_indexes(con):
+    """
+    Assert that table with one partition has one index with one column.
+    """
+    ddl = 'CREATE TABLE {table} (a STRING) PARTITIONED BY (b INT);'
+    table = table_metadata_from_ddl_template(con, ddl, 'one_partition')
+    assert len(table.indexes) == 1
+    assert str(list(table.indexes)[0].columns) == "['one_partition.b']"
+
+def test_two_partitions_indexes(con):
+    """
+    Assert that table with two partitions has one index with two columns.
+    """
+    ddl = 'CREATE TABLE {table} (a STRING) PARTITIONED BY (b INT, c INT);'
+    table = table_metadata_from_ddl_template(con, ddl, 'two_partitions')
+    assert len(table.indexes) == 1
+    assert str(list(table.indexes)[0].columns) == "['two_partitions.b', 'two_partitions.c']"
 
 def create_partitioned_test_table():
     metadata = MetaData()
