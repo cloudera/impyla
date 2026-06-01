@@ -12,6 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-# pyproject.toml also contains the version - the two should have the same value!
+# pyproject.toml takes version from this.
 __version__ = u'v0.23.0'

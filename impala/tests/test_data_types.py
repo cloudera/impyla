@@ -15,7 +15,6 @@
 
 import datetime
 import pytest
-import sys
 from pytest import fixture
 from decimal import Decimal
 
@@ -198,7 +197,4 @@ def test_string_no_string_conv(cur_no_string_conv):
     cur.execute('select "Test string"')
     result = cur.fetchone()
 
-    if sys.version_info[0] < 3:
-        assert isinstance(result[0], str)
-    else:
-        assert isinstance(result[0], bytes)
+    assert isinstance(result[0], bytes)

@@ -19,8 +19,6 @@ PEP 249 implementation is compliant.
 """
 
 
-from __future__ import absolute_import, print_function
-
 import pytest
 
 import impala.dbapi
