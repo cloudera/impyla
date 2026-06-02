@@ -14,8 +14,6 @@
 # Additional tests specific for query parameters
 #
 
-from __future__ import absolute_import
-
 from pytest import raises
 
 from impala.interface import _bind_parameters

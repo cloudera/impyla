@@ -14,8 +14,6 @@
 
 # some inspiration from Dropbox's PyHive
 
-from __future__ import absolute_import
-
 import re
 
 from sqlalchemy.dialects import registry

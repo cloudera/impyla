@@ -14,8 +14,6 @@
 
 """Implements the Python DB API 2.0 (PEP 249) for Impala"""
 
-from __future__ import absolute_import
-
 import time
 import datetime
 

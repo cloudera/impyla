@@ -15,4 +15,3 @@
 # This package exists purely to simpify the distribution of the thrift files,
 # which are required for py3 support.
 
-from __future__ import absolute_import

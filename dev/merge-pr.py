@@ -22,8 +22,6 @@
 #
 # Lightly modified from version of this script in incubator-parquet-format
 
-from __future__ import print_function
-
 from requests.auth import HTTPBasicAuth
 import requests
 

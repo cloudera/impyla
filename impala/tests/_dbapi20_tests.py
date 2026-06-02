@@ -11,16 +11,12 @@
     -- Ian Bicking
 '''
 
-from __future__ import absolute_import
-
 __rcs_id__  = '$Id: dbapi20.py,v 1.11 2005/01/02 02:41:01 zenzen Exp $'
 __version__ = '$Revision: 1.12 $'[11:-2]
 __author__ = 'Stuart Bishop <stuart@stuartbishop.net>'
 
 import time
 import sys
-
-from impala.tests.compat import unittest
 
 
 # Revision 1.12  2009/02/06 03:35:11  kf7xm
@@ -74,9 +70,10 @@ from impala.tests.compat import unittest
 #   nothing
 # - Fix bugs in test_setoutputsize_basic and test_setinputsizes
 #
+
+import unittest
+
 def str2bytes(sval):
-    if sys.version_info < (3,0) and isinstance(sval, str):
-        sval = sval.decode("latin1")
     return sval.encode("latin1")
 
 class DatabaseAPI20Test(unittest.TestCase):
