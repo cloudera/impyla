@@ -62,19 +62,11 @@ class ImpalaConnectionTests(unittest.TestCase):
             self.connection.close()
 
     def _execute_queries(self, con):
-        ddl = """
-            CREATE TABLE {0} (
-              f1 INT,
-              f2 INT)
-        """.format(self.tablename)
-        try:
-            cur = con.cursor()
-            cur.execute(ddl)
-            con.commit()
-            cur.execute('DROP TABLE {0}'.format(self.tablename))
-            con.commit()
-        except:
-            raise
+        cur = con.cursor()
+        cur.execute("SELECT 1 + 1")
+        assert cur.fetchall() == [(2,)]
+        cur.execute("SELECT 2 + 2")
+        assert cur.fetchall() == [(4,)]
 
     def _execute_query_get_username(self, con):
         query = "select user()"
@@ -254,7 +246,7 @@ class ImpalaConnectionTests(unittest.TestCase):
             assert False, "'connect' method should have thrown an exception but did not"
         except TTransportException as e:
             # The message is not too informative, verification error is swallowed by thrift.
-            assert "Could not connect to any of" in str(e)
+            assert "CERTIFICATE_VERIFY_FAILED" in str(e.inner)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
     def test_ssl_connection_default_certs(self):
@@ -268,7 +260,7 @@ class ImpalaConnectionTests(unittest.TestCase):
             assert False, "'connect' method should have thrown an exception but did not"
         except TTransportException as e:
             # The message is not too informative, verification error is swallowed by thrift.
-            assert "Could not connect to any of" in str(e)
+            assert "CERTIFICATE_VERIFY_FAILED" in str(e.inner)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
     def test_https_connection_nocert(self):
