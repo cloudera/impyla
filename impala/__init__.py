@@ -13,5 +13,5 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-# setup.py also contains the version - the two should have the same value!
+# pyproject.toml also contains the version - the two should have the same value!
 __version__ = u'v0.23.0'
