@@ -1,6 +1,20 @@
 Changelog
 =========
 
+0.24a1
+------
+* **Breaking changes**
+  - Remove Python 2.7 and <3.8 support (#606)
+
+* **Improvements**
+  - Switch to pyproject.toml from setup.py (#607)
+  - Upgrade Thrift to 0.23.0 (#609)
+    - also unpinned Thrift dependency (>=0.23.0)
+
+* **Bug Fixes**
+  - Fix non-http SSL connections with verify_cert=True and
+    ca_cert=None (these were always rejected in 0.23) (#609)
+
 0.23
 ------
 * **Improvements**
