@@ -310,3 +310,13 @@ class Impala4Dialect(ImpalaDialect):
     name = 'impala4'
     driver = 'impala4'
     type_compiler = Impala4TypeCompiler
+
+    # disable supports_statement_cache explicitly to avoid warning in sqlalchemy.
+    # TODO: it is not clear whether it would be safe to enable, needs more research
+    supports_statement_cache = False
+
+    @classmethod
+    def import_dbapi(cls):
+        # pylint: disable=method-hidden
+        import impala.dbapi
+        return impala.dbapi
