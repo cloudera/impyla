@@ -72,7 +72,7 @@ def http_503_server():
   shutdown_server(server)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def http_proxy_server():
   """A fixture that creates a reverse http proxy."""
 
