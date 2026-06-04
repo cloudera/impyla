@@ -28,14 +28,25 @@ from impala.tests.util import ImpylaTestEnv, SocketTracker
 from thrift.transport.TTransport import TTransportException
 
 ENV = ImpylaTestEnv()
-DEFAULT_AUTH = True
+DEFAULT_AUTH = ENV.auth_mech != "NOSASL"
 DEFAULT_AUTH_ERROR = "Non-default authorization method"
+
+# TODO: write tests for this - it needs Hive restart with hive.server2.authentication=NOSASL
+HIVE_NO_SASL_DISABLED = True
+
+# TODO: does this make any sense? Impala doesn't support plain auth
+IMPALA_PLAIN_DISABLED = True
+
+# TODO: write LDAP tests - these are currently in Java in Impala.
+#       note that from client perspective, LDAP auth is the same as PLAIN, which is
+#       covered in Hive tests
+LDAP_DISABLED = ENV.auth_mech != "LDAP"
+LDAP_DISABLED_ERROR = "LDAP authentication disabled"
 
 # JWT tests require the Impala coordinator to have the following startup flags:
 # --jwt_token_auth=true --jwt_validate_signature=false --jwt_allow_without_tls=true
-JWT_DISABLED = True
+JWT_DISABLED = ENV.auth_mech != "JWT"
 JWT_DISABLED_ERROR = "JWT authentication disabled"
-
 
 # SSL can be enabled in Impala dev environment with the following commands:
 # export IMPALA_SSL_CERT_DIR=$IMPALA_HOME/be/src/testutil
@@ -98,7 +109,7 @@ class ImpalaConnectionTests(unittest.TestCase):
                                   password="cloudera")
         self._execute_queries(self.connection)
 
-    @pytest.mark.skipif(DEFAULT_AUTH, reason=DEFAULT_AUTH_ERROR)
+    @pytest.mark.skipif(IMPALA_PLAIN_DISABLED, reason=DEFAULT_AUTH_ERROR)
     def test_impala_plain_connect(self):
         self.connection = connect(ENV.host, ENV.port, auth_mechanism="PLAIN",
                                   timeout=TIMEOUT_S,
@@ -106,7 +117,7 @@ class ImpalaConnectionTests(unittest.TestCase):
                                   password="cloudera")
         self._execute_queries(self.connection)
 
-    @pytest.mark.skipif(DEFAULT_AUTH, reason=DEFAULT_AUTH_ERROR)
+    @pytest.mark.skipif(LDAP_DISABLED, reason=LDAP_DISABLED_ERROR)
     def test_impala_ldap_connect_user_agent(self):
         self.connection = connect(ENV.host, ENV.port, auth_mechanism="LDAP",
                                   timeout=TIMEOUT_S,
@@ -118,7 +129,7 @@ class ImpalaConnectionTests(unittest.TestCase):
                                   user_agent="cloudera/impyla")
         self._execute_queries(self.connection)
 
-    @pytest.mark.skipif(DEFAULT_AUTH, reason=DEFAULT_AUTH_ERROR)
+    @pytest.mark.skipif(HIVE_NO_SASL_DISABLED, reason="Skipping hive tests")
     def test_hive_nosasl_connect(self):
         self.connection = connect(ENV.host, ENV.hive_port, timeout=TIMEOUT_S)
         self._execute_queries(self.connection)
@@ -133,6 +144,7 @@ class ImpalaConnectionTests(unittest.TestCase):
             assert 'Unsupported authentication mechanism: FOO' in str(e)
 
     @pytest.mark.skipif(JWT_DISABLED, reason=JWT_DISABLED_ERROR)
+    @pytest.mark.jwt_auth
     def test_jwt_auth(self):
         """Test for connecting via the auth_mechanism=JWT"""
         # This is a JWT generated via jwt.io's online generator
@@ -227,18 +239,21 @@ class ImpalaConnectionTests(unittest.TestCase):
             assert "'password' argument cannot be specified with 'JWT' authentication" in str(e)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    @pytest.mark.ssl
     def test_ssl_connection_no_cert(self):
         self.connection = connect(ENV.host, ENV.port, timeout=TIMEOUT_S, use_ssl=True)
         self._execute_queries(self.connection)
 
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    @pytest.mark.ssl
     def test_ssl_connection_with_cert(self):
         self.connection = connect(
             ENV.host, ENV.port, use_ssl=True, timeout=TIMEOUT_S, ca_cert=ENV.ssl_cert)
         self._execute_queries(self.connection)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    @pytest.mark.ssl
     def test_ssl_connection_wrong_cert(self):
         try:
             connect(
@@ -249,6 +264,7 @@ class ImpalaConnectionTests(unittest.TestCase):
             assert "CERTIFICATE_VERIFY_FAILED" in str(e.inner)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    @pytest.mark.ssl
     def test_ssl_connection_default_certs(self):
         try:
             # With verify_cert=True, the system's CA certificates will be used to verify
@@ -263,12 +279,14 @@ class ImpalaConnectionTests(unittest.TestCase):
             assert "CERTIFICATE_VERIFY_FAILED" in str(e.inner)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    @pytest.mark.ssl
     def test_https_connection_nocert(self):
         self.connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
                                   http_path="cliservice", use_ssl=True, timeout=TIMEOUT_S)
         self._execute_queries(self.connection)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    @pytest.mark.ssl
     def test_https_connection_with_cert(self):
         self.connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
                                   http_path="cliservice", use_ssl=True, timeout=TIMEOUT_S,
@@ -276,6 +294,7 @@ class ImpalaConnectionTests(unittest.TestCase):
         self._execute_queries(self.connection)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    @pytest.mark.ssl
     def test_https_connection_wrong_cert(self):
         try:
             connection = connect(ENV.host, ENV.http_port, use_http_transport=True,
@@ -288,6 +307,7 @@ class ImpalaConnectionTests(unittest.TestCase):
             assert "CERTIFICATE_VERIFY_FAILED" in str(e)
 
     @pytest.mark.skipif(SSL_DISABLED, reason=SSL_DISABLED_ERROR)
+    @pytest.mark.ssl
     def test_https_connection_default_certs(self):
         try:
             # With verify_cert=True, the system's CA certificates will be used to verify

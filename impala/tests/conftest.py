@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import logging
+from logging import config
+import sys
 
 from pytest import fixture, skip
 
@@ -33,6 +35,7 @@ def pytest_addoption(parser):
     parser.addoption('--log-debug', action='store_true', default=False,
                      help='Enable DEBUG logging')
 
+ENV = ImpylaTestEnv()
 
 def pytest_configure(config):
     # if both --log-debug and --log-info are set, the DEBUG takes precedence
@@ -46,6 +49,11 @@ def pytest_configure(config):
         root_logger.addHandler(logging.StreamHandler())
     config.addinivalue_line("markers", "connect")
     config.addinivalue_line("markers", "params_neg: marks tests that verify invalid parameters are not allowed")
+    config.addinivalue_line("markers", "ssl: marks tests that require SSL")
+    config.addinivalue_line("markers", "jwt_auth: mark tests that require JWT authentication")
+    suite_name = "%spy%d.%d" % (ENV.auth_mech , sys.version_info[0], sys.version_info[1])
+    config.inicfg['junit_suite_name'] = suite_name
+
 
 def pytest_runtest_setup(item):
     if (getattr(item.obj, 'connect', None) and
@@ -55,8 +63,6 @@ def pytest_runtest_setup(item):
 
 # testing fixtures
 
-
-ENV = ImpylaTestEnv()
 hive = ENV.auth_mech == 'PLAIN'
 
 
