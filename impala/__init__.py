@@ -13,4 +13,4 @@
 # limitations under the License.
 
 # pyproject.toml takes version from this.
-__version__ = u'v0.24a1'
+__version__ = u'v0.24.0'

@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.24a1
+0.24
 ------
 * **Breaking changes**
   - Remove Python 2.7 and <3.8 support (#606)
